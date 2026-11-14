@@ -15,6 +15,8 @@ import android.view.View
  * Televize ukáže český seznam VEDLE anglických voleb (nezakrývá je).
  */
 object Volby {
+    private val zmeny = java.util.concurrent.atomic.AtomicLong()
+    val revize get() = zmeny.get()
     /** Čte se oblast voleb? (vypínač pod mini televizí) */
     @Volatile var zapnuto = false
     /** Kde ve hře jsou volby: vlevo, nahoře, vpravo, dole – podíl šířky/výšky obrazu (0..1). */
@@ -31,6 +33,7 @@ object Volby {
     private fun prefs(c: Context) = c.getSharedPreferences("gamelingo", Context.MODE_PRIVATE)
 
     fun nacti(c: Context) {
+        zmeny.incrementAndGet()
         val p = prefs(c)
         zapnuto = p.getBoolean("volbyZap", false)
         ukazatNaTv = p.getBoolean("volbyUkazat", false)
@@ -43,6 +46,7 @@ object Volby {
     }
 
     fun uloz(c: Context) {
+        zmeny.incrementAndGet()
         val o = oblast
         prefs(c).edit().putBoolean("volbyZap", zapnuto).putBoolean("volbyUkazat", ukazatNaTv).putBoolean("volbyZamek", zamceno).putBoolean("volbyRezimText", rezimText)
             .putFloat("volbyL", o[0]).putFloat("volbyT", o[1])
