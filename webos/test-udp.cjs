@@ -63,6 +63,14 @@ const { once } = require('node:events');
         assert.equal(result.packet.text, 'První řádek\nDruhý řádek');
         assert.equal(result.packet.hint, 'Nápověda');
         assert.equal(result.source, '127.0.0.1');
+        for (const [text, kind] of [
+            ['PCV1\t42\t2\t0.55\t0.45\t0.95\t0.8\t0\tPrvní volba\\nDruhá volba', 'choices'],
+            ['PCO1\t1\t0.1\t0.72\t0.9\t0.97', 'ocr']
+        ]) {
+            const deliveredFrame = new Promise(resolve => { pending = resolve; });
+            sender.send(Buffer.from(text), sockets[0].address().port, '127.0.0.1');
+            assert.equal((await deliveredFrame).packet.kind, kind);
+        }
         const closed = once(sockets[0], 'close');
         handlers.listen.cancel({ uniqueToken: 'udp-test' });
         await closed;

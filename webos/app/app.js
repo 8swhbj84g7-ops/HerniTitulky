@@ -4,6 +4,7 @@
     var status = document.getElementById("status");
     var subtitle = document.getElementById("subtitle");
     var hint = document.getElementById("hint");
+    var receiverUI = window.PlayCaptionReceiverUI ? new window.PlayCaptionReceiverUI(document) : null;
     var inputPanel = document.getElementById("inputs");
     var inputBridge = null;
     var inputButtons = [];
@@ -96,6 +97,7 @@
     }
 
     function clearText() {
+        if (receiverUI) receiverUI.clear();
         subtitle.hidden = true;
         hint.hidden = true;
         hint.textContent = "";
@@ -166,14 +168,23 @@
             return;
         }
         var now = Date.now();
+        var connectionChanged = source !== result.source || (lastSeen && now - lastSeen > 5000);
+        if (connectionChanged) clearText();
+        if (receiverUI && receiverUI.handle(packet, now)) {
+            lastSeen = now;
+            source = result.source;
+            status.hidden = !activityWarning;
+            return;
+        }
         // Opakované pakety jsou heartbeat; nesmějí znovu zobrazit již prošlý titulek.
-        var changed = packet.id !== lastId || source !== result.source || now - lastSeen > 5000;
+        var changed = packet.id !== lastId || connectionChanged;
         lastSeen = now;
         status.hidden = !activityWarning;
         if (!changed) return;
         lastId = packet.id;
         source = result.source;
         subtitle.textContent = packet.text;
+        if (receiverUI) receiverUI.caption(packet, now);
         subtitle.hidden = !packet.text;
         subtitleUntil = now + packet.duration;
         var layout = packet.layout;
@@ -204,6 +215,7 @@
         keepOverlayOpen();
         timer = setInterval(function () {
             var now = Date.now();
+            if (receiverUI) receiverUI.tick(now);
             if (now - lastActivity >= 45000) keepOverlayOpen();
             if (now >= subtitleUntil) subtitle.hidden = true;
             if (now >= hintUntil) hint.hidden = true;

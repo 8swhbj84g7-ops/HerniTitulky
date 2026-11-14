@@ -24,17 +24,19 @@ nepovažujeme za dostupnou jen na základě existence metody.
 
 - `app/`: průhledné HTML/CSS/JS UI, životní cyklus, heartbeat a doba zobrazení.
 - `service/`: Node.js služba používající systémový `webos-service`, UDP a parser.
-- `test.cjs`, `test-udp.cjs`, `test-input.cjs`: regrese UI/protokolu, skutečný loopback UDP přenos a přepínání HDMI.
+- `test.cjs`, `test-udp.cjs`, `test-input.cjs`, `test-receiver.cjs`: regrese UI/protokolu, UDP, přepínání HDMI a shoda vykreslení.
 - `build.py`: testy, syntaxe, sestavení IPK, kontrola obsahu a distribuční ZIP.
 
 Kompatibilní protokol je v Android `Propojeni.kt`: `PLAYCAPTION_TV` na UDP 41988
-každé 2 s a příjem `PCT1` na UDP 41989. Posíláme příznak nespárované konzole (`0`),
+každé 2 s a příjem `PCT1`, `PCV1` a `PCO1` na UDP 41989. Posíláme příznak nespárované konzole (`0`),
 aby přihlášení zůstávalo na Android zařízení. `PCS1` se ignoruje; žádné tokeny konzole
 se nepředávají. Síťové texty se vykreslují přes `textContent`, nikoli HTML.
 
-Aktuální rozsah: titulky, nápověda, poloha a velikost. `PCV1`, `PCO1` a barvy jmen
-se zatím ignorují. Opakované ID neobnovuje dobu zobrazení; po 5 s bez přenosu se text
-skryje. Po zavření posledního odběratele skončí UDP i discovery.
+Aktuální rozsah zahrnuje i volby odpovědí, dlouhé texty, modrý/žlutý/zelený rámeček
+a barvy jmen. [Matice shody s Android přijímačem](SHODA-ANDROID.md) uvádí detaily
+a hranice ověření. Opakované ID neobnovuje dobu zobrazení; kanály titulků a voleb
+mají oddělené čítače. Po 5 s bez přenosu se skryjí texty i rámečky.
+Po zavření posledního odběratele skončí UDP i discovery.
 
 ## Sestavení
 
@@ -48,8 +50,8 @@ python3 webos/build.py
 Na Windows lze použít `py -3 webos/build.py`. Aplikace nemá přidané npm knihovny;
 CLI 3.2.6 se spouští přes npx pouze pro sestavení. Výstup ve `webos/dist/`:
 
-- `cz.playcaption.overlaytest_0.0.5_all.ipk` pro instalaci do LG;
-- `PlayCaption-LG-0.0.5.zip` pro předání uživatelům: IPK, návod, licence,
+- `cz.playcaption.overlaytest_0.0.6_all.ipk` pro instalaci do LG;
+- `PlayCaption-LG-0.0.6.zip` pro předání uživatelům: IPK, návod, licence,
   přesně odpovídající zdroje přijímače a SHA256SUMS.
 
 Adresář `dist/` se necommituje. Build nečte žádné místní přihlašovací údaje,
@@ -71,7 +73,7 @@ Key Server. Z rootu projektu pokračuj:
 
 ```sh
 ares-novacom --device c5 --getkey
-ares-install --device c5 webos/dist/cz.playcaption.overlaytest_0.0.5_all.ipk
+ares-install --device c5 webos/dist/cz.playcaption.overlaytest_0.0.6_all.ipk
 ```
 
 Volitelné spuštění z počítače otevře stejný výběr HDMI jako spuštění z TV:

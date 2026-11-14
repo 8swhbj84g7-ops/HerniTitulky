@@ -6,6 +6,8 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
 
 ## Unreleased
 
+- LG přijímač 0.0.6: dialogové volby a zvýraznění, dlouhé texty, žlutý/modrý rámeček oblasti čtení, zelený náhled polohy a barvy jmen. Matice funkcí rozlišuje shodu TV přijímačů a OCR/párování konzole na tabletu.
+
 - LG přijímač nabízí výběr HDMI přímo na TV a po přepnutí obnoví překryv; počítač je potřeba pouze k instalaci.
 - LG webOS: návod instalace a každodenního používání, lokální sestavení distribučního ZIPu a automatické testy; trvalá chybová signalizace prodlužování překryvu a ignorování opožděných odpovědí ze zrušených volání.
 - LG webOS: přijímač obnovuje systémový časovač překryvu, aby jej TV při hraní automaticky nezavírala po 120 sekundách.

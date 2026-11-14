@@ -1,11 +1,28 @@
 # Kontrola LG přijímače před předáním
 
+## Ověření voleb a rámečků ve verzi 0.0.6
+
+- Skutečné UDP pakety na C5 současně vykreslily titulky, volby a oba rámečky.
+  Web Inspector naměřil modrou oblast `(0.1, 0.72, 0.8, 0.25)` a žlutou
+  `(0.55, 0.45, 0.4, 0.35)` ve formátu x/y/šířka/výška, podle paketů.
+- Český seznam byl vlevo vedle oblasti voleb, druhá odpověď byla zvýrazněná.
+  Jména byla zelená a červená podle ARGB dat; zelený náhled měl přerušovaný obrys.
+- Celý testovací odstavec v režimu Text odpovídal odeslanému obsahu. DOM potvrdil
+  umístění uvnitř obrazovky a obsah bez oříznutí.
+- Uživatel na tabletu potvrdil, že modrý i žlutý rámeček jsou na LG vidět
+  a pohybují se podle tabletu. Jde o end-to-end test nastavování oblastí.
+- SHA256 všech šesti souborů UI a pěti souborů služby na TV odpovídal aktuálním
+  zdrojům; nejde pouze o kontrolu souboru APK/IPK v počítači.
+- Skutečné herní odpovědi a úplnost jejich OCR/překladu zbývají k přejímce;
+  syntetické UDP pakety je nenahrazují. Viz `SHODA-ANDROID.md`.
+
 ## Automatické kontroly
 
 ```sh
 node webos/test.cjs
 node webos/test-udp.cjs
 node webos/test-input.cjs
+node webos/test-receiver.cjs
 python3 webos/build.py
 git diff --check
 ```
@@ -25,7 +42,11 @@ pořadí spuštění HDMI → overlay, validaci vstupu, souběžný požadavek, 
 API, timeout a opožděnou aktivitu. Testuje i výběr v UI, uloženou volbu, neplatné
 odpovědi a obnovení bez opětovného otevření menu. Systémová API jsou zde náhrady.
 
-`build.py` znovu spustí všechny tři testy a kontrolu syntaxe, sestaví IPK oficiálním CLI
+`test-receiver.cjs` testuje PCV1/PCO1, limity a neplatné souřadnice, časování
+voleb/textu/rámečků, zvýraznění odpovědi, barevná jména, souběžné kanály se stejným
+ID a společný výpadek spojení.
+
+`build.py` znovu spustí všechny čtyři testy a kontrolu syntaxe, sestaví IPK oficiálním CLI
 3.2.6 a porovná veškerý obsah IPK se zdroji. Odmítne soubory navíc či jinou verzi.
 Vytvoří ZIP s návodem, licencí, odpovídajícími zdroji a SHA256SUMS; ověří CRC ZIPu.
 Vyžaduje Python 3.9+, Node.js 20+ a internet pro stažení CLI přes npx.

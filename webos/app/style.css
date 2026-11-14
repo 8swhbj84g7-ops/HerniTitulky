@@ -42,6 +42,35 @@ body {
   max-height: 35%;
 }
 
+#choices {
+  position: fixed;
+  box-sizing: border-box;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.9);
+  color: #ffd54a;
+  font-size: 30px;
+  font-weight: bold;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  overflow: auto;
+}
+.choice { padding: 8px 12px; border-radius: 6px; }
+.choice + .choice { margin-top: 4px; }
+.choice.selected { color: #000; background: #ffd54a; }
+.frame {
+  position: fixed;
+  box-sizing: border-box;
+  border: 4px dashed currentColor;
+  background: repeating-linear-gradient(135deg, transparent 0, transparent 18px, currentColor 19px, transparent 20px);
+  font-size: 24px;
+  pointer-events: none;
+}
+.frame span { background: #171717; padding: 4px 8px; }
+.yellow { color: #ffd54a; }
+.blue { color: #4fb3ff; }
+
 #inputs {
   position: fixed;
   z-index: 10;

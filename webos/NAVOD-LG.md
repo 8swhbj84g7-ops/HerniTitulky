@@ -12,7 +12,7 @@ Je to experimentální podpora, zatím ověřená na LG C5.
 - Počítač s Windows, macOS nebo Linuxem pro instalaci přijímače. Při hraní není potřeba.
 - Konzoli zapojenou přes HDMI do LG a zařízení ve stejné domácí síti.
   LG může být připojená kabelem a tablet přes Wi-Fi; nepoužívej oddělenou síť pro hosty.
-- ZIP **PlayCaption-LG-0.0.5.zip** poskytnutý projektem. Rozbal ho v počítači.
+- ZIP **PlayCaption-LG-0.0.6.zip** poskytnutý projektem. Rozbal ho v počítači.
   Uvnitř je instalační soubor `.ipk`, tento návod, licence a zdrojové kódy.
 
 APK patří do Android zařízení, IPK patří do LG. Na LG se nepřihlašuješ k PSN.
@@ -38,7 +38,7 @@ Podrobný postup LG: [Developer Mode](https://webostv.developer.lge.com/develop/
    zadej IP televize a Passphrase. Pokud nástroj vyžádá port a uživatele, použij port
    **9922** a uživatele **prisoner**. Nevol připojení jako root.
 3. Po připojení v části s aplikacemi použij **Install** a vyber rozbalený soubor
-   **cz.playcaption.overlaytest_0.0.5_all.ipk**.
+   **cz.playcaption.overlaytest_0.0.6_all.ipk**.
 4. Počkej na dokončení. V seznamu aplikací má přibýt **PlayCaption LG**.
    Pokud už máš náš původní HDMI test, stejný identifikátor zajistí jeho aktualizaci.
 
@@ -70,7 +70,7 @@ přebírá přihlášení z Android TV. Pro LG nepoužívej tento postup ani vol
 Android zařízení nech odemčené s otevřeným PlayCaption, ideálně na nabíječce.
 Počítač při hraní není potřeba. Pokud chceš změnit vstup, otevři znovu PlayCaption LG
 a vyber ho uvnitř aplikace. Přepnutí přes systémové menu LG může překryv zavřít;
-verze 0.0.5 nesleduje všechny změny vstupů na pozadí.
+verze 0.0.6 nesleduje všechny změny vstupů na pozadí.
 Přijímač neposílá ovládací vstupy do konzole; hraješ dál svým ovladačem.
 
 ## Každé další hraní
@@ -109,10 +109,21 @@ Pro nahlášení problému stačí model LG, verze firmwaru/webOS, verze obou ap
 model Android zařízení a rozdíl mezi tím, co zobrazí tablet a LG. Neposílej PSN tokeny,
 Passphrase ani soukromé klíče. Pokud posíláš fotku, stačí samotný text na obrazovce.
 
-## Co první LG verze umí a neumí
+## Oblasti čtení a překlad odpovědí
 
-Umí základní titulky, nápovědu a polohu/velikost textu. Zatím nezobrazuje dialogové
-volby a delší texty posílané samostatným režimem, modrý OCR rámeček ani barvy jmen.
+- Zelená oblast nastavuje umístění českých dialogových titulků.
+- Modrá oblast vybírá místo čtení původních titulků. Zapni ruční čtení;
+  při přesouvání se na LG ukáže modrý rámeček.
+- Žlutá oblast vybírá místo čtení odpovědí nebo dokumentu. Zapni ji a zvol
+  **Volby odpovědí**, nebo **Text (dopis, SMS)**. Český text se zobrazí vedle
+  zvolené oblasti; pokud vedle není místo, zůstane uvnitř ní.
+- **Rámeček na TV: Ukazovat pořád** ponechá žlutý rámeček viditelný i bez
+  přečtených odpovědí. Jinak svítí jen při nastavování.
+
+## Rozsah LG přijímače
+
+Umí titulky, nápovědu, polohu/velikost, dialogové volby, delší texty, náhledy
+oblastí a barvy jmen. Podrobnosti a testy uvádí [matice funkcí](SHODA-ANDROID.md).
 Ověřená kombinace je LG C5 + Redmi Pad Pro + PS5. Stejná verze webOS nezaručuje
 kompatibilitu všech modelů; překryv i jeho udržování používají neoficiální rozhraní LG.
 Xbox ani jiné LG modely zatím v této sestavě nebyly otestované.

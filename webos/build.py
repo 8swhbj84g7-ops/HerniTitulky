@@ -43,9 +43,9 @@ def main():
     service = json.loads((HERE / "service/package.json").read_text(encoding="utf8"))
     assert app["version"] == service["version"], "Nesouhlasí verze UI a služby"
     assert service["name"] == app["id"] + ".receiver", "Nesouhlasí ID služby"
-    for test in ["test.cjs", "test-udp.cjs", "test-input.cjs"]:
+    for test in ["test.cjs", "test-udp.cjs", "test-input.cjs", "test-receiver.cjs"]:
         subprocess.run(["node", test], cwd=HERE, check=True)
-    for source in ["app/app.js", "service/protocol.js", "service/service.js", "service/switch-input.js"]:
+    for source in ["app/app.js", "app/receiver-ui.js", "service/protocol.js", "service/service.js", "service/switch-input.js"]:
         subprocess.run(["node", "--check", source], cwd=HERE, check=True)
     (HERE / "dist").mkdir(exist_ok=True)
     # Pevný příkaz bez interpolace vstupu; shell podporuje také npx.cmd na Windows.
@@ -61,9 +61,10 @@ def main():
     verify_ipk(ipk, expected)
     files = {ipk.name: ipk.read_bytes(), "LICENSE": (ROOT / "LICENSE").read_bytes()}
     files["NAVOD-LG.md"] = (HERE / "NAVOD-LG.md").read_bytes()
+    files["SHODA-ANDROID.md"] = (HERE / "SHODA-ANDROID.md").read_bytes()
     files["source/LICENSE"] = (ROOT / "LICENSE").read_bytes()
     files["source/BACKLOG.md"] = (ROOT / "BACKLOG.md").read_bytes()
-    sources = ["README.md", "NAVOD-LG.md", "TESTOVANI.md", "test.cjs", "test-udp.cjs", "test-input.cjs", "build.py"]
+    sources = ["README.md", "NAVOD-LG.md", "TESTOVANI.md", "SHODA-ANDROID.md", "test.cjs", "test-udp.cjs", "test-input.cjs", "test-receiver.cjs", "build.py"]
     sources += [str(p.relative_to(HERE)) for folder in ["app", "service"] for p in sorted((HERE / folder).iterdir())]
     for name in sources:
         files["source/webos/" + name] = (HERE / name).read_bytes()

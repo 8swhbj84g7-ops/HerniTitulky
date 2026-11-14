@@ -48,11 +48,12 @@ neproblikávají zbytečně částečné řádky a po změně scény nezůstáv�
 
 ## PC-002 – Dorovnání funkcí LG přijímače
 
-Stav: náměty, bez implementace v první verzi.
+Stav: v LG 0.0.6 doplněny níže uvedené vizuální funkce; herní přejímka pokračuje.
 
 - Dialogové volby a delší herní texty přenášené zprávou `PCV1`.
 - Modrý OCR rámeček `PCO1`, rámeček pro nastavení a barvy jmen postav.
-- Další LG modely/firmware a několika hodinové hraní, včetně uspání a návratu TV.
+- Matice implementace a testů: `webos/SHODA-ANDROID.md` a `webos/TESTOVANI.md`.
+- Zbývají další LG modely/firmware a několika hodinové hraní, včetně uspání a návratu TV.
 
 ## PC-003 – Měřením podložená optimalizace přenosu a čtení
 
