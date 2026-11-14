@@ -13,6 +13,7 @@ android {
         targetSdk = 34
         versionCode = 32
         versionName = "0.20.1"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // jen procesory, které mají televize (ARM) – aplikace je tak o třetinu menší
         ndk { abiFilters += listOf("armeabi-v7a", "arm64-v8a") }
     }
@@ -32,6 +33,9 @@ android {
 }
 
 dependencies {
+    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test:runner:1.5.2")
     implementation("androidx.core:core-ktx:1.13.1")
     // Překlad přímo v televizi – zdarma, bez limitu (Google ML Kit)
     implementation("com.google.mlkit:translate:17.0.3")
