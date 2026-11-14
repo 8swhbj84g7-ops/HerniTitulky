@@ -9,6 +9,45 @@
         var lastChoiceId = null;
         var lastFrameMode = 0;
         var choicesUntil = 0, yellowUntil = 0, blueUntil = 0, greenUntil = 0;
+        var captionPacket = null, captionOffset = 0, captionNext = 0, captionUntil = 0;
+
+        function pageEnd(text) {
+            var ends = [], word, words = /\S+/g;
+            while ((word = words.exec(text))) ends.push(word.index + word[0].length);
+            function fits(end) {
+                subtitle.textContent = text.slice(0, end);
+                return !subtitle.clientHeight || subtitle.scrollHeight <= subtitle.clientHeight + 1;
+            }
+            if (!ends.length) return text.length;
+            // Poškozené OCR může obsahovat i jediné dlouhé slovo; nesmí se ztratit jeho konec.
+            if (!fits(ends[0])) {
+                var length = 0;
+                ends = Array.from(text.slice(0, ends[0])).map(function (ch) { length += ch.length; return length; });
+            }
+            var low = 0, high = ends.length - 1, best = ends[0];
+            while (low <= high) {
+                var mid = Math.floor((low + high) / 2);
+                if (fits(ends[mid])) { best = ends[mid]; low = mid + 1; }
+                else high = mid - 1;
+            }
+            // Krátká dokončená věta má přednost před polovinou další věty.
+            var part = text.slice(0, best), sentence = /[.!?…]["'”’»)]*(?=\s|$)/g, match, stop = 0;
+            while ((match = sentence.exec(part))) stop = match.index + match[0].length;
+            return stop >= best / 2 ? stop : best;
+        }
+
+        function nextCaption(now) {
+            var rest = captionPacket.text.slice(captionOffset);
+            captionOffset += rest.length - rest.replace(/^\s+/, "").length;
+            rest = captionPacket.text.slice(captionOffset);
+            var start = captionOffset;
+            var end = pageEnd(rest);
+            var colors = (captionPacket.colors || []).slice(captionPacket.text.slice(0, start).split("\n").length - 1);
+            if (start && captionPacket.text[start - 1] !== "\n") colors[0] = 0;
+            paintCaption(rest.slice(0, end), colors);
+            captionOffset += end;
+            captionNext = now + Math.max(2000, 1000 + end * 50);
+        }
 
         function positionFrame(node, area) {
             node.style.left = (area[0] * 100) + "%";
@@ -66,14 +105,14 @@
             return true;
         };
 
-        this.caption = function (packet, now) {
-            subtitle.textContent = packet.text;
-            if (packet.colors && packet.colors.some(function (color) { return color !== 0; })) {
+        function paintCaption(text, colors) {
+            subtitle.textContent = text;
+            if (colors.some(function (color) { return color !== 0; })) {
                 subtitle.textContent = "";
-                packet.text.split("\n").forEach(function (line, index) {
+                text.split("\n").forEach(function (line, index) {
                     if (index) subtitle.appendChild(document.createTextNode("\n"));
                     var colon = line.indexOf(":");
-                    var color = packet.colors[index] || 0;
+                    var color = colors[index] || 0;
                     if (color && colon >= 1 && colon <= 25) {
                         var name = document.createElement("span");
                         name.textContent = line.slice(0, colon + 1);
@@ -84,11 +123,21 @@
                     } else subtitle.appendChild(document.createTextNode(line));
                 });
             }
+        }
+
+        this.caption = function (packet, now) {
+            var same = captionPacket && packet.text === captionPacket.text &&
+                JSON.stringify([packet.layout, packet.colors]) === JSON.stringify([captionPacket.layout, captionPacket.colors]) && now < captionUntil;
+            captionPacket = packet;
+            captionUntil = now + packet.duration;
+            if (!same) { captionOffset = 0; nextCaption(now); }
             subtitle.style.outline = packet.editing ? "4px dashed #78e89b" : "";
             greenUntil = now + 8000;
         };
 
         this.tick = function (now) {
+            if (captionPacket && now < captionUntil && now >= captionNext && captionOffset < captionPacket.text.trimEnd().length)
+                nextCaption(now);
             if (now >= choicesUntil) choices.hidden = true;
             if (now >= yellowUntil) yellow.hidden = true;
             if (now >= blueUntil) blue.hidden = true;
@@ -101,6 +150,7 @@
             subtitle.style.outline = "";
             lastChoiceId = null; lastFrameMode = 0;
             choicesUntil = yellowUntil = blueUntil = greenUntil = 0;
+            captionPacket = null; captionOffset = captionNext = captionUntil = 0;
         };
     };
 }());

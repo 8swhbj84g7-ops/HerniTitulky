@@ -50,8 +50,8 @@ python3 webos/build.py
 Na Windows lze použít `py -3 webos/build.py`. Aplikace nemá přidané npm knihovny;
 CLI 3.2.6 se spouští přes npx pouze pro sestavení. Výstup ve `webos/dist/`:
 
-- `cz.playcaption.overlaytest_0.0.6_all.ipk` pro instalaci do LG;
-- `PlayCaption-LG-0.0.6.zip` pro předání uživatelům: IPK, návod, licence,
+- `cz.playcaption.overlaytest_0.0.7_all.ipk` pro instalaci do LG;
+- `PlayCaption-LG-0.0.7.zip` pro předání uživatelům: IPK, návod, licence,
   přesně odpovídající zdroje přijímače a SHA256SUMS.
 
 Adresář `dist/` se necommituje. Build nečte žádné místní přihlašovací údaje,
@@ -73,7 +73,7 @@ Key Server. Z rootu projektu pokračuj:
 
 ```sh
 ares-novacom --device c5 --getkey
-ares-install --device c5 webos/dist/cz.playcaption.overlaytest_0.0.6_all.ipk
+ares-install --device c5 webos/dist/cz.playcaption.overlaytest_0.0.7_all.ipk
 ```
 
 Volitelné spuštění z počítače otevře stejný výběr HDMI jako spuštění z TV:

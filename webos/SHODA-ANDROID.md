@@ -1,10 +1,10 @@
 # Shoda funkcí televizního přijímače
 
-LG 0.0.6 porovnáváme s Android režimem **titulky z telefonu/tabletu** a protokolem
+LG 0.0.7 porovnáváme s Android režimem **titulky z telefonu/tabletu** a protokolem
 v `Propojeni.kt`. Remote Play, OCR, překlad a účet konzole zajišťuje Android.
 Matice odděluje implementované vykreslení od přejímky konkrétní herní scény.
 
-| Funkce Android přijímače | LG 0.0.6 | Ověření |
+| Funkce Android přijímače | LG 0.0.7 | Ověření |
 | --- | --- | --- |
 | `PCT1`: české titulky a více řádků | Ano | Parser/UI, skutečné UDP a dřívější hraní na C5. |
 | Poloha, šířka a velikost podle zelené oblasti | Ano | Automatické testy a dosavadní běh. |
@@ -31,7 +31,8 @@ Matice odděluje implementované vykreslení od přejímky konkrétní herní sc
 
 Viditelnost rámečku je samostatná volba, neslouží jako vypínač OCR. Prázdný seznam
 skryje české odpovědi, trvale zapnutý rámeček zůstane. Styl a velikost písma nejsou
-pixelovou kopií Androidu.
+pixelovou kopií Androidu. LG dialogy stránkuje po dvou řádcích s limitem výšky
+18 % obrazovky; Android přijímač tuto novou prezentační politiku zatím nemá.
 
 ## Odlišnosti zapojení a platformy
 

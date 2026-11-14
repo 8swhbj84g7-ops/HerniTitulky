@@ -1,5 +1,24 @@
 # Kontrola LG přijímače před předáním
 
+## Krátké dialogy ve verzi 0.0.7 – 15. 11. 2026
+
+- Záznam z Redmi Pad Pro zachytil dvě chybné OCR varianty téže repliky v GTA V,
+  které Android spojil jako pokračování. Ochrana proti tomuto případu je na větvi
+  `bugfix/subtitle-cues`; 44 JVM testů prošlo a na tablet byla nainstalována
+  `PlayCaption Test 0.20.1-cues-test01` se zachováním dat (`adb install -r`).
+- LG přijímač nyní ukazuje dialog po nejvýše dvou řádcích. Nová replika zruší
+  zbytek předchozí, heartbeat ani stejné znění s novým ID nevrací stránky na začátek.
+  Platnost paketu dál omezuje celkovou dobu čtení; rychlá nová replika může
+  přerušit nedočtené stránky. Text a nabídky odpovědí nejsou tímto limitem dotčené.
+- C5 Web Inspector otestoval devět kombinací šířky (20/54/100 %) a velikosti
+  písma (0.5/1.05/2.5). Obsah stránek dohromady odpovídal originálu, bez přetečení.
+  Největší naměřená výška boxu byla 17.998 % obrazu.
+- Skutečné UDP pakety v nainstalované aplikaci vystřídaly stránky a novou krátkou
+  repliku; prázdný paket zobrazení ukončil. Nejvýše dva řádky, žádný návrat starého
+  textu po nové replice. SHA256 všech 11 souborů UI a služby souhlasí se zdroji.
+- Herní přejímka po opravě ještě zbývá. Špatně rozpoznaná slova z Remote Play
+  tímto krokem obecně neopravujeme; nejde o důkaz kvality všech her a fontů.
+
 ## Ověření voleb a rámečků ve verzi 0.0.6
 
 - Skutečné UDP pakety na C5 současně vykreslily titulky, volby a oba rámečky.
@@ -44,7 +63,8 @@ odpovědi a obnovení bez opětovného otevření menu. Systémová API jsou zde
 
 `test-receiver.cjs` testuje PCV1/PCO1, limity a neplatné souřadnice, časování
 voleb/textu/rámečků, zvýraznění odpovědi, barevná jména, souběžné kanály se stejným
-ID a společný výpadek spojení.
+ID a společný výpadek spojení. Také dvouřádkové stránky, úplnost obsahu, dlouhé slovo,
+Unicode, opakované znění, nahrazení novou replikou a ukončení stránkování.
 
 `build.py` znovu spustí všechny čtyři testy a kontrolu syntaxe, sestaví IPK oficiálním CLI
 3.2.6 a porovná veškerý obsah IPK se zdroji. Odmítne soubory navíc či jinou verzi.

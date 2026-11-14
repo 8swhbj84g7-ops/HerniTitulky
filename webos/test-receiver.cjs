@@ -84,6 +84,46 @@ assert.equal(elements.choices.style.maxHeight, '90vh');
 assert.equal(packet('PCT1\t1\t6000\tJméno: text\t\tB:9999999999,NaN').colors[0], 0);
 assert.equal(packet('PCT1\t1\t6000\tJméno: text\t\tB:9999999999,NaN').colors[1], 0);
 
+// Omezený dvouřádkový viewport: dlouhý text se čte po stránkách, nikoli oříznutím.
+const subtitle = elements.subtitle;
+Object.defineProperty(subtitle, 'clientHeight', { get: () => 40 });
+Object.defineProperty(subtitle, 'scrollHeight', { get: () => subtitle.textContent.split('\n')
+    .reduce((lines, line) => lines + Math.max(1, Math.ceil(Array.from(line).length / 24)), 0) * 20 });
+const longCaption = packet('PCT1\t20\t60000\t' + 'Tohle je první věta. Potom následuje další delší věta a její celý konec. '.repeat(4) + '\t');
+ui.caption(longCaption, 650000);
+const pages = [subtitle.textContent];
+for (let t = 651000; t < 710000; t += 1000) {
+    const old = subtitle.textContent;
+    ui.tick(t);
+    assert.ok(subtitle.scrollHeight <= 40, 'Stránka nepřesáhne dva řádky.');
+    if (old !== subtitle.textContent) pages.push(subtitle.textContent);
+}
+assert.ok(pages.length > 1);
+assert.equal(pages.join(' ').replace(/\s+/g, ' ').trim(), longCaption.text.trim(), 'Neztratí se slova ani pořadí.');
+ui.caption(longCaption, 720000);
+ui.tick(725000);
+const secondPage = subtitle.textContent;
+ui.caption({ ...longCaption, id: '21' }, 725100);
+assert.equal(subtitle.textContent, secondPage, 'Nové ID se stejným textem nevrátí stránkování na začátek.');
+ui.caption(packet('PCT1\t22\t6000\tTrevor: Nová replika.\t'), 726000);
+ui.tick(730000);
+assert.equal(subtitle.textContent, 'Trevor: Nová replika.', 'Nová replika ruší zbytek staré, nehromadí historii.');
+const oneWord = packet('PCT1\t23\t60000\t' + '😀'.repeat(70) + '\t');
+ui.caption(oneWord, 740000);
+const pieces = [subtitle.textContent];
+for (let t = 741000; t < 760000; t += 1000) {
+    const old = subtitle.textContent;
+    ui.tick(t);
+    assert.ok(subtitle.scrollHeight <= 40);
+    if (old !== subtitle.textContent) pieces.push(subtitle.textContent);
+}
+assert.equal(pieces.join(''), oneWord.text, 'Dlouhé slovo i Unicode se rozdělí bez ztráty znaků.');
+ui.clear();
+ui.tick(765000);
+const afterClear = subtitle.textContent;
+ui.tick(775000);
+assert.equal(subtitle.textContent, afterClear, 'Zrušená replika už nepokračuje další stránkou.');
+
 // Celá UI cesta: samostatné kanály se stejným ID a společný hlídač spojení.
 let receive, tick, now = 700000;
 function Bridge() {
@@ -106,4 +146,15 @@ now += 5100; tick();
 for (const id of ['subtitle', 'choices', 'choice-frame', 'ocr-frame']) assert.equal(elements[id].hidden, true, id);
 send(choice(1, 2));
 assert.equal(elements.choices.hidden, false, 'Po obnovení spojení funguje i stejné ID.');
-console.log('OK: PCV1/PCO1, rámečky, umístění voleb, dlouhý text, barvy jmen, heartbeat a výpadek spojení.');
+send({ ...longCaption, id: '30' });
+now += 3000; tick();
+const currentPage = subtitle.textContent;
+send({ ...longCaption, id: '31' });
+assert.equal(subtitle.textContent, currentPage, 'Celá cesta příjmu nesmí znovu vložit celý dlouhý text.');
+send(packet('PCT1\t32\t6000\tNový krátký úsek.\t'));
+now += 3000; tick();
+assert.equal(subtitle.textContent, 'Nový krátký úsek.');
+send(packet('PCT1\t33\t6000\t\t'));
+now += 1000; tick();
+assert.equal(subtitle.hidden, true, 'Prázdný paket ihned ukončí stránkování.');
+console.log('OK: dvouřádkové stránky, úplnost, Unicode, nová replika/expirace; PCV1/PCO1, rámečky, barvy, heartbeat a výpadek.');

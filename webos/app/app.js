@@ -183,8 +183,7 @@
         if (!changed) return;
         lastId = packet.id;
         source = result.source;
-        subtitle.textContent = packet.text;
-        if (receiverUI) receiverUI.caption(packet, now);
+        if (!receiverUI) subtitle.textContent = packet.text;
         subtitle.hidden = !packet.text;
         subtitleUntil = now + packet.duration;
         var layout = packet.layout;
@@ -193,7 +192,9 @@
         subtitle.style.left = (left * 100) + "%";
         subtitle.style.bottom = ((1 - (layout ? layout[1] : 0.91)) * 100) + "%";
         subtitle.style.width = (width * 100) + "%";
-        subtitle.style.fontSize = (38 * (layout ? layout[3] : 1)) + "px";
+        var viewport = document.documentElement ? document.documentElement.clientHeight : 1080;
+        subtitle.style.fontSize = Math.min(38 * (layout ? layout[3] : 1), (viewport * 0.18 - 32) / 2.7) + "px";
+        if (receiverUI) receiverUI.caption(packet, now);
         if (packet.hint !== hint.textContent) {
             hint.textContent = packet.hint;
             hint.hidden = !packet.hint;
