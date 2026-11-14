@@ -5,6 +5,8 @@ Od verze 0.10 se vyvíjí jen jedna aplikace (dřívější NextGen, větev `mas
 Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCode + versionName) a sem se dopíše, co je nového.
 
 ## Unreleased
+
+- LG přijímač nabízí výběr HDMI přímo na TV a po přepnutí obnoví překryv; počítač je potřeba pouze k instalaci.
 - LG webOS: návod instalace a každodenního používání, lokální sestavení distribučního ZIPu a automatické testy; trvalá chybová signalizace prodlužování překryvu a ignorování opožděných odpovědí ze zrušených volání.
 - LG webOS: přijímač obnovuje systémový časovač překryvu, aby jej TV při hraní automaticky nezavírala po 120 sekundách.
 - LG webOS přijímač `webos/`: ohlašování do sítě pro stávající Android aplikaci, příjem titulků/nápovědy přes UDP, poloha a velikost podle tabletu, skrytí při výpadku spojení. Bez nutnosti upravovat Android APK.

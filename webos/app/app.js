@@ -4,6 +4,10 @@
     var status = document.getElementById("status");
     var subtitle = document.getElementById("subtitle");
     var hint = document.getElementById("hint");
+    var inputPanel = document.getElementById("inputs");
+    var inputBridge = null;
+    var inputButtons = [];
+    var inputIndex = 0;
     var bridge = null;
     var activityBridge = null;
     var activityWarning = "";
@@ -15,6 +19,75 @@
     var source = null;
     var subtitleUntil = 0;
     var hintUntil = 0;
+
+    function configureLaunch(params) {
+        if (!inputPanel) return;
+        var detail = params;
+        if (!detail) {
+            try { detail = JSON.parse(window.PalmSystem && window.PalmSystem.launchParams || "{}"); }
+            catch (error) { detail = {}; }
+        }
+        inputPanel.hidden = detail && detail.resumeOverlay === true;
+        if (inputPanel.hidden) return;
+        var options = document.getElementById("input-options");
+        var inputStatus = document.getElementById("input-status");
+        var current = document.getElementById("input-current");
+        options.textContent = "";
+        inputButtons = [];
+        inputStatus.textContent = "Načítám HDMI vstupy…";
+        current.disabled = false;
+        current.onclick = function () { inputPanel.hidden = true; };
+        if (inputBridge) inputBridge.cancel();
+        var request = new PalmServiceBridge();
+        inputBridge = request;
+        request.onservicecallback = function (raw) {
+            if (inputBridge !== request) return;
+            var result;
+            try { result = JSON.parse(raw); } catch (error) { result = {}; }
+            if (!result || typeof result !== "object") result = {};
+            inputBridge = null;
+            var devices = Array.isArray(result.devices) ? result.devices.filter(function (device) {
+                return device && /^com\.webos\.app\.hdmi[1-9][0-9]*$/.test(device.appId || "");
+            }) : [];
+            if (!result.returnValue || !Array.isArray(result.devices)) {
+                inputStatus.textContent = "LG neposkytla seznam vstupů. Nech TV na HDMI a spusť přijímač z počítače.";
+            } else {
+                inputStatus.textContent = "";
+                devices.forEach(function (device) {
+                        var button = document.createElement("button");
+                        button.textContent = "HDMI " + device.port + " · " + String(device.label || "").slice(0, 100);
+                        button.onclick = function () {
+                            inputStatus.textContent = "Přepínám vstup a spouštím titulky…";
+                            inputButtons.forEach(function (item) { item.disabled = true; });
+                            try { localStorage.setItem("playcaption-input", device.appId); } catch (error) {}
+                            var switcher = new PalmServiceBridge();
+                            inputBridge = switcher;
+                            switcher.onservicecallback = function (answer) {
+                                if (inputBridge !== switcher) return;
+                                inputBridge = null;
+                                var response;
+                                try { response = JSON.parse(answer); } catch (error) { response = {}; }
+                                if (!response || typeof response !== "object") response = {};
+                                if (response.returnValue) inputPanel.hidden = true;
+                                else {
+                                    inputStatus.textContent = response.errorText || "Přepnutí se nepodařilo.";
+                                    inputButtons.forEach(function (item) { item.disabled = false; });
+                                }
+                            };
+                            switcher.call("luna://cz.playcaption.overlaytest.receiver/switchInput", JSON.stringify({ id: device.appId }));
+                        };
+                        options.appendChild(button);
+                        inputButtons.push(button);
+                    });
+            }
+            inputButtons.push(current);
+            var saved;
+            try { saved = localStorage.getItem("playcaption-input"); } catch (error) {}
+            inputIndex = Math.max(0, devices.findIndex(function (device) { return device.appId === saved; }));
+            inputButtons[inputIndex].focus();
+        };
+        request.call("luna://com.webos.service.eim/getAllInputStatus", "{}");
+    }
 
     function showStatus(text) {
         statusText = text;
@@ -32,6 +105,11 @@
     }
 
     function stop() {
+        if (inputBridge) {
+            inputBridge.onservicecallback = function () {};
+            inputBridge.cancel();
+            inputBridge = null;
+        }
         if (timer !== null) clearInterval(timer);
         timer = null;
         if (activityBridge) {
@@ -138,8 +216,16 @@
     }
 
     // shortcut: overlay není veřejný kontrakt LG, ověřit na každém cílovém firmwaru.
-    document.addEventListener("webOSRelaunch", start);
+    document.addEventListener("webOSRelaunch", function (event) { start(); configureLaunch(event && event.detail); });
     document.addEventListener("keydown", function (event) {
+        if (inputPanel && !inputPanel.hidden && inputButtons.length) {
+            if (event.keyCode >= 37 && event.keyCode <= 40) {
+                event.preventDefault();
+                inputIndex = (inputIndex + (event.keyCode === 37 || event.keyCode === 38 ? -1 : 1) + inputButtons.length) % inputButtons.length;
+                inputButtons[inputIndex].focus();
+                return;
+            }
+        }
         if (event.keyCode === 461 || event.key === "Escape") {
             event.preventDefault();
             stop();
@@ -148,4 +234,5 @@
     });
     window.addEventListener("pagehide", stop);
     start();
+    configureLaunch();
 }());

@@ -8,6 +8,14 @@
   <script src="app.js" defer></script>
 </head>
 <body>
+  <section id="inputs" aria-label="Výběr HDMI" hidden>
+    <h1>PlayCaption LG</h1>
+    <p>Na kterém vstupu chceš zobrazovat titulky?</p>
+    <div id="input-options"></div>
+    <p id="input-status" role="status"></p>
+    <button id="input-current">Pokračovat nad aktuálním obrazem</button>
+    <p class="help">Vyber šipkami a potvrď OK. Zpět aplikaci zavře.</p>
+  </section>
   <div id="status" role="status"></div>
   <div id="subtitle" role="status" hidden></div>
   <div id="hint" role="status" hidden></div>

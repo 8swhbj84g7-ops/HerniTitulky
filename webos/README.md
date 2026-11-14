@@ -11,9 +11,20 @@ Konzole posílá obraz hry přes HDMI do TV. Původní Android PlayCaption získ
 kopii přes Remote Play, čte a překládá text. Přijímač na LG pouze zobrazuje výsledek.
 Android kód ani APK se kvůli tomuto přijímači nemění.
 
+Od verze 0.0.5 lze přijímač otevřít z nabídky aplikací na TV a vybrat HDMI přímo
+v PlayCaption. `com.webos.service.eim/getAllInputStatus` poskytne seznam vstupů;
+`switchInput` ověří vybrané ID a služba krátce podrží Activity Manager aktivitu.
+Nejprve spustí HDMI a následně vlastní overlay s `resumeOverlay: true`, takže
+uzavření původního UI při přepnutí nezastaví dokončení operace. Aktivita se uvolní
+po úspěchu, chybě nebo timeoutu 12 s. Služba neběží trvale po zavření přijímače.
+
+Nejde o automatické obnovení po libovolném přepnutí vstupu přes systémové menu.
+`getForegroundAppInfo` testované C5 webové aplikaci odmítla; takovou funkci
+nepovažujeme za dostupnou jen na základě existence metody.
+
 - `app/`: průhledné HTML/CSS/JS UI, životní cyklus, heartbeat a doba zobrazení.
 - `service/`: Node.js služba používající systémový `webos-service`, UDP a parser.
-- `test.cjs`, `test-udp.cjs`: regresní testy a skutečný loopback UDP přenos.
+- `test.cjs`, `test-udp.cjs`, `test-input.cjs`: regrese UI/protokolu, skutečný loopback UDP přenos a přepínání HDMI.
 - `build.py`: testy, syntaxe, sestavení IPK, kontrola obsahu a distribuční ZIP.
 
 Kompatibilní protokol je v Android `Propojeni.kt`: `PLAYCAPTION_TV` na UDP 41988
@@ -37,8 +48,8 @@ python3 webos/build.py
 Na Windows lze použít `py -3 webos/build.py`. Aplikace nemá přidané npm knihovny;
 CLI 3.2.6 se spouští přes npx pouze pro sestavení. Výstup ve `webos/dist/`:
 
-- `cz.playcaption.overlaytest_0.0.4_all.ipk` pro instalaci do LG;
-- `PlayCaption-LG-0.0.4.zip` pro předání uživatelům: IPK, návod, licence,
+- `cz.playcaption.overlaytest_0.0.5_all.ipk` pro instalaci do LG;
+- `PlayCaption-LG-0.0.5.zip` pro předání uživatelům: IPK, návod, licence,
   přesně odpovídající zdroje přijímače a SHA256SUMS.
 
 Adresář `dist/` se necommituje. Build nečte žádné místní přihlašovací údaje,
@@ -60,10 +71,10 @@ Key Server. Z rootu projektu pokračuj:
 
 ```sh
 ares-novacom --device c5 --getkey
-ares-install --device c5 webos/dist/cz.playcaption.overlaytest_0.0.4_all.ipk
+ares-install --device c5 webos/dist/cz.playcaption.overlaytest_0.0.5_all.ipk
 ```
 
-Nech TV na HDMI a aplikaci spusť z počítače:
+Volitelné spuštění z počítače otevře stejný výběr HDMI jako spuštění z TV:
 
 ```sh
 ares-launch --device c5 cz.playcaption.overlaytest
@@ -96,5 +107,7 @@ UDP původní aplikace nemá autentizaci, proto pouze důvěryhodná LAN bez př
 portů. Licence celého přijímače je AGPLv3, viz `../LICENSE`.
 
 Reference: [LG JS služby](https://webostv.developer.lge.com/develop/guides/js-service-usage),
+[životní cyklus služby a Activity Manager](https://webostv.developer.lge.com/develop/guides/js-service-faq),
+[spouštění aplikací](https://webostv.developer.lge.com/develop/references/application-manager),
 [CLI](https://webostv.developer.lge.com/develop/tools/cli-dev-guide),
 [Developer Mode](https://webostv.developer.lge.com/develop/getting-started/developer-mode-app).

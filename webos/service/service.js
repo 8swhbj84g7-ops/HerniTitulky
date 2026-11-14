@@ -6,6 +6,7 @@ var os = require("os");
 var crypto = require("crypto");
 var parse = require("./protocol").parse;
 var service = new Service(require("./package.json").name);
+require("./switch-input").register(service);
 var subscriptions = {};
 var socket = null;
 var announceTimer = null;

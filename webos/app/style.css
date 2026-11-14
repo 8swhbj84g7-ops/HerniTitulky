@@ -42,6 +42,35 @@ body {
   max-height: 35%;
 }
 
+#inputs {
+  position: fixed;
+  z-index: 10;
+  top: 12%;
+  left: 20%;
+  width: 60%;
+  padding: 32px;
+  box-sizing: border-box;
+  border-radius: 16px;
+  background: #171717;
+  font-size: 26px;
+  pointer-events: auto;
+}
+#inputs h1 { margin: 0; }
+#inputs button {
+  display: block;
+  width: 100%;
+  margin: 12px 0;
+  padding: 16px;
+  border: 3px solid transparent;
+  border-radius: 8px;
+  color: white;
+  background: #333;
+  font: inherit;
+  text-align: left;
+}
+#inputs button:focus { outline: none; border-color: #78e89b; background: #204b30; }
+#inputs .help { font-size: 20px; color: #ccc; }
+
 #hint {
   bottom: 2%;
   color: #ffe36e;

@@ -9,10 +9,10 @@ Je to experimentální podpora, zatím ověřená na LG C5.
 - LG TV s webOS a aplikací **Developer Mode** z obchodu LG Apps.
 - **Android telefon nebo tablet**, na kterém už funguje PlayCaption a překlad hry.
   iPhone neumí spustit Android APK. Telefon/tablet nemusí mířit kamerou na televizi.
-- Počítač s Windows, macOS nebo Linuxem pro instalaci a spuštění přijímače.
+- Počítač s Windows, macOS nebo Linuxem pro instalaci přijímače. Při hraní není potřeba.
 - Konzoli zapojenou přes HDMI do LG a zařízení ve stejné domácí síti.
   LG může být připojená kabelem a tablet přes Wi-Fi; nepoužívej oddělenou síť pro hosty.
-- ZIP **PlayCaption-LG-0.0.4.zip** poskytnutý projektem. Rozbal ho v počítači.
+- ZIP **PlayCaption-LG-0.0.5.zip** poskytnutý projektem. Rozbal ho v počítači.
   Uvnitř je instalační soubor `.ipk`, tento návod, licence a zdrojové kódy.
 
 APK patří do Android zařízení, IPK patří do LG. Na LG se nepřihlašuješ k PSN.
@@ -38,7 +38,7 @@ Podrobný postup LG: [Developer Mode](https://webostv.developer.lge.com/develop/
    zadej IP televize a Passphrase. Pokud nástroj vyžádá port a uživatele, použij port
    **9922** a uživatele **prisoner**. Nevol připojení jako root.
 3. Po připojení v části s aplikacemi použij **Install** a vyber rozbalený soubor
-   **cz.playcaption.overlaytest_0.0.4_all.ipk**.
+   **cz.playcaption.overlaytest_0.0.5_all.ipk**.
 4. Počkej na dokončení. V seznamu aplikací má přibýt **PlayCaption LG**.
    Pokud už máš náš původní HDMI test, stejný identifikátor zajistí jeho aktualizaci.
 
@@ -49,10 +49,13 @@ Názvy ovládacích prvků Dev Manageru se mohou mezi verzemi mírně lišit.
 
 1. Na tabletu/telefonu spusť původní Android PlayCaption, připoj konzoli a ověř,
    že překlad funguje přímo na tomto zařízení.
-2. Na LG vyber HDMI s konzolí a nech obraz hry zobrazený.
-3. **Z počítače v Dev Manageru spusť PlayCaption LG** přes akci pro spuštění aplikace
-   (Launch / tlačítko přehrání). Neotvírej kvůli tomu nabídku aplikací na TV.
-4. Na LG se objeví výzva k výběru televize na tabletu.
+2. Na LG otevři domeček a spusť **PlayCaption LG**.
+3. V aplikaci vyber HDMI s konzolí a potvrď OK. Seznam se načítá z TV včetně názvů
+   zařízení; žádné číslo HDMI není nastavené natvrdo. Aplikace přepne vstup a obnoví
+   překryv titulků nad hrou. Poslední volba je příště předvybraná.
+4. Na LG se objeví výzva k výběru televize na tabletu. Pokud se výběr HDMI nepodaří,
+   aplikace zobrazí chybu. Tlačítko **Pokračovat nad aktuálním obrazem** použij pouze
+   tehdy, když už je pod aplikací vidět správný obraz hry.
 5. Na Android zařízení ukonči úvodní nastavení tlačítkem **Hotovo – hrát**.
 6. Na obrazovce s překladem najdi **vpravo nahoře přepínač 📺 Televize / 📱 Telefon**.
    Klepni na **📺 Televize**. Pro seznam dostupných televizí toto tlačítko podrž
@@ -65,19 +68,22 @@ přebírá přihlášení z Android TV. Pro LG nepoužívej tento postup ani vol
 **+ Přidat Android zařízení**. Přihlášení ke konzoli už máš v tabletu/telefonu.
 
 Android zařízení nech odemčené s otevřeným PlayCaption, ideálně na nabíječce.
+Počítač při hraní není potřeba. Pokud chceš změnit vstup, otevři znovu PlayCaption LG
+a vyber ho uvnitř aplikace. Přepnutí přes systémové menu LG může překryv zavřít;
+verze 0.0.5 nesleduje všechny změny vstupů na pozadí.
 Přijímač neposílá ovládací vstupy do konzole; hraješ dál svým ovladačem.
 
 ## Každé další hraní
 
-1. Zapni konzoli a HDMI na LG.
+1. Zapni konzoli a LG.
 2. Spusť překlad na Android zařízení.
-3. Spusť **PlayCaption LG z počítače** a na Android zařízení případně znovu vyber TV.
+3. Na LG spusť **PlayCaption LG**, vyber HDMI konzole a na Android zařízení případně znovu vyber TV.
 4. Po hraní přijímač zavři tlačítkem **Zpět na LG ovladači** nebo akcí Close v Dev Manageru.
 
-První verze nemá automatické spuštění po zapnutí TV. Po instalaci počítač nemusí
-zůstávat připojený, ale bude potřeba při dalším spuštění z uvedeného postupu.
+Přijímač nemá automatické spuštění po zapnutí TV. Po instalaci se spouští ovladačem;
+počítač při dalším hraní není potřeba.
 Pokud na LG mačkáš Zpět, otevíráš Home nebo měníš aplikaci, může se překryv zavřít;
-pak ho z počítače znovu spusť. Android přepínač neotevře vypnutý LG přijímač.
+pak znovu otevři PlayCaption LG a vyber HDMI. Android přepínač neotevře vypnutý LG přijímač.
 
 ## Developer Mode je potřeba prodlužovat
 
@@ -91,7 +97,7 @@ instaluj přes Install novějšího IPK a přijímač znovu spusť.
 
 | Problém | Co zkontrolovat |
 |---|---|
-| V seznamu je jen „Jen telefon“ | Spusť přijímač na LG z počítače. Pak na Android zařízení znovu podrž 📺 Televize. Ověř společnou síť bez izolace klientů. |
+| V seznamu je jen „Jen telefon“ | Na LG otevři PlayCaption LG a vyber HDMI. Pak na Android zařízení znovu podrž 📺 Televize. Ověř společnou síť bez izolace klientů. |
 | Android chce přebírat přihlášení z TV | Jsi v jiném průvodci. Dej Zrušit → Hotovo – hrát → přepínač 📺 Televize vpravo nahoře. |
 | Překlad chybí na tabletu i LG | Nejprve řeš čtení/překlad na Android zařízení; LG dostává až jeho hotový výsledek. |
 | Na tabletu překlad je, na LG není | Ověř vybranou LG a spuštěný přijímač. Po výpadku delším než 5 s se na LG schová starý text. |

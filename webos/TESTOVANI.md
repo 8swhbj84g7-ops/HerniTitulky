@@ -5,6 +5,7 @@
 ```sh
 node webos/test.cjs
 node webos/test-udp.cjs
+node webos/test-input.cjs
 python3 webos/build.py
 git diff --check
 ```
@@ -19,7 +20,12 @@ přesměruje na loopback a náhrada Luna busu zachytí odpověď odběrateli. Ov
 discovery, přenos víceřádkového českého paketu a ukončení socketu/časovače po odhlášení.
 Nezávisí na televizi, připojeném tabletu ani přístupu k lokální síti.
 
-`build.py` znovu spustí oba testy a kontrolu syntaxe, sestaví IPK oficiálním CLI
+`test-input.cjs` ověřuje seznam HDMI, výběr jiného než pevně daného portu,
+pořadí spuštění HDMI → overlay, validaci vstupu, souběžný požadavek, odmítnutí
+API, timeout a opožděnou aktivitu. Testuje i výběr v UI, uloženou volbu, neplatné
+odpovědi a obnovení bez opětovného otevření menu. Systémová API jsou zde náhrady.
+
+`build.py` znovu spustí všechny tři testy a kontrolu syntaxe, sestaví IPK oficiálním CLI
 3.2.6 a porovná veškerý obsah IPK se zdroji. Odmítne soubory navíc či jinou verzi.
 Vytvoří ZIP s návodem, licencí, odpovídajícími zdroji a SHA256SUMS; ověří CRC ZIPu.
 Vyžaduje Python 3.9+, Node.js 20+ a internet pro stažení CLI přes npx.
@@ -45,7 +51,7 @@ na novou verzi; u vydávaného IPK znovu zaznamenej provedené kroky níže.
 ## Ruční přejímka aktuálního IPK na TV
 
 - [ ] Zapsat verzi LG přijímače, verzi Android APK, model/firmware LG a model Android zařízení.
-- [ ] Nainstalovat IPK ze sestaveného ZIPu a spustit ho z počítače nad aktivním HDMI.
+- [ ] Nainstalovat IPK ze sestaveného ZIPu, otevřít na TV a vybrat HDMI přímo v aplikaci.
 - [ ] Najít LG přes přepínač 📺 Televize na Android obrazovce s překladem.
 - [ ] Porovnat stejný český text na tabletu a LG; vyzkoušet české znaky i více řádků v jednom paketu.
 - [ ] Změnit polohu, šířku a velikost zeleného boxu; pozor na překrytí nápovědy.
@@ -56,3 +62,15 @@ na novou verzi; u vydávaného IPK znovu zaznamenej provedené kroky níže.
 - [ ] Před širším vydáním otestovat delší hraní a alespoň další kombinaci model/firmware.
 
 Bez skutečné TV lze potvrdit balení a logiku, nikoli chování nedokumentovaného LG overlay.
+
+## Ověření výběru HDMI ve verzi 0.0.5
+
+- C5 vrátila seznam čtyř HDMI včetně názvů zařízení přes `getAllInputStatus`.
+- UI zobrazilo načtené vstupy; výběr PS5 spustil službu a překryv byl obnoven
+  s parametrem `resumeOverlay: true`. Web Inspector potvrdil zavřený výběr HDMI.
+- Uživatel ovladačem vyzkoušel domeček → PlayCaption LG → HDMI s PS5 a potvrdil
+  současný obraz PS5 i překryv. To ověřuje konkrétní postup, nikoli automatické
+  obnovení po libovolné systémové změně vstupu.
+- Stejné C5 odmítla webové aplikaci metodu `getForegroundAppInfo`.
+- Delší provoz nové verze, jiná TV/firmware a všechny HDR/VRR kombinace zůstávají
+  k ruční přejímce. Doklady běhu do 150 s výše se vztahují ke starším verzím.
