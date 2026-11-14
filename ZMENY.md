@@ -4,6 +4,11 @@
 Od verze 0.10 se vyvíjí jen jedna aplikace (dřívější NextGen, větev `master`) – umí „Jen televize“ i „S telefonem“.
 Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCode + versionName) a sem se dopíše, co je nového.
 
+## Unreleased
+- LG webOS: návod instalace a každodenního používání, lokální sestavení distribučního ZIPu a automatické testy; trvalá chybová signalizace prodlužování překryvu a ignorování opožděných odpovědí ze zrušených volání.
+- LG webOS: přijímač obnovuje systémový časovač překryvu, aby jej TV při hraní automaticky nezavírala po 120 sekundách.
+- LG webOS přijímač `webos/`: ohlašování do sítě pro stávající Android aplikaci, příjem titulků/nápovědy přes UDP, poloha a velikost podle tabletu, skrytí při výpadku spojení. Bez nutnosti upravovat Android APK.
+
 ## 0.20 (versionCode 31)
 - PS5 na telefonu: obraz jde z dekodéru přímo do paměti (jako u Xboxu) – čtení titulků 20–40 ms místo ~80 ms. Televize beze změny.
 - PS5 na telefonu: kodek H.265 (čistší obraz, ostřejší písmo) – automaticky, jen když ho telefon umí; jinak H.264.

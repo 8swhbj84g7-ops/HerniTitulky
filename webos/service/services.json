@@ -1,0 +1,7 @@
+{
+  "id": "cz.playcaption.overlaytest.receiver",
+  "services": [{
+    "name": "cz.playcaption.overlaytest.receiver",
+    "commands": [{ "name": "listen", "public": true }]
+  }]
+}
