@@ -1021,7 +1021,8 @@ class RemotePlayService : Service() {
             val zacatek = predKonec.trimEnd('.', '…', ' ')
             val konec = novaZacatek.trimStart('.', '…', ' ')
             // "Now all of you..." → "all of you..." je jen opakování, ne pokračování → nespojovat
-            val opakovani = zacatek.lowercase().endsWith(konec.trimEnd('.', '…', ' ').lowercase())
+            val opakovani = zacatek.lowercase().endsWith(konec.trimEnd('.', '…', ' ').lowercase()) ||
+                StabilitaTextu.opakovaneCteni(zacatek, konec)
             if (zacatek.isNotEmpty() && konec.isNotEmpty() && !opakovani) {
                 // tři tečky nechat – Google pak ví, že jde o pauzu v řeči ("we've had... well, a bad couple of days")
                 repliky = listOf(if (predTecky) "$zacatek... $konec" else "$zacatek $konec")

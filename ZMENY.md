@@ -6,6 +6,7 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
 
 ## Unreleased
 
+- Opakované OCR čtení stejné repliky se nespojí jako pokračování věty; regrese zachycená při telefonátu v GTA V.
 - OCR zachovává příslušnost řádků k blokům; větší řádkování uvnitř jednoho bloku nemusí vyřadit začátek repliky.
 - Jednorázově neúplný OCR snímek nepotvrdí zkrácení textu. Doplněný text lze znovu přeložit i bez závěrečné tečky.
 - Opožděné překlady kontrolují platnost textu, nastavení oblasti a spojení. Ruční režim Text je chráněn proti jednorázově neúplnému čtení celého odstavce.

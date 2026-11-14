@@ -6,6 +6,22 @@ import org.junit.Test
 class StabilitaTextuTest {
     private val cely = "We have to find the way back to our home."
 
+    @Test fun gtaOpravaCteniNeniPokracovaniVety() {
+        assertTrue(StabilitaTextu.opakovaneCteni("Oh. thank fuck Youve goiti", "hi thank fuck! You've gotit"))
+        assertTrue(StabilitaTextu.opakovaneCteni("hi thank fuck! You've gotit", "Oh thank fuck! You've got it"))
+    }
+
+    @Test fun doctenyTitulekSeNeslepiSeSvojimZacatkem() {
+        assertTrue(StabilitaTextu.opakovaneCteni("We have to find", "We have to find the key."))
+        assertTrue(StabilitaTextu.opakovaneCteni("We have to find the key.", "We have to find"))
+    }
+
+    @Test fun skutecnePokracovaniZustavaMozne() {
+        assertFalse(StabilitaTextu.opakovaneCteni("we need to", "get that fire lit quick."))
+        assertFalse(StabilitaTextu.opakovaneCteni("well we're gonna be...", "gone."))
+        assertFalse(StabilitaTextu.opakovaneCteni("", "gone."))
+    }
+
     @Test fun chybejiciProstredniRadekJenJednouNahraduNepotvrdi() {
         val s = StabilitaTextu()
         assertTrue(s.prijmi(cely))

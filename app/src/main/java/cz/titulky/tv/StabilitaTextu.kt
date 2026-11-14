@@ -29,6 +29,21 @@ internal class StabilitaTextu {
             val ted = novy.lowercase().filter(Char::isLetterOrDigit)
             return pred.isNotEmpty() && ted.length > pred.length && ted.startsWith(pred)
         }
+
+        /** Oprava nebo dočtení stejného titulku nesmí vytvořit další kopii věty. */
+        fun opakovaneCteni(predchozi: String, nove: String): Boolean {
+            fun slova(text: String) = SLOVA.findAll(text.lowercase())
+                .map { it.value.filter(Char::isLetterOrDigit) }.toList()
+            val pred = slova(predchozi)
+            val ted = slova(nove)
+            if (pred.isEmpty() || ted.isEmpty()) return false
+            val a = pred.joinToString(" ")
+            val b = ted.joinToString(" ")
+            if (a.startsWith(b) || b.startsWith(a)) return true
+            // shortcut: shodná trojice slov rozpozná i opravu okrajů OCR; význam vět neposuzuje.
+            val trojice = pred.windowed(3).toSet()
+            return ted.windowed(3).any { it in trojice }
+        }
     }
 }
 
