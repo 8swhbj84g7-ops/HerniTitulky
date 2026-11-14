@@ -4,6 +4,13 @@
 Od verze 0.10 se vyvíjí jen jedna aplikace (dřívější NextGen, větev `master`) – umí „Jen televize“ i „S telefonem“.
 Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCode + versionName) a sem se dopíše, co je nového.
 
+## Unreleased
+
+- OCR zachovává příslušnost řádků k blokům; větší řádkování uvnitř jednoho bloku nemusí vyřadit začátek repliky.
+- Jednorázově neúplný OCR snímek nepotvrdí zkrácení textu. Doplněný text lze znovu přeložit i bez závěrečné tečky.
+- Opožděné překlady kontrolují platnost textu, nastavení oblasti a spojení. Ruční režim Text je chráněn proti jednorázově neúplnému čtení celého odstavce.
+- Přidané JVM regresní testy a samostatný test skutečného ML Kit na Androidu; rozsah a omezení popisuje `docs/OCR-AUDIT.md`.
+
 ## 0.20 (versionCode 31)
 - PS5 na telefonu: obraz jde z dekodéru přímo do paměti (jako u Xboxu) – čtení titulků 20–40 ms místo ~80 ms. Televize beze změny.
 - PS5 na telefonu: kodek H.265 (čistší obraz, ostřejší písmo) – automaticky, jen když ho telefon umí; jinak H.264.
