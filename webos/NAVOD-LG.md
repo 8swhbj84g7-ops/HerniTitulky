@@ -135,3 +135,7 @@ Xbox ani jiné LG modely zatím v této sestavě nebyly otestované.
 
 Přijímač sám nečte HDMI a nepřekládá. UDP přenos původní aplikace nemá přihlašování,
 proto používej důvěryhodnou domácí síť a nepřesměrovávej jeho porty na internet.
+
+## Volitelný Příběhový režim (testovací MVP)
+
+Vyžaduje LG přijímač 0.0.8 a odpovídající PlayCaption Test na Androidu. V Android obrazovce překladu klepni na „Standardní režim · přepnout na Příběhový“. Android řídí čtecí frontu, LG zobrazuje jedinou repliku po stránkách a potvrzuje dočtení. Stejným tlačítkem se vrátíš do Standardního režimu. Při čekání na podporovaný LG přijímač zkontroluj verzi a spuštění nad HDMI přímo z aplikace. Jde o experimentální MVP k hernímu ověření.

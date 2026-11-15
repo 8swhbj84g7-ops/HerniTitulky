@@ -52,7 +52,33 @@ class Prekladac(context: android.content.Context? = null, cilovy: String = "cs")
 
     private val ui = Handler(Looper.getMainLooper())
     private val sit = Executors.newSingleThreadExecutor()
+    private val pribehSit = Executors.newSingleThreadExecutor()
+    private val pribehObsazen = java.util.concurrent.atomic.AtomicBoolean(false)
 
+    /** Story má jeden výsledek a vlastní omezenou online práci; Standardní cesta zůstává oddělená. */
+    fun prelozPribeh(text: String, hotovo: (String) -> Unit, chyba: (String) -> Unit) {
+        val vstup = upravSlang(text.trim())
+        val jazyk = cil
+        cache.get(vstup)?.let { hotovo(it); return }
+        if (zavreno) { chyba("Překladač je zavřený"); return }
+        val strategie = PrekladPribehu({ t, callback ->
+            if (!pribehObsazen.compareAndSet(false, true)) false
+            else try {
+                pribehSit.execute {
+                    val vysledek = try { runCatching { google(t, jazyk) }.getOrNull() }
+                    finally { pribehObsazen.set(false) }
+                    ui.post {
+                        if (!vysledek.isNullOrBlank() && cil == jazyk && !zavreno) cache.put(t, vysledek)
+                        callback(vysledek)
+                    }
+                }
+                true
+            } catch (_: java.util.concurrent.RejectedExecutionException) { pribehObsazen.set(false); false }
+        }, { t, ok, err -> prelozVTelevizi(t, ok, { err() }) }, { ms, block -> ui.postDelayed({ block() }, ms) })
+        strategie.preloz(vstup, {
+            if (zavreno || cil != jazyk) chyba("Změna jazyka nebo relace") else hotovo(it)
+        }, { chyba("Překlad není dostupný v časovém rozpočtu") })
+    }
 
     /** Paměť na už přeložené věty – ve hrách se věty často opakují. */
     private val cache = LruCache<String, String>(500)
@@ -151,8 +177,8 @@ class Prekladac(context: android.content.Context? = null, cilovy: String = "cs")
     }
 
     /** Neoficiální adresa Google Překladače (stejnou používají rozšíření do prohlížečů). */
-    private fun google(text: String): String? {
-        val adresa = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=$cil&dt=t&q=" +
+    private fun google(text: String, cilJazyk: String = cil): String? {
+        val adresa = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=$cilJazyk&dt=t&q=" +
             URLEncoder.encode(text, "UTF-8")
         val spojeni = URL(adresa).openConnection() as HttpURLConnection
         try {
@@ -235,6 +261,7 @@ class Prekladac(context: android.content.Context? = null, cilovy: String = "cs")
         zavreno = true
         runCatching { translator.close() }
         sit.shutdown()
+        pribehSit.shutdown()
     }
 
     companion object {

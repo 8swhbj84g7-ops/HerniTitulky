@@ -35,6 +35,12 @@
 - Skutečné herní odpovědi a úplnost jejich OCR/překladu zbývají k přejímce;
   syntetické UDP pakety je nenahrazují. Viz `SHODA-ANDROID.md`.
 
+## Story MVP 0.0.8
+
+- Přidán `test-story.cjs`: časování skutečných českých stránek, dočtení, pauza/obnova, opakovaná potvrzení a generační reset.
+- Skutečný C5 test přes UDP a DOM: 3 stránky, celý obsah, nulové přetečení, potvrzení až po čtecím minimu; po zrušení fungoval Standardní titulek. Viz `docs/PRIBEHOVY-REZIM.md`.
+- Nová herní přejímka a dlouhý běh ještě zbývají.
+
 ## Automatické kontroly
 
 ```sh
@@ -42,6 +48,7 @@ node webos/test.cjs
 node webos/test-udp.cjs
 node webos/test-input.cjs
 node webos/test-receiver.cjs
+node webos/test-story.cjs
 python3 webos/build.py
 git diff --check
 ```

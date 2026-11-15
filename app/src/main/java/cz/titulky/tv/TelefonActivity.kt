@@ -820,6 +820,11 @@ class TelefonActivity : Activity() {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.parseColor("#111114"))
             addView(lista, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+            addView(TextView(this@TelefonActivity).apply {
+                fun obnov() { text = if (nast.pribehovy) "Příběhový režim · ZAPNUTO" else "Standardní režim · přepnout na Příběhový" }
+                obnov(); textSize = 15f; setTextColor(Color.parseColor("#3CFF6E")); setPadding(dp(16), dp(10), dp(16), dp(10))
+                setOnClickListener { nast.pribehovy = !nast.pribehovy; obnov() }
+            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
             addView(stavRadek, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         }
         tip = TextView(this).apply {
@@ -953,6 +958,7 @@ class TelefonActivity : Activity() {
             val k = if (RemotePlayService.naXboxu) klic + "Xbox" else klic
             stav.text = if (!RemotePlayService.bezi && (duvod.contains("ukončeno", true) || duvod.contains("✘")))
                 t(k) + "\n" + duvod else t(k)
+            if (nast.pribehovy) stav.append("\n" + RemotePlayService.pribehStav)
             tecka.background = zaobleni(barva)
             prepnoutKonzoli?.let { b ->
                 val ukazat = RemotePlayService.obeZapnute && RemotePlayUdaje(this@TelefonActivity).sparovano &&

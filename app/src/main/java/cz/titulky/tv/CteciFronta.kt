@@ -22,6 +22,22 @@ internal class CteciFronta(private val maxReplik: Int = 128, private val maxZnak
     var selhanych = 0
         private set
     val pocet get() = repliky.size
+    val generace get() = relace
+    fun platny(token: Token) = najdi(token) != null
+
+    /** LG potvrzuje dočtení celé repliky; zde je pro externí výstup uložená jako jediný celek. */
+    fun potvrzeno(token: Token): Boolean {
+        if (aktualni?.token != token || aktualni?.pocet != 1) return false
+        repliky.remove(token.poradi)
+        aktualni = null
+        dokoncenych++
+        return true
+    }
+    fun chybaZobrazeni(token: Token): Boolean {
+        if (aktualni?.token != token) return false
+        repliky.remove(token.poradi); aktualni = null; selhanych++
+        return true
+    }
 
     init { require(maxReplik > 0 && maxZnakuRepliky > 0) }
 
@@ -69,12 +85,12 @@ internal class CteciFronta(private val maxReplik: Int = 128, private val maxZnak
     }
 
     /** Vrací aktuální stránku. Pozdní tick nesmí přeskočit stránky, které hráč nikdy neviděl. */
-    fun zobraz(tedMs: Long): Stranka? {
+    fun zobraz(tedMs: Long, externiDokonceni: Boolean = false): Stranka? {
         cas(tedMs)
         if (pozastaveno) return null
         val predchozi = aktualni
         if (predchozi != null) {
-            if (tedMs < predchozi.doMs) return predchozi
+            if (externiDokonceni || tedMs < predchozi.doMs) return predchozi
             val replika = repliky.getValue(predchozi.token.poradi)
             if (predchozi.index + 1 < predchozi.pocet) return stranka(replika, predchozi.index + 1, tedMs)
             repliky.remove(predchozi.token.poradi)

@@ -15,6 +15,16 @@ function area(fields) {
 exports.parse = function (buffer) {
     if (buffer.length > 8192) return null;
     var fields = buffer.toString("utf8").split("\t");
+    if (fields[0] === "PCQ1" || fields[0] === "PCS1") {
+        if (!/^[a-f0-9]{32}\.\d{1,10}\.\d{1,10}\.\d{1,10}$/.test(fields[1] || "")) return null;
+        if (fields[0] === "PCQ1") return fields.length === 2 ? {kind:"storyQuery",id:fields[1]} : null;
+        if (fields.length !== 9 || !/^[01]$/.test(fields[2])) return null;
+        var converted = ["PCT1", "1", "60000", fields[3], ""].concat(fields.slice(4, 8), ["0", "B:" + fields[8]]);
+        var parsed = exports.parse(Buffer.from(converted.join("\t"), "utf8"));
+        if (!parsed || !parsed.layout) return null;
+        parsed.kind = "story"; parsed.id = fields[1]; parsed.paused = fields[2] === "1";
+        return parsed;
+    }
     if (fields[0] === "PCO1") {
         if (fields.length < 6 || !/^[01]$/.test(fields[1])) return null;
         var ocrArea = area(fields.slice(2, 6));

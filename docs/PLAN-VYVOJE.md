@@ -62,50 +62,58 @@ Stavy: čeká / probíhá / dokončeno / blokováno. Dokončení úkolu není d�
 
 ## P2 — Příběhový režim MVP
 
-### P2-01 · Samostatná větev a rozhodnutí o vlastnictví — probíhá
+### P2-01 · Samostatná větev a rozhodnutí o vlastnictví — dokončeno
 
 - **Problém/části:** čtecí fronta není síťová fronta překladače; LG zná skutečné stránky. Android/LG prezentace, `Propojeni`, `PlatnostPrekladu`.
 - **Závislosti:** P0-01/02, **ne dokončení P1/P3/P4**. **Řešení:** připravit `feature/story-mode` z P0 základu bez upstreamu; před integrací doplnit LG větev bez duplicit. Prověřit jednu čtecí frontu v Androidu a dokončení aktuálního cue přijímačem podle P0 návrhu.
-- **Testy/hotovo:** explicitní vlastník fronty, virtuální vstupy/výstupy, vyřešená vazba na poslední stránku a minimální kompatibilní přenos. **Riziko:** dvě nezávislé fronty nebo odhad času podle celého textu mohou znovu ztrácet stránky. V P0 pouze návrh; žádný nový protokol zatím není hotový.
-- **Postup:** větev `feature/story-mode` aktivní. Jádro má jediného vlastníka a přijímá připravené české stránky; skutečné LG zalomení/potvrzení a přenos zbývají. Viz [kontrakt fronty](PRIBEHOVY-REZIM.md).
+- **Testy/hotovo:** explicitní vlastník fronty, virtuální vstupy/výstupy, vyřešená vazba na poslední stránku a minimální kompatibilní přenos. **Riziko:** dvě nezávislé fronty nebo odhad času podle celého textu mohou znovu ztrácet stránky. P0 byl pouze návrh; navazující MVP už používá PCQ1/PCS1/PCA1 při zachovaném Standardním PCT1.
+- **Postup:** větev `feature/story-mode` aktivní. Android je jediný vlastník čtecí fronty; LG drží jedinou repliku, měří její stránky a potvrzuje dočtení. Přenos a dočtení prošly na C5. Viz [kontrakt fronty](PRIBEHOVY-REZIM.md).
 
-### P2-02 · Identita repliky a její revize — probíhá
+### P2-02 · Identita repliky a její revize — dokončeno
 
 - **Problém/části:** globální token zahazuje platné A po příchodu B. `StabilitaTextu`, `RemotePlayService`, deterministické testy.
 - **Závislosti:** P2-01. **Řešení:** rozlišit relaci/pořadí repliky/revizi; existující událost nové repliky či `oprava` využít, ne znovu přepisovat OCR. Zachovat jméno a barvu mluvčího.
 - **Testy/hotovo:** pozdní platné A zachované, stará revize A odmítnutá, opakované čtení neduplikuje, nová podobná replika se neztratí; Standardní regrese zůstávají. **Riziko:** identita OCR bloku není identita cue; pokročilý odhad hypotéz patří do P3.
-- **Postup:** token relace/pořadí/revize a ochrana rozečteného obsahu hotové v `CteciFronta`; simulace ověřují starý callback i dvě samostatná „Ano.“. Převod skutečných OCR událostí a barev jmen na tento kontrakt zatím nenapojený.
+- **Postup:** token relace/pořadí/revize a ochrana rozečteného obsahu hotové v `CteciFronta`; simulace ověřují starý callback i dvě samostatná „Ano.“. Stávající OCR události nové/opravované repliky a barvy jmen jsou napojené přes `PribehovaRelace`; nová OCR klasifikace se nezaváděla.
 
 ### P2-03 · Čtecí politika s virtuálním časem — probíhá
 
 - **Problém/části:** nové výsledky nesmí přerušit čtení A. Malá samostatně testovatelná politika + skutečný zobrazovací callsite.
 - **Závislosti:** kontrakt P2-01/02; správné simulované překlady stačí. **Řešení:** pořadí A/B/C nezávislé na dokončení překladu; čas české stránky `max(1,8 s, Unicode code points / 14)`, poslední stránku dočíst, první volnou ukázat ihned.
 - **Testy/hotovo:** krátký/jednoslovný/dlouhý/vícestránkový text, emoji/diakritika, rychlé A/B/C, pauza vyprázdní frontu, přesné časy a počet zobrazení. **Riziko:** definovat bounded paměť a viditelné přetížení, bez tichého zahazování a preventivního agresivního backlog managementu.
-- **Postup:** samostatné jádro, virtuální čas, dočtení poslední stránky, pauza se zbývajícím časem a explicitní kapacitní limity implementované; 33 nových testů a 44 původních JVM testů prošlo, APK se sestavila. Zbývá skutečný zobrazovací callsite (P2-05), takže celý úkol/MVP ještě není dokončený.
+- **Postup:** samostatné jádro, virtuální čas, dočtení poslední stránky, pauza se zbývajícím časem a explicitní kapacitní limity implementované; 33 nových testů a 44 původních JVM testů prošlo, APK se sestavila. Zobrazovací callsite je nyní napojený přes potvrzení LG; celá herní přejímka MVP ještě není dokončená.
 
-### P2-04 · Napojení překladače bez ztráty pořadí — čeká
+### P2-04 · Napojení překladače bez ztráty pořadí — dokončeno
 
 - **Problém/části:** online náhled/final, retry a pozdní callback. `Prekladac`, `prelozAUkaz`, `ukazJestli`.
 - **Závislosti:** P2-02/03. **Řešení:** work queue oddělit od read queue, aktualizace jedné revize nevkládá další cue; konečný výsledek/fallback v omezeném rozpočtu. Kritickou blokaci odstranit zde, ne čekat na P4.
 - **Testy/hotovo:** B hotovo před A, chyba/timeout A neblokuje věčně B, offline náhled později než final, změna relace během retry. **Riziko:** nesmí se začít ukazovat původní anglický text jako úspěšný český překlad bez rozlišení chyby.
 
-### P2-05 · LG/Android zobrazení a kompatibilní doručení — čeká
+### P2-05 · LG/Android zobrazení a kompatibilní doručení — probíhá
 
 - **Problém/části:** LG nyní ruší nedočtené stránky a heartbeat přenáší jen poslední stav. `Propojeni`, `TelefonTitulky`, `OverlayService`, LG parser/služba/receiver UI.
 - **Závislosti:** P2-01/03/04. **Řešení:** zvolená jediná autorita čtení, receiver pouze aktuální cue/stránky, idempotentní ID/revize/relace a případné minimální potvrzení; capability fallback ponechá PCT1 Standardní režim funkční.
 - **Testy/hotovo:** stejné heartbeat nezrestartují stránku/frontu; ztráta/duplicitní/opožděný UDP, restart a obnova, poslední stránka, omezený box. **Riziko:** starý přijímač nesmí nepozorovaně dostat nepodporovaný Story režim; síťová garance přesně jednou není splněná pouhým dvojím odesláním UDP.
 
-### P2-06 · Přepínač, změna relace a interaktivní obsah — čeká
+### P2-06 · Přepínač, změna relace a interaktivní obsah — probíhá
 
 - **Problém/části:** hráč potřebuje volitelný režim a včasné volby. `Nastaveni`, `TelefonActivity`/nastavení, `Volby`, oba výstupy.
 - **Závislosti:** P2-03/05. **Řešení:** Standardní výchozí; změna jazyka/oblasti/konzole/relace resetuje příslušnou frontu a tokeny. Volby/text mají vlastní politiku; aktivní interaktivní volby mohou pozastavit Story čtení a potom ho obnovit.
 - **Testy/hotovo:** přepínání za běhu, zpožděné odpovědi ze starého režimu, reset, volby během A, pokračování s nezkráceným zbývajícím časem. **Riziko:** nevázat život české fronty na zmizení anglického OCR textu; změna nastavení musí být oběma výstupům srozumitelná.
 
-### P2-07 · MVP přejímka a metriky — čeká
+### P2-07 · MVP přejímka a metriky — probíhá
 
 - **Problém/části:** funkce potřebuje prokazatelné čtení, ne jen správný finální string. JVM/JS simulace a přejímka obou režimů.
 - **Závislosti:** P2-02 až 06. **Řešení:** 16 scénářů ze zadání, řízené hodiny; počítat zobrazené/ztracené/duplicitní/přerušené cues, maximum fronty a čekání P50/P95, čas vyprázdnění po pauze.
 - **Testy/hotovo:** všechny přijaté platné samostatné cues v běžných scénářích právě jednou, správné pořadí, celá doba každé stránky; samostatná herní přejímka pak P5. **Riziko:** syntetické správné překlady dokazují zobrazovací politiku, nikoliv kvalitu OCR/překladu.
+
+### Integrační stav P2
+
+- Implementované napojení překladů přes `PribehovaRelace` a `PrekladPribehu`: jeden finální výsledek, rozpočet 8 s, online práce bez další fronty, offline záloha a odmítnutí starých revizí.
+- `TelefonActivity` má uložený přepínač, Standardní výchozí. Reset nastavení/relace a pauza pro volby jsou zapojené. PCQ1/PCS1/PCA1 je samostatná potvrzovaná cesta; Standardní PCT1/PCV1/PCO1 zůstaly.
+- 94 JVM testů bez selhání; 5 LG sad. Přímý C5 test: celé tři stránky, žádné přetečení, ACK po dočtení, následně Standardní titulek a ignorování starého Story paketu.
+- Opravené první Android runtime selhání `NetworkOnMainThreadException`: otevření, obsluha i zrušení UDP běží na pracovním vlákně. Dva instrumentační testy na Redmi prošly se StrictMode a skutečným potvrzením od C5.
+- Na tabletu `PlayCaption Test 0.20.1-story-test02`, LG 0.0.8. Zbývá uživatelská herní přejímka, skutečné dialogové volby a dlouhodobé výpadky; přepínač v přímém Android TV režimu ani telefonní dvouřádkový stránkovač nejsou součást tohoto MVP.
 
 ## P3 — pokročilé OCR pouze podle výsledků P1
 

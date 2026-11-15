@@ -11,6 +11,7 @@ var subscriptions = {};
 var socket = null;
 var announceTimer = null;
 var ready = false;
+var storyPeer = null;
 
 function notify(payload) {
     Object.keys(subscriptions).forEach(function (key) { subscriptions[key].respond(payload); });
@@ -20,6 +21,7 @@ function stop() {
     clearInterval(announceTimer);
     announceTimer = null;
     ready = false;
+    storyPeer = null;
     if (socket) socket.close();
     socket = null;
 }
@@ -55,6 +57,11 @@ function start() {
     });
     receiver.on("message", function (buffer, remote) {
         var packet = parse(buffer);
+        if (packet && packet.kind === "storyQuery") {
+            receiver.send(Buffer.from("PCA1\t" + packet.id + "\tready"), remote.port, remote.address, function () {});
+            return;
+        }
+        if (packet && packet.kind === "story") storyPeer = {id:packet.id,address:remote.address,port:remote.port};
         if (packet) notify({ returnValue: true, packet: packet, source: remote.address });
     });
     receiver.bind(41989, "0.0.0.0", function () {
@@ -77,4 +84,14 @@ service.register("listen", function (message) {
 }, function (message) {
     delete subscriptions[message.uniqueToken];
     if (Object.keys(subscriptions).length === 0) stop();
+});
+
+service.register("storyAck", function (message) {
+    var p = message.payload || {};
+    if (!socket || !storyPeer || p.id !== storyPeer.id || ["reading", "done"].indexOf(p.state) < 0) {
+        message.respond({returnValue:false}); return;
+    }
+    socket.send(Buffer.from("PCA1\t" + p.id + "\t" + p.state), storyPeer.port, storyPeer.address, function (error) {
+        message.respond({returnValue:!error});
+    });
 });

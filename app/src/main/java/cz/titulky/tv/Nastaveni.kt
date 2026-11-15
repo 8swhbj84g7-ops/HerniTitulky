@@ -13,6 +13,10 @@ class Nastaveni(context: Context) {
 
     val jazykNeboCs get() = jazyk ?: "cs"
 
+    var pribehovy: Boolean
+        get() = prefs.getBoolean("pribehovy", false)
+        set(v) = prefs.edit().putBoolean("pribehovy", v).apply()
+
     /** Box s překladem přes původní titulek (jinak nad ním). */
     var prekryvat: Boolean
         get() = prefs.getBoolean("prekryvat", true)

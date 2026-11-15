@@ -308,6 +308,9 @@ object Propojeni {
      * Zapíná se výběrem televize v TelefonActivity; [cilIp] null = jen telefon.
      */
     object Vysilac {
+        @Volatile var pribehRidi = false
+        fun rozvrhPribehu() = synchronized(zamek) { rozvrh?.copyOf() ?: floatArrayOf(0.5f, 0.91f, 0.8f, 1f) }
+        fun aktivniVolby() = synchronized(zamek) { vybrana != -2 && volbyText.isNotBlank() }
         @Volatile var cilIp: String? = null
             private set
         @Volatile var cilJmeno: String = ""
@@ -427,7 +430,7 @@ object Propojeni {
             "$TITULEK\t$cislo\t$doba\t${escapuj(text)}\t${escapuj(napoveda)}$konec$sBarvami".toByteArray(Charsets.UTF_8)
         }
 
-        private fun posliTed() = posliData(zprava())
+        private fun posliTed() { if (!pribehRidi) posliData(zprava()) }
 
         private fun posliData(data: ByteArray) {
             val ip = cilIp ?: return
@@ -455,7 +458,7 @@ object Propojeni {
                             val ip = cilIp ?: break
                             val data = zprava()
                             val kam = InetAddress.getByName(ip)
-                            runCatching { s.send(DatagramPacket(data, data.size, kam, PORT_TITULKY)) }
+                            if (!pribehRidi) runCatching { s.send(DatagramPacket(data, data.size, kam, PORT_TITULKY)) }
                             if (cisloVoleb > 0) {
                                 val v = zpravaVoleb()
                                 runCatching { s.send(DatagramPacket(v, v.size, kam, PORT_TITULKY)) }

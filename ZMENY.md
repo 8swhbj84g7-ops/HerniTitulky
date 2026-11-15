@@ -6,6 +6,8 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
 
 ## Unreleased
 
+- Volitelný Příběhový režim pro Android tablet + LG 0.0.8: čtecí fronta a potvrzené dočtení všech stránek; Standardní režim zůstává výchozí. Herní přejímka zatím probíhá.
+
 - Opakované OCR čtení stejné repliky se nespojí jako pokračování věty; regrese zachycená při telefonátu v GTA V.
 - OCR zachovává příslušnost řádků k blokům; větší řádkování uvnitř jednoho bloku nemusí vyřadit začátek repliky.
 - Jednorázově neúplný OCR snímek nepotvrdí zkrácení textu. Doplněný text lze znovu přeložit i bez závěrečné tečky.

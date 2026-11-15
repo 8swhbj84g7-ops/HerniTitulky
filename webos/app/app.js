@@ -96,8 +96,10 @@
         status.hidden = false;
     }
 
-    function clearText() {
-        if (receiverUI) receiverUI.clear();
+    function clearText(preserveStory) {
+        if (receiverUI) {
+            if (preserveStory && receiverUI.storyActive()) receiverUI.pauseStory(Date.now()); else receiverUI.clear();
+        }
         subtitle.hidden = true;
         hint.hidden = true;
         hint.textContent = "";
@@ -150,6 +152,14 @@
         request.call("luna://com.webos.surfacemanager.screenSaver/restartUserActivityTimer", "{}");
     }
 
+    var ackBridge = null;
+    function storyAck(id, state) {
+        if (ackBridge) return;
+        var request = new PalmServiceBridge(); ackBridge = request;
+        var timeout = setTimeout(function () { if (ackBridge === request) { ackBridge = null; request.cancel(); } }, 2000);
+        request.onservicecallback = function () { clearTimeout(timeout); if (ackBridge === request) ackBridge = null; };
+        request.call("luna://cz.playcaption.overlaytest.receiver/storyAck", JSON.stringify({id:id,state:state}));
+    }
     function receive(raw) {
         var result;
         try { result = JSON.parse(raw); } catch (error) {
@@ -169,18 +179,20 @@
         }
         var now = Date.now();
         var connectionChanged = source !== result.source || (lastSeen && now - lastSeen > 5000);
-        if (connectionChanged) clearText();
+        if (connectionChanged) clearText(packet.kind === "story" && (!source || source === result.source));
         if (receiverUI && receiverUI.handle(packet, now)) {
             lastSeen = now;
             source = result.source;
             status.hidden = !activityWarning;
             return;
         }
+        if (packet.kind !== "story" && receiverUI && receiverUI.storyActive()) return;
+        if (packet.kind === "story" && receiverUI && receiverUI.oldStory(packet.id)) return;
         // Opakované pakety jsou heartbeat; nesmějí znovu zobrazit již prošlý titulek.
         var changed = packet.id !== lastId || connectionChanged;
         lastSeen = now;
         status.hidden = !activityWarning;
-        if (!changed) return;
+        if (!changed && packet.kind !== "story") return;
         lastId = packet.id;
         source = result.source;
         if (!receiverUI) subtitle.textContent = packet.text;
@@ -194,7 +206,11 @@
         subtitle.style.width = (width * 100) + "%";
         var viewport = document.documentElement ? document.documentElement.clientHeight : 1080;
         subtitle.style.fontSize = Math.min(38 * (layout ? layout[3] : 1), (viewport * 0.18 - 32) / 2.7) + "px";
-        if (receiverUI) receiverUI.caption(packet, now);
+        if (receiverUI && packet.kind === "story") {
+            subtitleUntil = Infinity;
+            var state = receiverUI.story(packet, now);
+            if (state) storyAck(packet.id, state);
+        } else if (receiverUI) receiverUI.caption(packet, now);
         if (packet.hint !== hint.textContent) {
             hint.textContent = packet.hint;
             hint.hidden = !packet.hint;
@@ -221,7 +237,7 @@
             if (now >= subtitleUntil) subtitle.hidden = true;
             if (now >= hintUntil) hint.hidden = true;
             if (lastSeen && now - lastSeen > 5000) {
-                clearText();
+                clearText(true);
                 hint.textContent = "";
                 showStatus("PlayCaption · Spojení přerušeno, čekám na tablet · Zpět = zavřít");
             }

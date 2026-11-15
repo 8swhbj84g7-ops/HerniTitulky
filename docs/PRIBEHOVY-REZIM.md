@@ -1,6 +1,6 @@
 # Příběhový režim: čtecí fronta
 
-Větev `feature/story-mode`, první krok P2. **Hotové je samostatné testovatelné jádro, nikoliv zapnutelný režim v aplikaci.** OCR, překladač, nastavení, UDP, LG a Android vykreslování se tímto krokem nemění.
+Větev `feature/story-mode`. Integrační MVP je napojené na Android překladač a LG přijímač 0.0.8. Standardní režim zůstává výchozí a zachovává dosavadní překladovou i zobrazovací cestu. Nový režim se zapíná v PlayCaption Test na obrazovce TelefonActivity.
 
 `CteciFronta.kt` je čistý Kotlin bez Android závislostí, vláken, sítě a vlastních hodin. Volání serializuje jediný vlastník, výhledově Android. LG zde nemá vlastní příběhovou frontu.
 
@@ -26,7 +26,7 @@ Překlady B/C mohou být připravené, zatímco se ještě překládá A. Zobraz
 
 ## Stránky a čas
 
-Zalomení stránek dodá výstupní vrstva. Testy používají předem připravené české stránky; fronta **neodhaduje šířku textu na LG**. P2-05 musí vyřešit, jak přijímač předá skutečnou geometrii/dokončení a kdy bylo zobrazení opravdu zahájené. Žádné nové zprávy protokolu zde nejsou zavedené.
+Android vlastní celou čtecí frontu a předává LG vždy jen jednu aktuální repliku. LG změří skutečné zalomení do dvouřádkového boxu a postupně vykreslí její stránky. Žádné další repliky nefrontuje. Android používá `zobraz(tedMs, externiDokonceni = true)` a čeká na potvrzení `potvrzeno(token)`; lokální odhad doby celé věty nemůže předčasně uvolnit další repliku. Potvrzení LG přichází až po čtecí době poslední stránky.
 
 Každá stránka má dobu:
 
@@ -62,7 +62,7 @@ Limit textu je samostatný pro každou repliku. Společný rozpočet by mohl zp�
 
 Při naplnění se nová položka nepřijme; při příliš dlouhém textu se vrátí `LIMIT_TEXTU`, nic se neořízne a dříve přijaté položky zůstanou zachované. **Napojení musí odmítnutí obsloužit viditelně nebo řízeným zpětným tlakem.** Nesmí takto odmítnutý obsah potichu zapomenout ani ho neomezeně přesunout do jiné fronty.
 
-Fronta sama nemá překladový timeout a neposuzuje, že A je už „moc staré“. Výrobce překladu musí vrátit výsledek, novou revizi nebo explicitní konečnou chybu. Jinak zůstane správné pořadí čekat na A. Omezený rozpočet překladové práce je úkol P2-04; není to důvod automaticky zahazovat hotové příběhové repliky.
+Fronta sama nemá překladový timeout a neposuzuje, že A je už „moc staré“. `PrekladPribehu` nyní poskytuje výrobu jednoho finálního výsledku: nejvýše jeden souběžný online požadavek bez síťové fronty a retry, po 2,5 s offline záloha, konečný limit 8 s. Obsazené online zpracování použije pro další repliku offline rovnou. Chyba offline modelu nezahodí dosud běžící online překlad. Pozdější úspěch nesmí podruhé změnit finální výsledek. Chyba je viditelná ve stavu Příběhového režimu a uvolní následující repliku; nepoužívá se anglický text vydávaný za český překlad. Standardní Google/Edge/MyMemory/offline fallback cesta zůstala zachovaná. Pro Story MVP se používá jeden Google pokus a lokální ML Kit.
 
 ## Ověření
 
@@ -76,4 +76,43 @@ Testy používají JUnit a virtuální milisekundy bez `sleep`. Pokrývají krá
 
 15. 11. 2026: **33 nových testů fronty a všech 44 původních JVM testů prošlo** (77 celkem, žádná chyba/selhání/přeskočení). `:app:assembleDebug` také prošlo; běh používal Java 21 a Android SDK 34.
 
-Žádná nová APK nebyla kvůli tomuto kroku instalovaná. Testy pauzy/obnovení nejsou test skutečného výpadku UDP; produkční UI, automatický převod OCR na tokeny a potvrzení z LG zatím frontu nevolají.
+Testy používají skutečný produkční adaptér `PribehovaRelace` a překladovou strategii s virtuálními hodinami. Testy UDP zahrnují skutečné loopback sockety a potvrzení od LG služby. Testy pauzy/obnovení samotného rendereru nenahrazují několikahodinové hraní.
+
+
+## Zapnutí a návrat
+
+Na Android tabletu otevři **PlayCaption Test**, připoj PS5/Xbox a vyber LG. Na obrazovce překladu je nový přepínač „Standardní režim · přepnout na Příběhový“. Po zapnutí se ukazuje velikost fronty nebo důvod čekání/chyby. Nastavení se ukládá, výchozí je Standardní.
+
+Na LG spusť přijímač 0.0.8 a HDMI vyber přímo v něm. Starší LG přijímač zůstává kompatibilní se Standardním režimem; pro Story chybí potvrzení a Android to zobrazí jako čekání na novější přijímač. Při potížích přepni tlačítkem zpět na Standardní.
+
+Přepnutí režimu, jazyka, zdrojové oblasti, cílové TV nebo relace konzole resetuje Story frontu a neplatné výsledky se již nezobrazí. Zmizení samotného anglického titulku frontu nemaže. Při aktivních dialogových volbách se pozastaví čtení aktuálního příběhového titulku. Syntetické rámečky a Text používají nadále svoje původní kanály.
+
+V režimu jen telefonu Android časuje celé repliky; stávající TextView je přizpůsobí ploše. Toto MVP nepřidává telefonní dvouřádkový stránkovač ani přepínač do přímého Android TV režimu bez telefonu. Primární herní přejímka je Android tablet + LG C5.
+
+## Přenos a obnova
+
+- PCT1/PCV1/PCO1 a Standardní režim zůstávají stejné.
+- PCQ1 obsahuje ID relace a ověří podporu Story přijímače.
+- PCS1 obsahuje ID relace/repliky/revize, pauzu, celý text jediné aktuální repliky, layout a barvy jmen. Wire limit je 8192 bajtů; příliš velký paket je hlášená chyba výstupu, nikoliv úspěšné dočtení.
+- PCA1 vrací pouze `ready`, `reading` nebo `done` se stejným ID. Socket je připojený na zvolenou TV a odpověď pro jiné aktuální ID ignoruje. Potvrzení dočtení starého tokenu neukončí novou repliku.
+- LG služba vrací odpověď jen na adresu/port odesílatele právě přijatého Story paketu. Webové UI nemůže určit libovolný cíl odpovědi.
+- Každý heartbeat opakuje aktuální stav; LG uchovává aktuální repliku, stránku a výsledek dočtení. Ztracené potvrzení se zopakuje bez návratu na první stránku.
+- Změna generace obsahuje prázdný zrušovací paket. Opožděné pakety starší generace se ignorují. Při výpadku spojení se běžící LG čtení skryje a pozastaví; po návratu se obnoví jeho zbývající čas.
+- Restart samotného UI může vyžadovat znovupřečtení aktuální repliky; nesmí ji chybně potvrdit jako dočtenou. Nejde o distribuovanou garanci přesně jednou přes úplné restarty zařízení.
+
+## Aktuální důkazy na C5
+
+15. 11. 2026, LG přijímač 0.0.8: skutečný UDP → JS služba → UI → ACK prošel. Testovací replika se rozdělila na **3 stránky**, všechny části dohromady odpovídaly celému vstupu. DOM neměřil žádné přetečení. Čtecí minimum podle stránek bylo **10 644 ms**, skutečné `done` dorazilo za **11 149 ms**.
+
+Po zrušení Story se vykreslil Standardní PCT1 titulek. Následný starý Story paket jej nepřepsal. SHA-256 všech 11 nainstalovaných souborů na TV odpovídalo zdrojům. Lokální důkaz: `/private/tmp/playcaption-story-c5-proof.json` (není součást Git repozitáře).
+
+Android PlayCaption Test byl aktualizovaný přes `adb install -r` pod původním testovacím ID `cz.titulky.tv.ocrfixes`; původní aplikace `cz.titulky.tv` se nepřepisovala. Živá herní přejímka, chování volby v konkrétní hře, dlouhá cutscéna a delší výpadek Wi-Fi ještě nejsou potvrzené.
+
+
+## Android runtime oprava story-test02
+
+První herní pokus odhalil `NetworkOnMainThreadException`: konstrukce/otevření UDP socketu byla mimo worker. `PribehSpojeni` nyní vytváří, připojuje, obsluhuje i ruší socket na vlastním pracovním vlákně. Hlavní vlákno pouze mění opakovaný stav a požadavek ukončení.
+
+94 JVM testů a všech pět LG testovacích sad prošlo. Na Redmi prošly také oba `PribehSitTest` instrumentační testy: otevření/odeslání/zrušení při `StrictMode.detectNetwork().penaltyDeathOnNetwork()` na hlavním vlákně a skutečný dotaz z tabletu na C5 s odpovědí `ready`. Opravená instalovaná verze je `0.20.1-story-test02`.
+
+Testy lze spustit v odděleném diagnostickém APK podle existujícího postupu; pro druhý test dodat argument `lgHost` s adresou vlastní TV. Pokud je cílem právě používaná PlayCaption Test, zachovat její ID/podpis a data, použít pouze `adb install -r`; samotný instrumentační běh neodinstalovává aplikaci. Bez `lgHost` se pouze volitelný test skutečné TV přeskočí.
