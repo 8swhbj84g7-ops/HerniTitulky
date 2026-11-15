@@ -80,6 +80,34 @@ class CteciFrontaTest {
         assertEquals(0, s.fronta.pocet)
     }
 
+    @Test fun metrikyRychlehoDialoguNaVychozimCasovani() {
+        val s = Simulace().apply { fronta.nastavCasovani(100) }
+        val prijate = mutableListOf<CteciFronta.Token>()
+        var maximum = 0
+        for (ted in 0L..19_200L step 100L) {
+            if (ted <= 1500L) prijate += s.nova("Replika ${ted / 100}.", ted)
+            maximum = maxOf(maximum, s.fronta.pocet)
+            s.v(ted)
+        }
+        val zobrazeni = s.zmeny.mapNotNull { it.second }
+        val cekani = zobrazeni.map { it.odMs - it.puvodniCasMs }.sorted()
+        fun percentil(p: Int) = cekani[(cekani.size * p + 99) / 100 - 1]
+        val duplicity = zobrazeni.size - zobrazeni.map { it.token }.distinct().size
+        val ztracene = prijate.toSet() - zobrazeni.map { it.token }.toSet()
+        val prerusene = zobrazeni.zipWithNext().count { (a, b) -> b.odMs < a.doMs }
+        assertEquals(prijate, zobrazeni.map { it.token })
+        assertEquals(16, s.fronta.dokoncenych)
+        assertEquals(0, s.fronta.pocet)
+        assertEquals(0, s.fronta.selhanych)
+        assertEquals(0, duplicity)
+        assertTrue(ztracene.isEmpty())
+        assertEquals(0, prerusene)
+        assertEquals(15, maximum)
+        assertEquals(7700L, percentil(50))
+        assertEquals(16500L, percentil(95))
+        assertEquals(17700L, s.zmeny.last().first - 1500L)
+    }
+
     @Test fun prekladyDokonceneObraceneNepredbehnouPuvodniRepliku() {
         val s = Simulace()
         val a = s.fronta.zarad(0)!!

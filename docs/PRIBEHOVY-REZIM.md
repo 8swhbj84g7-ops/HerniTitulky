@@ -181,3 +181,17 @@ Ověření úpravy základu: 132 JVM testů, šest LG sad a sestavení APK/IPK p
 Na Redmi je `story-platforms-test02`, na C5 LG 0.2.1. V tomto testovacím
 profilu se uložených 80 % změnilo na 100 %; ostatní uložené údaje zůstaly
 beze změny. Uživatel následně potvrdil, že nové časování vyzkoušel při hraní a je v pořádku. Toto potvrzení se týká vyzkoušené hry a nastavení, nikoliv všech titulů nebo dlouhodobého výpadkového testu.
+
+## Závěrečný stav pro kontrolu a sloučení
+
+`codex/story-mode-integration` zahrnuje master `aba0735` včetně opravy cest
+v ZIPu na Windows. Funkční Android/LG kód odpovídá uživatelem přijaté
+verzi story-platforms-test02 / LG 0.2.1; závěr doplňuje testy a podklady.
+
+Finálně prošlo 133 JVM testů, šest LG Node sad, osm Python testů skórování
+a sestavení APK, instrumentačního APK a IPK. Simulace 16 replik po 100 ms
+při výchozích 100 % zobrazuje a dokončuje všech 16 v pořadí, bez ztrát,
+duplicit a předčasného přerušení. Maximum fronty je 15 včetně čtené repliky;
+čekání P50/P95 je 7700/16500 ms, poslední replika skončí 17700 ms po
+posledním příchodu. Tyto hodnoty ukazují chování při přetížení, ne naměřenou
+herní latenci. Základní MVP je připravené ke kontrole a sloučení.
