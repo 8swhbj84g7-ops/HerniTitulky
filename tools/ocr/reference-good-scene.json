@@ -1,0 +1,76 @@
+{
+  "dataset": "gta-good-scene-2026-11-15",
+  "reference": "Manually transcribed from stored caption PNGs; 7 frames, 4 distinct texts; not a bad-daylight reproduction.",
+  "samples": [
+    {
+      "file": "1-caption.png",
+      "text": "Jimmy, it's Uncle T.",
+      "lines": 1,
+      "sha256": "00e7ad21b26ffa10667bbb83d6536accd9acb7a606ee338c83b299a1ed9b859b",
+      "tags": [
+        "good-read",
+        "one-line"
+      ]
+    },
+    {
+      "file": "2-caption.png",
+      "text": "How about spending some time with a man you can trust and look up to?",
+      "lines": 1,
+      "sha256": "8523a980369562bb7e5623be91730552c29e30e0fd1742dbe8716036793fb3fb",
+      "tags": [
+        "good-read",
+        "one-line"
+      ]
+    },
+    {
+      "file": "3-caption.png",
+      "text": "How about spending some time with a man you can trust and look up to?",
+      "lines": 1,
+      "sha256": "33cf7c487a1606e3ec42dc8f63242fc2367a09fddb5035aac8ecadad7c3ef223",
+      "tags": [
+        "good-read",
+        "one-line"
+      ]
+    },
+    {
+      "file": "4-caption.png",
+      "text": "Uncle T. Yeah, I guess that'd be cool. If you need to cancel, just like call and tell me.",
+      "lines": 2,
+      "sha256": "e910d63228868ecbcb9297571cbef4fa9b0262dc7cf03fae4bc00216d1bfa73f",
+      "tags": [
+        "good-read",
+        "two-lines"
+      ]
+    },
+    {
+      "file": "5-caption.png",
+      "text": "Uncle T. Yeah, I guess that'd be cool. If you need to cancel, just like call and tell me.",
+      "lines": 2,
+      "sha256": "44866c8d437ea25f250d84592f97ece54bad258a279fe0f6ee6ea66b7e8d554c",
+      "tags": [
+        "good-read",
+        "two-lines"
+      ]
+    },
+    {
+      "file": "6-caption.png",
+      "text": "Good, kid. Not like your father at all.",
+      "lines": 1,
+      "sha256": "8bf19d9feb2d3d570d4cdd0538b3874a2c62b0bf7bbc9fe7f39055bb6d398f92",
+      "tags": [
+        "good-read",
+        "one-line"
+      ]
+    },
+    {
+      "file": "7-caption.png",
+      "text": "Good, kid. Not like your father at all.",
+      "lines": 1,
+      "sha256": "41ba6446957305854fa9e5b1226cb5039989e905e4c35f965f02baeb6830e222",
+      "tags": [
+        "good-read",
+        "one-line"
+      ]
+    }
+  ]
+}

@@ -31,6 +31,14 @@ PlayCaption stojí na práci jiných open-source projektů:
 - `app/src/main/jniLibs/*/libpcobraz1.so`: vlastní mezivrstva PlayCaption (AGPLv3) mezi Chiaki a systémovým dekodérem, předává obraz z PS5 přímo do paměti. Zdrojový kód: [`native/pcobraz.c`](native/pcobraz.c).
 - `app/src/main/java/com/metallic/chiaki/lib/Chiaki.kt`: převzato z Chiaki 2.1.1 (AGPLv3), upraveno (odstraněno Parcelable) – popis úprav je v hlavičce souboru.
 
+## Vývoj a ověřování
+
+- [Priority a technický backlog P0–P6](docs/PLAN-VYVOJE.md)
+- [Výchozí audit větví, testů a měření](docs/P0-VYCHOZI-STAV.md)
+- [Reprodukovatelný OCR benchmark](tools/ocr/README.md)
+
+Příběhový režim je plánovaná volitelná funkce P2. Není podmíněný dokončením všech budoucích OCR optimalizací; jeho čtecí politiku nejprve ověříme nad simulovanými českými dialogy.
+
 ## Licence
 
 PlayCaption je šířen pod licencí **GNU AGPLv3** (viz soubor [LICENSE](LICENSE)), stejně jako Chiaki. Kdo kód použije a šíří, musí zveřejnit i svůj zdrojový kód pod stejnou licencí.
