@@ -20,6 +20,7 @@ Nejnovější verze: [Releases](https://github.com/AdamRuzick4/PlayCaption-app/r
 PlayCaption stojí na práci jiných open-source projektů:
 
 - **[Chiaki](https://git.sr.ht/~thestr4ng3r/chiaki)** (Florian Märkl a přispěvatelé) a **[chiaki-ng](https://github.com/streetpea/chiaki-ng)**. Jejich knihovna (`libchiaki-jni.so`) zajišťuje veškerou komunikaci s PS5: přihlášení, párování, Remote Play a přenos obrazu. Licence **AGPLv3**. Velké díky autorům, bez nich by PlayCaption nevznikl.
+- **[JSch](https://github.com/mwiede/jsch)** (BSD): SSH/SFTP pro místní instalaci LG přijímače z Android průvodce. Licenční texty jsou přibalené v APK v `assets/licenses/`.
 - **Google ML Kit**: rozpoznání textu z obrazu.
 - Překlad: online překladová služba.
 
@@ -38,3 +39,23 @@ PlayCaption stojí na práci jiných open-source projektů:
 PlayCaption je šířen pod licencí **GNU AGPLv3** (viz soubor [LICENSE](LICENSE)), stejně jako Chiaki. Kdo kód použije a šíří, musí zveřejnit i svůj zdrojový kód pod stejnou licencí.
 
 PlayCaption je neoficiální projekt a nemá nic společného se společností Sony Interactive Entertainment. PlayStation a PS5 jsou ochranné známky jejich vlastníků.
+
+## LG v Android aplikaci
+
+Vyber LG webOS a projdi průvodcem. Jedno spárování slouží k instalaci, kontrole
+verze, aktualizaci i zobrazení platnosti Developer Mode. Přibalený přijímač se
+instaluje pouze tehdy, když v TV chybí nebo je starší. Novější se nepřepisuje.
+Párovací klíč a údaj relace jsou uložené šifrovaně v Android zařízení; heslo LG ani
+Passphrase se neukládají. Samotná instalace běží v místní síti, kontrola času
+potřebuje spojení přímo se službou LG. PlayCaption Developer Mode neprodlužuje.
+Externí Android správce a počítačový postup zůstávají záložními možnostmi.
+
+## Sestavení Android APK s LG přijímačem
+
+Vedle Android SDK a JDK potřebuješ Python 3.9+ a Node.js 20+ s npx.
+`bash gradlew :app:assembleDebug` (pro vydání odpovídající podepsaný release build)
+automaticky sestaví a zkontroluje LG IPK a přibalí jej s manifestem do APK.
+CLI se při sestavení získává přes npx; koncový uživatel při místní instalaci
+z APK nepotřebuje počítač ani internetové stahování balíčku.
+Samostatný IPK a ZIP pro ruční instalaci vzniknou také ve `webos/dist/`;
+Adam je může přiložit ke stejnému vydání jako APK. Podrobnosti: [LG build](webos/README.md).

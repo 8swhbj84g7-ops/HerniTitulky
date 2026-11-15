@@ -319,7 +319,7 @@ object Propojeni {
         @Volatile private var napoveda = ""
         /** Barvy jmen postav (u každého řádku, 0 = bez barvy). */
         @Volatile private var barvy: IntArray? = null
-        @Volatile private var bezi = false
+        @Volatile private var generace = 0L
         private val zamek = Any()
         /** Poloha a velikost titulků na televizi: střed X, spodní hrana Y, šířka (0..1), velikost písma (1 = normální). */
         @Volatile private var rozvrh: FloatArray? = null
@@ -335,18 +335,18 @@ object Propojeni {
 
         /** Modrý rámeček ruční oblasti titulků: ukázat na televizi (při posouvání) nebo schovat. */
         fun oblastTitulku(o: FloatArray, ukazat: Boolean) {
-            posliData("$OBLAST\t${if (ukazat) 1 else 0}\t${o[0]}\t${o[1]}\t${o[2]}\t${o[3]}".toByteArray(Charsets.UTF_8))
+            posliData { "$OBLAST\t${if (ukazat) 1 else 0}\t${o[0]}\t${o[1]}\t${o[2]}\t${o[3]}".toByteArray(Charsets.UTF_8) }
         }
 
         fun nastavTrvaleOblast(ano: Boolean) {
             synchronized(zamek) { trvaleOblast = ano; cisloVoleb++ }
-            posliData(zpravaVoleb())
+            posliData { zpravaVoleb() }
         }
 
         /** Prst puštěn → rámeček voleb na televizi hned schovat (když není "ukazovat pořád"). */
         fun konecOblasti() {
             synchronized(zamek) { volbyUpravaDo = 0L; cisloVoleb++ }
-            posliData(zpravaVoleb())
+            posliData { zpravaVoleb() }
         }
 
         /** Prst puštěn → zelený rámeček a ukázkový text na televizi hned schovat. */
@@ -367,7 +367,7 @@ object Propojeni {
                 volbyText = t; vybrana = vyb
                 cisloVoleb++
             }
-            posliData(zpravaVoleb())
+            posliData { zpravaVoleb() }
         }
 
         /** Uživatel posouvá / mění rámeček voleb → televize ho 15 s ukazuje (žlutý šrafovaný). */
@@ -377,7 +377,7 @@ object Propojeni {
                 volbyUpravaDo = if (ukazat) System.currentTimeMillis() + 8_000 else 0L
                 cisloVoleb++
             }
-            posliData(zpravaVoleb())
+            posliData { zpravaVoleb() }
         }
 
         private fun zpravaVoleb(): ByteArray = synchronized(zamek) {
@@ -401,10 +401,37 @@ object Propojeni {
         }
 
         fun nastavCil(ip: String?, jmeno: String) {
-            cilIp = ip
-            cilJmeno = jmeno
-            if (ip != null) spustOpakovani() else bezi = false
-            posliTed()
+            synchronized(zamek) {
+                if (ip == cilIp) { cilJmeno = jmeno; return }
+                val puvodni = cilIp
+                generace++
+                cilIp = ip
+                cilJmeno = jmeno
+                text = ""; napoveda = ""; doba = 0L; barvy = null; ukazkaText = ""; upravaDo = 0L
+                volbyText = ""; vybrana = -1; volbyUpravaDo = 0L
+                cislo++; cisloVoleb++
+                if (puvodni != null) vycistiCil(puvodni, cislo, cisloVoleb)
+                if (ip != null) spustOpakovani(generace)
+            }
+        }
+
+        private fun vycistiCil(ip: String, titulekId: Long, volbyId: Long) {
+            val data = listOf(
+                "$TITULEK\t$titulekId\t0\t\t",
+                "$VOLBY\t$volbyId\t0\t0.1\t0.1\t0.9\t0.9\t-1\t",
+                "$OBLAST\t0\t0.1\t0.1\t0.9\t0.9"
+            ).map { it.toByteArray(Charsets.UTF_8) }
+            Thread {
+                runCatching {
+                    DatagramSocket().use { s ->
+                        val kam = InetAddress.getByName(ip)
+                        synchronized(zamek) {
+                            if (cilIp == ip) return@Thread
+                            data.forEach { s.send(DatagramPacket(it, it.size, kam, PORT_TITULKY)) }
+                        }
+                    }
+                }
+            }.apply { isDaemon = true }.start()
         }
 
         /** Nový titulek / nápověda z telefonu. */
@@ -427,44 +454,47 @@ object Propojeni {
             "$TITULEK\t$cislo\t$doba\t${escapuj(text)}\t${escapuj(napoveda)}$konec$sBarvami".toByteArray(Charsets.UTF_8)
         }
 
-        private fun posliTed() = posliData(zprava())
+        private fun posliTed() = posliData { zprava() }
 
-        private fun posliData(data: ByteArray) {
-            val ip = cilIp ?: return
+        private fun posliData(zprava: () -> ByteArray) {
+            val cil = synchronized(zamek) { Triple(cilIp ?: return, generace, zprava()) }
             Thread {
                 runCatching {
                     DatagramSocket().use { s ->
-                        val kam = InetAddress.getByName(ip)
-                        s.send(DatagramPacket(data, data.size, kam, PORT_TITULKY))
-                        Thread.sleep(60)
-                        // podruhé, kdyby se první zpráva po Wi-Fi ztratila
-                        s.send(DatagramPacket(data, data.size, kam, PORT_TITULKY))
+                        val kam = InetAddress.getByName(cil.first)
+                        repeat(2) { pokus ->
+                            if (pokus > 0) Thread.sleep(60)
+                            synchronized(zamek) {
+                                if (generace != cil.second) return@Thread
+                                s.send(DatagramPacket(cil.third, cil.third.size, kam, PORT_TITULKY))
+                            }
+                        }
                     }
                 }
-            }.start()
+            }.apply { isDaemon = true }.start()
         }
 
-        /** Každou sekundu poslat aktuální stav znovu (= "telefon žije" + oprava ztracené zprávy). */
-        private fun spustOpakovani() {
-            if (bezi) return
-            bezi = true
+        /** Každou sekundu aktuální stav; stará smyčka nesmí po změně cíle ožít. */
+        private fun spustOpakovani(relace: Long) {
             Thread {
                 runCatching {
                     DatagramSocket().use { s ->
-                        while (bezi) {
-                            val ip = cilIp ?: break
-                            val data = zprava()
+                        while (generace == relace) {
+                            val ip = cilIp ?: return@Thread
                             val kam = InetAddress.getByName(ip)
-                            runCatching { s.send(DatagramPacket(data, data.size, kam, PORT_TITULKY)) }
-                            if (cisloVoleb > 0) {
-                                val v = zpravaVoleb()
-                                runCatching { s.send(DatagramPacket(v, v.size, kam, PORT_TITULKY)) }
+                            synchronized(zamek) {
+                                if (generace != relace) return@Thread
+                                val data = zprava()
+                                runCatching { s.send(DatagramPacket(data, data.size, kam, PORT_TITULKY)) }
+                                if (cisloVoleb > 0) {
+                                    val v = zpravaVoleb()
+                                    runCatching { s.send(DatagramPacket(v, v.size, kam, PORT_TITULKY)) }
+                                }
                             }
                             Thread.sleep(1000)
                         }
                     }
                 }
-                bezi = false
             }.apply { isDaemon = true }.start()
         }
     }
