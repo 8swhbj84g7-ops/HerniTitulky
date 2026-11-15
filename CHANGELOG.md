@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Story experiment: konzervativní skládání nedokončených anglických vět před překladem, ID/revize zdrojů, omezené čekání a oddělení následující věty. Volby a přetížená fronta čekání ukončí; Standardní režim a LG protokol zůstávají. Bez oprav jednotlivých slov a bez AI služby. Herní přejímka ještě probíhá.
+
 - Story: od tří čekajících replik se časování automaticky exponenciálně zkracuje, nejvýše na polovinu uživatelské doby a ne pod podporovaných 50 %. Platí od další stránky, bez zahazování replik; po odbavení se vrací nastavená rychlost. Stav ukazuje aktivní dohánění. LG aktualizace není potřeba.
 
 - Story: podle herní přejímky GTA V je základní čtecí doba o 20 % kratší; výchozích 100 % nyní odpovídá předchozím 80 %. Shodný výpočet Android/LG 0.2.1, Standardní režim beze změny.

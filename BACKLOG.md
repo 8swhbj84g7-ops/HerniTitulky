@@ -122,3 +122,25 @@ jednorázově Key Server a Passphrase; pak je relace uložená šifrovaně pro s
 ID TV. Kontrola nejvýše hodinově při viditelné kartě, starší/chybný údaj označený.
 Žádné automatické prodlužování ani změna přijímače LG. Testy a důkazy v `webos/TESTOVANI.md`.
 Prvotní propojení času je součástí ověření TV v instalačním průvodci; stejný šifrovaně uložený klíč slouží k dalším aktualizacím.
+
+## PC-007 – Skládání nedokončených vět před Story překladem
+
+Stav: konzervativní MVP na `codex/story-sentence-buffer`, čeká na herní přejímku.
+Souvisí s PC-001; nezastavuje další OCR práci.
+
+- `SkladaniVet` drží pouze nepředaný konec anglické věty. Silně nedokončené
+  konstrukce mohou navázat při shodě známého mluvčího, u neznámého pouze
+  omezené spojení typu „We are such“ → „a nuisance.“.
+- Běžné repliky bez tečky se nezdržují. Chybějící interpunkce ani samotné malé
+  písmeno nejsou důkaz pokračování. Standardní režim se nemění.
+- Limity experimentu: 2500 ms celkem, po potvrzeném zmizení nejvýše 600 ms
+  v rámci stejného limitu, tři zdrojové repliky a 800 znaků čekajícího textu.
+  Interaktivní volby a tři již zařazené Story položky čekání ukončí.
+- ID zdroje a revize vznikají nad událostmi nové/opravované repliky; OCR pořadí
+  není samo identita dialogu. Nepřepisuje se klasifikace OCR. Vstupní chybnou
+  klasifikaci tato vrstva neumí spolehlivě opravit.
+- Regrese pokrývají všech 16 zadaných scénářů, negativní korpus, zdrojové
+  úseky, prodlevy a napojení překladače/čtecí fronty. Detaily v
+  `docs/PRIBEHOVY-REZIM.md`.
+- Pro rozšíření: nejdříve změřit správná a chybná spojení na skutečných
+  dialozích. Nezavádět opravy jednotlivých slov, LLM ani LG změny bez důkazu.

@@ -130,7 +130,8 @@ class RemotePlayService : Service() {
                 val cekajici = (pribeh.pocet - if (pribehAktualni != null || pribehLokalni != null) 1 else 0).coerceAtLeast(0)
                 val casProcenta = CasovaniPribehu.priZpozdeni(nast.casPribehuProcenta, cekajici)
                 pribeh.nastavCasovani(casProcenta)
-                val dohanel = if (casProcenta < nast.casPribehuProcenta) " · doháním: $casProcenta %" else ""
+                val dohanel = (if (casProcenta < nast.casPribehuProcenta) " · doháním: $casProcenta %" else "") +
+                    (if (pribeh.cekaNaVetu) " · dokončuji větu" else "")
                 val pauza = ip != null && Propojeni.Vysilac.aktivniVolby()
                 val p = pribeh.krok(ted, ip != null, pauza)
                 if (!pauza) pribehAktualni = p
@@ -852,6 +853,11 @@ class RemotePlayService : Service() {
                     zapis("  [nic nepřečteno: jas $jas, ${casCteni} ms" +
                         (if (nadNapovedou) ", nad nápovědou" else if (druhyPokus) ", 2. pokus" else "") + "]")
                 if (text.length < 4) {
+                    if (chcePribeh()) ui.post {
+                        if (chcePribeh() && bezi && relace == relaceCteni.get() &&
+                            oblast == (rucniOblast()?.joinToString(",") ?: "auto"))
+                            pribeh.zmizelo(cislo, android.os.SystemClock.elapsedRealtime())
+                    }
                     prazdnychZaSebou++
                     if (prazdnychZaSebou >= 1 && prectenoPosledne.isNotEmpty()) {
                         prectenoPosledne = ""
@@ -909,7 +915,8 @@ class RemotePlayService : Service() {
                         // titulek se teprve vynořuje a začátek je ještě průhledný ("et Davey rest…" místo
                         // "Let Davey rest…") → začíná malým písmenem, ale nemůže to být pokračování věty
                         // → chvilku počkat a přečíst znovu (nejvýš ~0,4 s)
-                        val pokracovaniMozne = predchoziAnglicky != null && ted - predchoziVidenKdy < 2500
+                        val pokracovaniMozne = (predchoziAnglicky != null && ted - predchoziVidenKdy < 2500) ||
+                            (chcePribeh() && pribeh.cekaNaVetu)
                         if (text.trimStart().firstOrNull()?.isLowerCase() == true && !pokracovaniMozne && useknutychZaSebou < 4) {
                             useknutychZaSebou++
                             if (useknutychZaSebou == 1) zapis("  [začátek titulku se teprve vynořuje – čtu znovu]")
@@ -1084,7 +1091,7 @@ class RemotePlayService : Service() {
                 kontextPribehu()
                 if (chcePribeh() && bezi && relace == relaceCteni.get() && jazyk == nast.jazykNeboCs && oblastPribehu == rucniOblast()?.joinToString()) {
                     prekladac.nastavJazyk(jazyk)
-                    pribeh.prijmi(surove, barvyJmen, oprava, android.os.SystemClock.elapsedRealtime())
+                    pribeh.prijmiOcr(cislo, surove, barvyJmen, oprava, android.os.SystemClock.elapsedRealtime())
                 }
             }
             return
