@@ -63,9 +63,7 @@ Pokud přímá instalace nejde, tlačítko
 4. V části aplikací vyber instalaci místního `.ipk` a uložený soubor PlayCaption.
 5. Po dokončení spusť **PlayCaption LG** ovladačem a vyber HDMI konzole.
 
-Aphanes podle [své dokumentace](https://symonxdd.github.io/aphanes/) také nabízí
-kontrolu zbývajícího času a prodloužení Developer Mode. Celý postup v této externí
-aplikaci zatím na naší C5 nebyl otestovaný. Export IPK v PlayCaption je samostatný
+Celý postup v této externí aplikaci zatím na naší C5 nebyl otestovaný. Export IPK v PlayCaption je samostatný
 krok a neznamená, že už je přijímač v TV nainstalovaný.
 
 ### C. Z počítače, graficky bez příkazové řádky
@@ -161,9 +159,7 @@ Prodloužení zobrazení titulků není prodloužením Developer Mode.
 Pokud režim vyprší a deaktivuje se, LG vývojově nainstalované aplikace odstraní.
 Pak znovu zapni Developer Mode a zopakuj instalaci IPK.
 PlayCaption aktuální zbývající dobu nezjišťuje a neprodlužuje ji automaticky.
-Pro správu z Androidu lze použít Aphanes; před prodloužením počítej s tím, že
-se na TV může otevřít Developer Mode. Pravidla a odstranění aplikací při deaktivaci
-popisuje [oficiální LG návod](https://webostv.developer.lge.com/develop/getting-started/developer-mode-app).
+Pravidla a odstranění aplikací při deaktivaci popisuje [oficiální LG návod](https://webostv.developer.lge.com/develop/getting-started/developer-mode-app).
 
 Běžné aktualizace PlayCaption
 instaluj přes Install novějšího IPK a přijímač znovu spusť.
