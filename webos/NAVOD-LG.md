@@ -9,11 +9,10 @@ Je to experimentální podpora, zatím ověřená na LG C5.
 - LG TV s webOS a aplikací **Developer Mode** z obchodu LG Apps.
 - **Android telefon nebo tablet**, na kterém už funguje PlayCaption a překlad hry.
   iPhone neumí spustit Android APK. Telefon/tablet nemusí mířit kamerou na televizi.
-- Pro instalaci buď Android s aplikací webOS Dev Mode Manager, nebo počítač s Windows, macOS či Linuxem. Počítač při hraní není potřeba.
+- V novější Android aplikaci je instalátor LG přímo v průvodci. Ruční instalace z počítače zůstává jako záloha.
 - Konzoli zapojenou přes HDMI do LG a zařízení ve stejné domácí síti.
   LG může být připojená kabelem a odesílající zařízení přes Wi-Fi; nepoužívej oddělenou síť pro hosty.
-- Instalační soubor **cz.playcaption.overlaytest_0.1.0_all.ipk** poskytnutý projektem
-  u změny nebo vydání na GitHubu. Pokud je zabalený v ZIPu, nejprve ho rozbal.
+- Pro ruční instalaci navíc potřebuješ soubor **cz.playcaption.overlaytest_0.1.0_all.ipk** z vydání na GitHubu. Pro přímou instalaci jej už obsahuje Android aplikace.
 
 APK patří do Android zařízení, IPK patří do LG. Na LG se nepřihlašuješ k PSN.
 Hra běží přes HDMI; Remote Play dodává kopii obrazu Android zařízení pro čtení titulků.
@@ -34,24 +33,24 @@ Podrobný postup LG: [Developer Mode](https://webostv.developer.lge.com/develop/
 
 Vyber jednu cestu. LG příprava v kroku 1 je nutná pro obě. Obyčejné odeslání souboru přes Bluetooth ani otevření IPK v prohlížeči TV aplikaci nenainstaluje.
 
-### A. Z Android telefonu nebo tabletu, bez počítače
+### A. Přímo z PlayCaption, bez počítače
 
-Komunitní [webOS Dev Mode Manager](https://symonxdd.github.io/aphanes/) podporuje
-instalaci místního IPK přímo z Androidu. Jde o samostatnou aplikaci třetí strany,
-nikoliv o funkci, která už je zabudovaná v PlayCaption. Tento postup je podložený
-[dokumentací správce](https://symonxdd.github.io/aphanes/concepts/); na naší sestavě
-zatím není ručně odzkoušený.
+1. V Android PlayCaption otevři **Výstup titulků → Změnit**, vyber platformu
+   **LG webOS** a **Jak připojit televizi**.
+2. Projdi přípravu do kroku **Nainstaluj PlayCaption LG**. Zadej IP adresu TV
+   bez portu a Passphrase z Developer Mode (6 znaků, rozlišuje velká a malá písmena).
+   Nezadávej heslo účtu LG.
+3. Stiskni **Nainstalovat / aktualizovat**. Nech TV i zařízení zapnuté a počkej
+   na **Nainstalováno a ověřeno** s číslem verze. Balíček je přibalený v APK;
+   samotná instalace probíhá přes domácí síť bez stahování z internetu.
+4. Přijímač se pokusí spustit. Pokud se nespustí, otevři **PlayCaption LG**
+   ovladačem. Vyber HDMI konzole a pokračuj v průvodci vyhledáním televize.
 
-1. Stáhni správce z jeho [oficiálních vydání](https://github.com/symonxdd/aphanes/releases).
-2. Stáhni IPK PlayCaption do stejného Android zařízení a případný ZIP rozbal.
-3. Ve správci přidej vlastní LG podle IP adresy z Developer Mode a její Passphrase.
-   Na LG musí být zapnutý Key Server. Použij Developer Mode, ne root připojení.
-4. V části aplikací zvol instalaci z místního souboru a vyber IPK PlayCaption.
-5. Po úspěšné instalaci spusť **PlayCaption LG** ovladačem z domovské nabídky TV.
-
-Názvy tlačítek se mohou lišit podle verze správce. Pokud postup selže, použij
-počítačovou cestu níže. Přímá instalace tlačítkem z PlayCaption je samostatný
-[navržený doplněk](INSTALACE-Z-ANDROIDU.md), zatím není implementovaná.
+Instalátor nemaže původní přijímač před aktualizací a neukládá Passphrase.
+Při chybě postupuj podle konkrétní zprávy; Key Server musí být zapnutý.
+**Zrušit čekání** nemusí zastavit instalaci, kterou už LG zahájila.
+Pokud přímá instalace nejde nebo používáš starší APK, tlačítko
+**Nedaří se? Ruční instalace z počítače** otevře záložní postup níže.
 
 ### B. Z počítače, graficky bez příkazové řádky
 
@@ -194,6 +193,6 @@ Verze přijímače může být zatím neověřená. Tato nabídka sama IPK neins
 
 V Android aplikaci s průvodcem otevři **Výstup titulků → Změnit → Jak připojit
 televizi** při zvolené platformě LG webOS. Příprava sítě, účet LG, Developer Mode,
-ruční instalace i první spuštění jsou rozdělené do pěti kroků. **PlayCaption LG
+přímá instalace se záložním ručním postupem i první spuštění jsou rozdělené do pěti kroků. **PlayCaption LG
 už mám** přeskočí přípravu k vyhledání přijímače. Návod si pamatuje rozpracovaný
 krok; jeho dokončení samo neprokazuje instalaci ani příjem titulků.

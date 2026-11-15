@@ -1,56 +1,65 @@
 # Instalace LG přijímače z Androidu
 
-## Co lze použít už teď
+V Android průvodci pro LG webOS je krok **Nainstalovat / aktualizovat**.
+Uživatel zadá místní IPv4 adresu a šestiznakovou Passphrase z Developer Mode.
+Na TV musí běžet Developer Mode a Key Server. Účet a heslo LG zadává pouze na TV.
+Tlačítko **Nedaří se? Ruční instalace z počítače** zachovává záložní postup.
+[Uživatelský návod](NAVOD-LG.md) popisuje přípravu a první spuštění.
 
-Instalace bez počítače je technicky možná, bez rootu TV. Samostatný komunitní
-[webOS Dev Mode Manager](https://symonxdd.github.io/aphanes/) umí místní IPK:
-spárování přes Developer Mode, přenos SFTP a instalaci přes službu LG.
-[Postup pro uživatele](NAVOD-LG.md) odděluje tuto cestu od ověřené instalace z PC.
-Mobilní správce jsme na své TV ještě ručně neotestovali; není součástí PlayCaption.
+## Balíček a sestavení
 
-## Vlastní tlačítko v PlayCaption — návrh, zatím neimplementováno
+Android Gradle `preBuild` zavolá `python3 webos/build.py`: testy přijímače,
+sestavení připnutým CLI a kontrola IPK proti zdrojům. Ověří manifest, ID, verzi,
+velikost a SHA256; do assets přidá `lg/receiver.ipk` a `lg/receiver-manifest.json`.
+IPK 0.1.0 má 31 060 bajtů. Generované soubory jsou pouze v build adresářích.
+Build potřebuje Python 3.9+, Node.js 20+ a dostupné CLI přes npx.
+Při instalaci z hotové APK se nic nestahuje z internetu a není potřeba počítač.
+Založení účtu LG a získání Developer Mode jsou samostatné přípravné kroky.
 
-Nejmenší průvodce: **Nainstalovat / aktualizovat PlayCaption LG** → IP TV →
-Passphrase z Developer Mode → instalace s průběhem → ověření nainstalované verze.
-Prvotní vyhledání nelze opřít o PlayCaption discovery: dosud nenainstalovaný
-přijímač nic nevysílá. První verze může adresu vyžádat ručně. Nevolit automaticky
-první nalezenou TV, pokud jich má uživatel více.
+`LgZdrojBalicku` odděluje instalaci od zdroje; nyní existuje pouze přibalený asset.
+Vzdálené aktualizace, vlastní backend ani výběr cizího IPK nejsou implementované.
+Manifest uvádí také protokoly a schopnosti; nevydáváme jej za zjištěnou verzi TV.
 
-Technické kroky, potvrzené zdroji a stávajícím oficiálním CLI:
+## Instalační tok
 
-1. Uživatel na LG zapne Developer Mode a Key Server. Účet LG zadává na TV.
-2. Z uživatelem zadané lokální IP získat klíč z Key Serveru na portu 9991;
-   odemknout jej Passphrase. SSH spojení běží jako `prisoner` na portu 9922.
-3. Použít udržovanou SSH/SFTP knihovnu; PlayCaption ji nyní nemá. Běžná Android
-   zásuvka ani UDP příjemce neumí SSH nahradit. Síťová práce patří mimo hlavní vlákno.
-4. Nahrát pouze připravený IPK stejného ID přes SFTP, ověřit shodu přenesených bajtů
-   a zavolat instalační službu Developer Mode. Průběh zpracovat až do konečného
-   úspěchu/selhání; samotné přijetí požadavku není dokončená instalace.
-5. Ověřit ID a verzi instalované aplikace. Původní přijímač předem neodinstalovávat.
-   Nabídnout spuštění, HDMI vybere uživatel v LG aplikaci.
+- `LgInstalator` mimo hlavní vlákno získá zašifrovaný RSA klíč z místního
+  Key Serveru (`9991/webos_rsa`) a odemkne jej Passphrase.
+- Udržovaná knihovna [JSch](https://github.com/mwiede/jsch) připojí `prisoner:9922`.
+  SSH veřejný otisk se při prvním úspěšném připojení zapamatuje. Změna se odmítne;
+  nové spárování vyžaduje výslovné potvrzení uživatelem. První spojení důvěřuje
+  domácí síti; nejde o nezávislé ověření výrobce TV. C5 Developer Mode nabízí
+  pouze starší podpis `ssh-rsa`; kompatibilita je povolená jen pro tuto SSH relaci,
+  bez vypnutí kontroly otisku a bez změny globální konfigurace JSch.
+- SFTP nahraje vlastní náhodně pojmenovaný IPK do `/media/developer/temp`, přečte
+  jej zpět a porovná bajty. Předchozí přijímač se neodinstalovává.
+- `com.webos.appInstallService/dev/install` musí potvrdit konečný úspěch.
+  Samotné přijetí požadavku nestačí. Následuje kontrola skutečného `appinfo.json`
+  proti očekávanému ID/verzi a pokus o spuštění přes Application Manager.
+- Pokud spuštění selže, potvrzená instalace zůstává úspěšná a průvodce požádá
+  o ruční spuštění. Výběr HDMI a discovery jsou další kroky.
 
-Pro první verzi je nejjednodušší vložit konkrétní ověřený IPK do Android assets.
-Odpadne závislost instalace na stahovacím serveru; Android build ale musí zaručit
-shodu IPK a jeho verze. Vzdálené aktualizace lze doplnit později.
+Operace má limit 120 s a možnost zrušit čekání. Již zahájená instalace LG může
+pokračovat i po zavření Android dialogu. Při přerušení takového požadavku IPK
+ponecháváme, aby jej LG mohla dočíst; po potvrzeném konci odstraníme pouze vlastní
+přenesený soubor. Neprovádíme hromadný úklid TV.
 
-Klíč a Passphrase nepatří do Git repozitáře, logů ani běžné zálohy Android dat.
-Minimální instalátor je může držet jen po dobu instalace; uložené párování by
-potřebovalo šifrované uložení a kontrolu SSH identity TV. Na změněný host key se
-nesmí automaticky připojit bez nového potvrzeného párování.
+Passphrase ani soukromý klíč se neukládají do souborů, preferencí či logů.
+Vstupní pole se nezálohují; veřejný SSH otisk není přihlašovací tajemství.
+Veřejné/hostitelské adresy, přesměrování HTTP a příliš velké odpovědi se odmítají.
+MVP podporuje místní IPv4; IPv6 a DNS jména nejsou implementované.
 
-## Co musí projít před zpřístupněním tlačítka
+## Ověření a omezení
 
-- První instalace i aktualizace při aktivním Developer Mode na skutečné TV.
-- Chybná IP/Passphrase, vypnutý Key Server, nedostupná TV, výpadek během přenosu,
-  odmítnutí instalace a nové spuštění po chybě bez falešného hlášení úspěchu.
-- Více TV, změna IP, zavření Android obrazovky a ochrana citlivých údajů.
+JVM testy pokrývají adresy, manifest a změněný obsah, HTTP odpovědi,
+koncové stavy instalace, ID/verzi, odemknutí syntetického klíče, zrušení
+před připojením a změnu SSH identity. Skutečná přejímka musí oddělit aktualizaci
+na C5 od první instalace na čisté TV a od výpadků v jednotlivých fázích.
+Na C5 uživatel potvrdil aktualizaci, správné potvrzení výsledku i spuštění
+přijímače z test06; podrobnosti jsou v [TESTOVANI.md](TESTOVANI.md). První
+instalace na čisté TV a jiné modely tím nejsou ověřené.
 
 ## Zdroje
 
 - [LG Developer Mode](https://webostv.developer.lge.com/develop/getting-started/developer-mode-app)
-- [Oficiální webOS CLI](https://github.com/webos-tools/cli): `lib/base/novacom.js`
-  (Key Server) a `lib/install.js` (přenos, instalace a konečný stav).
-- [Mobilní správce: princip instalace](https://symonxdd.github.io/aphanes/concepts/)
-- [Mobilní správce: párování](https://symonxdd.github.io/aphanes/pairing/)
-
-Ověření zdrojů: 15. 11. 2026. Tento dokument nepředstavuje hotový Android instalátor.
+- [Oficiální webOS CLI](https://github.com/webos-tools/cli): `lib/base/novacom.js`,
+  `lib/install.js`, `files/conf/command-service.json`.

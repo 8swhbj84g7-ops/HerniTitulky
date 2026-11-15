@@ -2,11 +2,18 @@ package cz.titulky.tv
 
 import android.app.Activity
 import android.app.Dialog
+import android.app.AlertDialog
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
+import android.text.InputType
+import android.view.View
+import android.widget.EditText
+import android.widget.ProgressBar
 import android.view.Gravity
 import android.view.ViewGroup
 import android.widget.LinearLayout
@@ -32,13 +39,25 @@ internal class LgPruvodceStav(ulozeny: Int) {
     companion object { const val POSLEDNI = 4 }
 }
 
-/** Samostatné LG instrukce; běžný Android TV průvodce zůstává beze změny. */
+/** LG průvodce s místním instalátorem; běžný Android TV průvodce zůstává beze změny. */
 class LgPruvodce(private val activity: Activity, private val vyhledej: () -> Unit) {
     private val prefs = activity.getSharedPreferences("lg_pruvodce", Activity.MODE_PRIVATE)
     private val stav = LgPruvodceStav(prefs.getInt("krok", 0))
+    private val ui = Handler(Looper.getMainLooper())
+    private val otisky = activity.getSharedPreferences("lg_ssh_otisky", Activity.MODE_PRIVATE)
+    private var manualni = false
+    private var bezi = false
+    private var faze = LgFaze.BALICEK
+    private var vysledek: LgInstalaceVysledek? = null
+    private var chyba: LgChyba? = null
+    private var instalator: LgInstalator? = null
+    private var stavInstalace: TextView? = null
+    private var zadanaIp = TvProfily(activity).let { p -> p.posledniId?.let { p.najdi(it) } }
+        ?.takeIf { it.platforma == TvPlatforma.WEBOS }?.ip.orEmpty()
     private val dialog = object : Dialog(activity, android.R.style.Theme_DeviceDefault_NoActionBar) {
         @Deprecated("Deprecated in Java")
         override fun onBackPressed() {
+            if (bezi) { instalator?.zrus(); return }
             if (stav.zpet()) vykresli() else @Suppress("DEPRECATION") super.onBackPressed()
         }
     }
@@ -49,9 +68,14 @@ class LgPruvodce(private val activity: Activity, private val vyhledej: () -> Uni
         if (activity.isFinishing || activity.isDestroyed) return
         dialog.setOwnerActivity(activity)
         dialog.setOnCancelListener { uloz() }
+        dialog.setOnDismissListener { instalator?.zrus() }
         vykresli()
         dialog.show()
         dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        dialog.window?.decorView?.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v: View) {}
+            override fun onViewDetachedFromWindow(v: View) { instalator?.zrus() }
+        })
     }
 
     private fun uloz() { prefs.edit().putInt("krok", stav.krok).apply() }
@@ -85,6 +109,7 @@ class LgPruvodce(private val activity: Activity, private val vyhledej: () -> Uni
         uloz()
         val koren = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
+            keepScreenOn = true
             setBackgroundColor(Color.parseColor("#0B0B0E"))
             setPadding(dp(24), dp(24), dp(24), dp(20))
         }
@@ -98,7 +123,7 @@ class LgPruvodce(private val activity: Activity, private val vyhledej: () -> Uni
         })
         val obsah = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL; setPadding(0, 0, 0, dp(20)) }
         obsah.addView(text(t("lgNadpis" + stav.krok), 27f).apply { typeface = Typeface.DEFAULT_BOLD })
-        obsah.addView(text(t("lgText" + stav.krok), 18f, Color.parseColor("#E2E2E8")).apply { setPadding(0, dp(18), 0, dp(14)) })
+        obsah.addView(text(t(if (stav.krok == 3 && !manualni) "lgAutoText" else "lgText" + stav.krok), 18f, Color.parseColor("#E2E2E8")).apply { setPadding(0, dp(18), 0, dp(14)) })
         fun odkaz(popis: String, url: String) {
             obsah.addView(tlacitko(t(popis) + "  ↗") { otevri(url) },
                 LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp(10) })
@@ -107,7 +132,10 @@ class LgPruvodce(private val activity: Activity, private val vyhledej: () -> Uni
             0 -> obsah.addView(tlacitko(t("lgUzMam")) { stav.prijimacMam(); vykresli() })
             1 -> odkaz("lgUcetOdkaz", "https://webostv.developer.lge.com/")
             2 -> odkaz("lgOficialniNavod", "https://webostv.developer.lge.com/develop/getting-started/developer-mode-app")
-            3 -> {
+            3 -> if (!manualni) {
+                instalacniPole(obsah)
+            } else {
+                obsah.addView(tlacitko(t("lgZpetAutomatika")) { manualni = false; vykresli() })
                 odkaz("lgBalicek", "https://github.com/AdamRuzick4/PlayCaption-app/releases")
                 odkaz("lgSpravce", "https://github.com/webosbrew/dev-manager-desktop/releases/latest")
                 odkaz("lgCelyNavod", "https://github.com/AdamRuzick4/PlayCaption-app/blob/master/webos/NAVOD-LG.md")
@@ -118,15 +146,94 @@ class LgPruvodce(private val activity: Activity, private val vyhledej: () -> Uni
             LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
         val navigace = LinearLayout(activity).apply { gravity = Gravity.CENTER_VERTICAL }
         navigace.addView(tlacitko(t("zpet")) {
-            if (stav.zpet()) vykresli() else dialog.dismiss()
-        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { rightMargin = dp(12) })
+            if (!bezi) { if (stav.zpet()) vykresli() else dialog.dismiss() }
+        }.apply { isEnabled = !bezi; alpha = if (bezi) 0.4f else 1f }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { rightMargin = dp(12) })
         navigace.addView(tlacitko(t(if (stav.krok == LgPruvodceStav.POSLEDNI) "lgHledat" else "lgDalsi"), hlavni = true) {
             if (stav.dalsi()) vykresli() else {
                 dialog.dismiss()
                 vyhledej()
             }
+        }.apply {
+            isEnabled = !bezi && (stav.krok != 3 || manualni || vysledek != null)
+            alpha = if (isEnabled) 1f else 0.4f
         }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
         koren.addView(navigace)
         dialog.setContentView(koren)
     }
+    private fun instalacniPole(obsah: LinearLayout) {
+        fun radek(view: View) {
+            obsah.addView(view, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp(12) })
+        }
+        fun pole(popis: String, heslo: Boolean = false): EditText = EditText(activity).apply {
+            hint = popis
+            contentDescription = popis
+            textSize = 18f
+            setTextColor(Color.WHITE)
+            setHintTextColor(Color.parseColor("#B2B3BF"))
+            setPadding(dp(12), dp(12), dp(12), dp(12))
+            minimumHeight = dp(54)
+            isSingleLine = true
+            isEnabled = !bezi
+            isSaveEnabled = false
+            importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO_EXCLUDE_DESCENDANTS
+            inputType = InputType.TYPE_CLASS_TEXT or if (heslo) InputType.TYPE_TEXT_VARIATION_PASSWORD else InputType.TYPE_TEXT_VARIATION_URI
+        }
+        val ip = pole(t("lgIp"))
+        ip.setText(zadanaIp)
+        val pass = pole(t("lgPassphrase"), true)
+        radek(ip); radek(pass)
+        stavInstalace = text(when {
+            bezi -> t("lgFaze" + faze.name)
+            chyba != null -> t("lgChyba" + chyba!!.name)
+            vysledek != null -> t("lgOvereno").replace("{verze}", vysledek!!.verze) + "\n" + t(if (vysledek!!.spusteno) "lgSpusteno" else "lgSpustRucne")
+            else -> t("lgPripravenoInstalace")
+        }, 17f, Color.parseColor(when { chyba != null -> "#FF9191"; vysledek != null -> "#3CFF6E"; else -> "#B2B3BF" })).also { radek(it) }
+        if (bezi) {
+            radek(ProgressBar(activity))
+            radek(tlacitko(t("lgZrusitInstalaci")) { instalator?.zrus() })
+        } else {
+            radek(tlacitko(t("lgInstalovat"), hlavni = true) {
+                zadanaIp = ip.text.toString().trim()
+                val heslo = pass.text.toString().toCharArray()
+                pass.text.clear()
+                spustInstalaci(heslo)
+            })
+            if (chyba == LgChyba.IDENTITA) radek(tlacitko(t("lgNoveParovani")) {
+                AlertDialog.Builder(activity).setTitle(t("lgNoveParovani"))
+                    .setMessage(t("lgNoveParovaniPopis").replace("{ip}", zadanaIp))
+                    .setPositiveButton(t("ano")) { _, _ ->
+                        otisky.edit().remove(lgSha256(zadanaIp.toByteArray())).apply()
+                        chyba = null; vykresli()
+                    }.setNegativeButton(t("zpet"), null).show()
+            })
+            radek(tlacitko(t("lgRucniZaloha")) { manualni = true; vykresli() })
+            radek(tlacitko(t("lgUzMam")) { stav.prijimacMam(); vykresli() })
+        }
+    }
+
+    private fun spustInstalaci(heslo: CharArray) {
+        if (bezi) { heslo.fill('\u0000'); return }
+        bezi = true; chyba = null; vysledek = null; faze = LgFaze.BALICEK
+        val job = LgInstalator(LgAssetBalicek(activity), { ip -> otisky.getString(lgSha256(ip.toByteArray()), null) },
+            { ip, otisk -> otisky.edit().putString(lgSha256(ip.toByteArray()), otisk).apply() })
+        instalator = job
+        vykresli()
+        Thread {
+            try {
+                val hotovo = job.nainstaluj(zadanaIp, heslo) { f ->
+                    ui.post { if (dialog.isShowing && !activity.isDestroyed && instalator === job) {
+                        faze = f; stavInstalace?.text = t("lgFaze" + f.name)
+                    } }
+                }
+                ui.post { if (dialog.isShowing && !activity.isDestroyed && instalator === job) {
+                    bezi = false; vysledek = hotovo; vykresli()
+                } }
+            } catch (e: LgInstalacniChyba) {
+                ui.post { if (dialog.isShowing && !activity.isDestroyed && instalator === job) {
+                    bezi = false; chyba = e.kod; vykresli()
+                } }
+            } finally { heslo.fill('\u0000') }
+        }.apply { isDaemon = true }.start()
+    }
+
 }

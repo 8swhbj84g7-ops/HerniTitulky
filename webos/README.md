@@ -67,7 +67,7 @@ CLI 3.2.6 se spouští přes npx pouze pro sestavení. Výstup ve `webos/dist/`:
 Build normalizuje časy a UID/GID z CLI archivů; dvě stejná sestavení ve stejném
 prostředí musí mít stejné bajty IPK. ZIP má také pevné časy. Kontrola porovnává
 rozbalený obsah IPK se zdroji. SHA256 neprokazuje důvěryhodnost cizího downloadu;
-pro plánované Android assets ji zajistí distribuovaná Android aplikace. Verze
+pro přibalené Android assets ji zajistí distribuovaná Android aplikace. Verze
 přibaleného IPK není důkaz verze nainstalovaného přijímače.
 
 Adresář `dist/` se necommituje. Samotný push zdrojů tedy nenahraje instalační IPK.
@@ -77,6 +77,9 @@ Build nečte žádné místní přihlašovací údaje,
 nepřipojuje se k TV a nic nezveřejňuje. ID zůstává stejné jako u původního testu,
 aby bylo možné aktualizovat existující instalace. Při změně verze uprav `appinfo.json`,
 `service/package.json` a názvy balíčků v návodu/README; Android verzi nezvyšuj.
+
+Android `preBuild` spouští stejný build automaticky a přibaluje IPK i manifest
+do APK. Samostatné sestavení výše zůstává pro ruční distribuci.
 
 ## Instalace přes CLI pro vývojáře
 
@@ -132,8 +135,8 @@ neprovádí commit/push. Obecná optimalizace OCR a FPS patří do samostatné z
   TV. Zůstává kvůli aktualizaci starších instalací bez druhé aplikace.
 - PC není předpokladem samotného protokolu, ale podporovaný odesílač nyní dodává
   Android. Obecný text „zařízení“ neslibuje hotovou PC aplikaci.
-- [Instalace z Androidu](INSTALACE-Z-ANDROIDU.md): existující správce a návrh
-  samostatného instalátoru přímo v PlayCaption. Nevyžaduje root.
+- [Instalace z Androidu](INSTALACE-Z-ANDROIDU.md): přímý instalátor v PlayCaption,
+  kontrola balíčku a záložní ruční postup. Nevyžaduje root.
 
 ## Omezení platformy
 

@@ -184,3 +184,27 @@ Bez skutečné TV lze potvrdit balení a logiku, nikoli chování nedokumentovan
 - Stejné C5 odmítla webové aplikaci metodu `getForegroundAppInfo`.
 - Delší provoz nové verze, jiná TV/firmware a všechny HDR/VRR kombinace zůstávají
   k ruční přejímce. Doklady běhu do 150 s výše se vztahují ke starším verzím.
+
+
+## Android instalátor LG – 15. 11. 2026
+
+Větev `feature/tv-platform-management`, Android `PlayCaption Profily Test`
+`0.20.1-platforms-test06`, Redmi Pad Pro; přijímač 0.1.0 na LG C5.
+
+- `:app:testDebugUnitTest :app:assembleDebug`: 20 JVM testů bez selhání.
+  Nové testy zahrnují skutečný formát C5 subscription událostí bez `returnValue`
+  a kompatibilitu `ssh-rsa` omezenou na konkrétní SSH relaci.
+- Gradle vytváří a kontroluje LG IPK; sestavení přijímače spouští všech pět Node
+  sad. IPK v APK má 31 060 bajtů a odpovídá SHA256 manifestu.
+- Uživatel na C5 potvrdil úspěšnou instalaci/aktualizaci z tabletu v test06,
+  správné potvrzení nainstalované verze a automatické spuštění přijímače.
+  Passphrase zadával pouze na tabletu. Původní PlayCaption ani Story Test se neměnily.
+- Při diagnostice byla zachycena skutečná posloupnost LG od `ipk verifying`
+  přes `installing` do `installed`. Předchozí obecná chyba SSH odpovídala tomu,
+  že Developer Mode na této C5 nabízí pouze `ssh-rsa`.
+- Záložní ruční postup zůstává v instalačním kroku i uživatelském návodu.
+
+Neověřeno: první instalace na čisté/jiné LG, všechny fyzické výpadky sítě
+uprostřed instalace a chování všech podporovaných verzí Androidu.
+Kontrola UI po uživatelském dokončení již instalační obrazovku nenašla;
+není evidována jako úspěšný automatický test tlačítka záložního postupu.
