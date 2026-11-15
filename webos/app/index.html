@@ -19,10 +19,23 @@
     <p class="help">Vyber šipkami a potvrď OK. Zpět aplikaci zavře.</p>
   </section>
   <div id="status" role="status"></div>
-  <div id="subtitle" role="status" hidden></div>
-  <div id="hint" role="status" hidden></div>
-  <div id="choices" role="status" hidden></div>
-  <div id="choice-frame" class="frame yellow" hidden><span>Volby / text – oblast čtení</span></div>
-  <div id="ocr-frame" class="frame blue" hidden><span>Titulky hry – oblast čtení</span></div>
+  <section id="controls" aria-label="Ovládání PlayCaption" hidden>
+    <h2>PlayCaption LG</h2>
+    <p id="connection-info" role="status"></p>
+    <button id="change-input">Změnit HDMI</button>
+    <button id="local-test">Zkušební titulek · pouze test zobrazení</button>
+    <button id="toggle-output">Dočasně skrýt titulky</button>
+    <button id="return-game">Zpět ke hře</button>
+    <button id="close-app">Ukončit PlayCaption</button>
+    <p class="help">Šipky a OK vyberou akci. Zpět zavře nabídku. Pro jiný zdroj nejprve zastav původní odesílání a počkej 5 sekund.</p>
+  </section>
+  <div id="test-subtitle" role="status" hidden></div>
+  <div id="output">
+    <div id="subtitle" role="status" hidden></div>
+    <div id="hint" role="status" hidden></div>
+    <div id="choices" role="status" hidden></div>
+    <div id="choice-frame" class="frame yellow" hidden><span>Volby / text – oblast čtení</span></div>
+    <div id="ocr-frame" class="frame blue" hidden><span>Titulky hry – oblast čtení</span></div>
+  </div>
 </body>
 </html>
