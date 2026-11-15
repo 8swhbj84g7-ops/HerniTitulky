@@ -70,7 +70,10 @@ rozbalený obsah IPK se zdroji. SHA256 neprokazuje důvěryhodnost cizího downl
 pro plánované Android assets ji zajistí distribuovaná Android aplikace. Verze
 přibaleného IPK není důkaz verze nainstalovaného přijímače.
 
-Adresář `dist/` se necommituje. Build nečte žádné místní přihlašovací údaje,
+Adresář `dist/` se necommituje. Samotný push zdrojů tedy nenahraje instalační IPK.
+Pro běžné uživatele se sestavený IPK nebo ZIP přiloží k vydání v GitHub Releases;
+pokud tam LG balíček chybí, je zatím dostupné pouze sestavení ze zdrojů.
+Build nečte žádné místní přihlašovací údaje,
 nepřipojuje se k TV a nic nezveřejňuje. ID zůstává stejné jako u původního testu,
 aby bylo možné aktualizovat existující instalace. Při změně verze uprav `appinfo.json`,
 `service/package.json` a názvy balíčků v návodu/README; Android verzi nezvyšuj.
@@ -148,5 +151,3 @@ Reference: [LG JS služby](https://webostv.developer.lge.com/develop/guides/js-s
 [spouštění aplikací](https://webostv.developer.lge.com/develop/references/application-manager),
 [CLI](https://webostv.developer.lge.com/develop/tools/cli-dev-guide),
 [Developer Mode](https://webostv.developer.lge.com/develop/getting-started/developer-mode-app).
-
-Plán P0–P4 a hranice větví: [TV-PLATFORMS-PLAN.md](../docs/TV-PLATFORMS-PLAN.md).

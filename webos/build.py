@@ -107,7 +107,6 @@ def main():
     files["INSTALACE-Z-ANDROIDU.md"] = (HERE / "INSTALACE-Z-ANDROIDU.md").read_bytes()
     files["source/LICENSE"] = (ROOT / "LICENSE").read_bytes()
     files["source/BACKLOG.md"] = (ROOT / "BACKLOG.md").read_bytes()
-    files["source/docs/TV-PLATFORMS-PLAN.md"] = (ROOT / "docs/TV-PLATFORMS-PLAN.md").read_bytes()
     sources = ["README.md", "NAVOD-LG.md", "TESTOVANI.md", "SHODA-ANDROID.md", "INSTALACE-Z-ANDROIDU.md", "test.cjs", "test-udp.cjs", "test-input.cjs", "test-receiver.cjs", "test-controls.cjs", "build.py"]
     sources += [str(p.relative_to(HERE)) for folder in ["app", "service"] for p in sorted((HERE / folder).iterdir())]
     for name in sources:

@@ -74,7 +74,3 @@ samostatný mobilní správce s instalací místního IPK. Aktuální uživatels
 obsahuje tuto možnost vedle počítačové instalace. Vlastní průvodce v PlayCaption
 vyžaduje SSH/SFTP, bezpečné párování a skutečné potvrzení dokončení instalace.
 Rozsah a přejímku popisuje [návrh instalátoru](webos/INSTALACE-Z-ANDROIDU.md).
-
-## Dokončení LG a následné etapy P0–P4
-
-[Technický plán podle větví](docs/TV-PLATFORMS-PLAN.md) obsahuje audit, stav, závislosti, akceptaci a testy. Android je hlavní produkt; LG je zobrazovač. Samsung řeší jeho vývojář. P0 se dokončuje pouze v LG větvi.

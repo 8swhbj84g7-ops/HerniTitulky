@@ -20,7 +20,7 @@ Matice odděluje implementované vykreslení od přejímky konkrétní herní sc
 | `PCO1`: modrý rámeček | Souřadnice, skrytí, pojistka 8 s | UDP → C5 a potvrzení pohybu z tabletu. |
 | Heartbeat neobnovuje prošlý text | Oddělené čítače titulků a voleb | Test včetně shodných ID obou kanálů. |
 | Výpadek odesílajícího zařízení po 5 s | Skrytí textů i všech rámečků | Test celé UI cesty. |
-| Zavření a znovuspuštění | Zpět zavře; spuštění obnoví odběr | TV a regresní testy životního cyklu. |
+| Nabídka, zavření a znovuspuštění | OK/Zpět otevře nabídku; Ukončit zavře; spuštění obnoví odběr | TV a regresní testy životního cyklu. |
 
 Příběhový režim se vyvíjí odděleně na `feature/story-mode` a není součástí
 této samostatné LG větve.
