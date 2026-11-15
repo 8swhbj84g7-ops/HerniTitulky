@@ -76,7 +76,7 @@ integraci ani měnit Android TV režim. UI ukáže pouze zvolenou platformu.
 
 ### LG-P0-01 — verze, kompatibilita a balení
 
-- **Priorita/větev:** P0 / `feature/lg-webos-receiver`. **Stav:** rozpracováno.
+- **Priorita/větev:** P0 / `feature/lg-webos-receiver`. **Stav:** implementováno; 5 LG sad, kontrola artefaktu a dvě bitově shodná sestavení prošly.
 - **Komponenty:** parser, `build.py`, metadata, testy, manifest a dokumentace.
 - **Závislosti:** audit větví; původní PCT1/PCV1/PCO1.
 - **Řešení:** nové jednoznačné vydání a manifest skutečného IPK; zachovat původní
@@ -87,7 +87,7 @@ integraci ani měnit Android TV režim. UI ukáže pouze zvolenou platformu.
 
 ### LG-P0-02 — ovladač a lokální test
 
-- **Priorita/větev:** P0 / LG. **Stav:** čeká.
+- **Priorita/větev:** P0 / LG. **Stav:** implementováno; automatické testy a fyzické OK/šipky/Zpět na C5 potvrzené uživatelem.
 - **Komponenty:** `app.js`, HTML/CSS, UI testy a návod.
 - **Závislosti:** současná HDMI nabídka/renderer.
 - **Řešení:** malá nabídka přes OK/Zpět: HDMI, stav, lokální test, skrýt/zobrazit,
@@ -97,7 +97,7 @@ integraci ani měnit Android TV režim. UI ukáže pouze zvolenou platformu.
 
 ### LG-P0-03 — pravdivé stavy
 
-- **Priorita/větev:** P0 / LG. **Stav:** čeká.
+- **Priorita/větev:** P0 / LG. **Stav:** implementováno; renderer/lokální stav ověřený testy a DOM C5.
 - **Komponenty:** UI, keepalive, diagnostika a regresní test.
 - **Závislosti:** LG-P0-02.
 - **Řešení:** připraven / platná data / poslední titulek / výpadek / chyba překryvu;
@@ -107,7 +107,7 @@ integraci ani měnit Android TV režim. UI ukáže pouze zvolenou platformu.
 
 ### LG-P0-04 — jeden odesílatel a přejímka
 
-- **Priorita/větev:** P0 / LG. **Stav:** čeká.
+- **Priorita/větev:** P0 / LG. **Stav:** implementováno; dva skutečné zdroje Mac/Android a převzetí po uvolnění prošly. Několikahodinové hraní, uspání a změna IP skutečné TV zbývají.
 - **Komponenty:** UDP služba, UI, testy a hardware.
 - **Závislosti:** LG-P0-01 až 03.
 - **Řešení:** první platný zdroj vlastní příjem do 5 s bez svých dat; jiný zdroj
@@ -165,3 +165,16 @@ integraci ani měnit Android TV režim. UI ukáže pouze zvolenou platformu.
   integrace LG ovládání a odesílacího pravidla bez ztráty existující fronty.
 - **Akceptace/test:** starý standardní odesílač, kompatibilní Story a nepodporovaný
   přijímač; skrytí/pauza neznamenají dočtení, žádné tiché ztráty nebo duplicity.
+
+## Provedení P0
+
+- `1e5499e`: audit a rozdělení P0–P4.
+- `894ad43`: kompatibilní pravidlo jednoho zdroje; platný druhý zdroj uvolnění nevynucuje.
+- `9f33e3a`: LG menu, lokální test, diagnostika, maskování a reproducibilní artefakt/manifest.
+- `19ef4eb`: místní vysvětlení nepodporovaného Story režimu bez ready/ACK; ověřeno na C5 i simulacemi.
+- Uživatel na C5 potvrdil fyzické OK/šipky/Zpět a následně explicitní ukončení přes menu. První monitorovací běh byl tímto uživatelským ukončením přerušen; nejde o prokázané selhání lifecycle.
+- Balíček 0.1.0 je kandidát P0. GitHub Release, tag ani merge do master nebyly provedeny. Android integrace, instalátor i Story zůstávají odložené.
+
+Finální kandidát P0 0.1.0: **31060 B (30.33 KiB)**, SHA256 `c3bdef2dddb1abd1ab238e6d920660c35420eb9abb543e02df43daf5fa27a4af`. Takto malý IPK podporuje volbu assets jako výchozí distribuce. Manifest vzniká z konkrétních sestavených bajtů.
+
+Kontrola 0–180 s na C5 po novém spuštění prošla bez uzavření/keepalive chyby. Původní Android 0.20 posílal při uživatelském testu pouze prázdné PCT1/PCV1 (6+6 během 6 s); síť funguje, herní překlad tím potvrzený není. Uživatel následně potvrdil fungování existující opravené Test APK ve Standardním režimu; v neúspěšném pokusu Test APK byla zapnutá Story. Doplněno místní vysvětlení nepodporovaného Story dotazu bez síťového ACK nebo změny čtecí logiky. Žádný výsledek OCR se z lokálního testu neodvozuje.

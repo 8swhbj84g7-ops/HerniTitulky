@@ -25,7 +25,7 @@ nepovažujeme za dostupnou jen na základě existence metody.
 
 - `app/`: průhledné HTML/CSS/JS UI, životní cyklus, heartbeat a doba zobrazení.
 - `service/`: Node.js služba používající systémový `webos-service`, UDP a parser.
-- `test.cjs`, `test-udp.cjs`, `test-input.cjs`, `test-receiver.cjs`: regrese UI/protokolu, UDP, přepínání HDMI a shoda vykreslení.
+- `test.cjs`, `test-udp.cjs`, `test-input.cjs`, `test-receiver.cjs`, `test-controls.cjs`: regrese UI/protokolu, UDP, přepínání HDMI a shoda vykreslení.
 - `build.py`: testy, syntaxe, sestavení IPK, kontrola obsahu a distribuční ZIP.
 
 Kompatibilní protokol je v Android `Propojeni.kt`: `PLAYCAPTION_TV` na UDP 41988
@@ -38,7 +38,13 @@ Aktuální rozsah zahrnuje i volby odpovědí, dlouhé texty, modrý/žlutý/zel
 a barvy jmen. [Matice shody s Android přijímačem](SHODA-ANDROID.md) uvádí detaily
 a hranice ověření. Opakované ID neobnovuje dobu zobrazení; kanály titulků a voleb
 mají oddělené čítače. Po 5 s bez přenosu se skryjí texty i rámečky.
-Po zavření posledního odběratele skončí UDP i discovery.
+Po zavření posledního odběratele skončí UDP i discovery. První platná IPv4 adresa
+drží příjem do 5 s bez vlastních dat; jiné zdroje mezitím obsah nepřepisují.
+Ochrana nemění protokol a není autentizací ani identitou procesu.
+
+OK/Zpět nad hrou otevře malé menu; Zpět v něm vrací hru, explicitní Ukončit
+zavře přijímač. Lokální test používá vlastní prvek a nefalšuje přijetí dat.
+Skrytí maskuje prezentaci, ale nepozastavuje Standardní časování.
 
 ## Sestavení
 
@@ -52,9 +58,17 @@ python3 webos/build.py
 Na Windows lze použít `py -3 webos/build.py`. Aplikace nemá přidané npm knihovny;
 CLI 3.2.6 se spouští přes npx pouze pro sestavení. Výstup ve `webos/dist/`:
 
-- `cz.playcaption.overlaytest_0.0.10_all.ipk` pro instalaci do LG;
-- `PlayCaption-LG-0.0.10.zip` pro předání uživatelům: IPK, návod, licence,
+- `cz.playcaption.overlaytest_0.1.0_all.ipk` pro instalaci do LG;
+- `receiver-manifest.json`: schema, platforma, ID, verze, protokoly/schopnosti,
+  skutečná velikost IPK a SHA256; výslovně `story: false`;
+- `PlayCaption-LG-0.1.0.zip` pro předání uživatelům: IPK, návod, licence,
   přesně odpovídající zdroje přijímače a SHA256SUMS.
+
+Build normalizuje časy a UID/GID z CLI archivů; dvě stejná sestavení ve stejném
+prostředí musí mít stejné bajty IPK. ZIP má také pevné časy. Kontrola porovnává
+rozbalený obsah IPK se zdroji. SHA256 neprokazuje důvěryhodnost cizího downloadu;
+pro plánované Android assets ji zajistí distribuovaná Android aplikace. Verze
+přibaleného IPK není důkaz verze nainstalovaného přijímače.
 
 Adresář `dist/` se necommituje. Build nečte žádné místní přihlašovací údaje,
 nepřipojuje se k TV a nic nezveřejňuje. ID zůstává stejné jako u původního testu,
@@ -75,7 +89,7 @@ Key Server. Z rootu projektu pokračuj:
 
 ```sh
 ares-novacom --device lg-tv --getkey
-ares-install --device lg-tv webos/dist/cz.playcaption.overlaytest_0.0.10_all.ipk
+ares-install --device lg-tv webos/dist/cz.playcaption.overlaytest_0.1.0_all.ipk
 ```
 
 Volitelné spuštění z počítače otevře stejný výběr HDMI jako spuštění z TV:
@@ -134,3 +148,5 @@ Reference: [LG JS služby](https://webostv.developer.lge.com/develop/guides/js-s
 [spouštění aplikací](https://webostv.developer.lge.com/develop/references/application-manager),
 [CLI](https://webostv.developer.lge.com/develop/tools/cli-dev-guide),
 [Developer Mode](https://webostv.developer.lge.com/develop/getting-started/developer-mode-app).
+
+Plán P0–P4 a hranice větví: [TV-PLATFORMS-PLAN.md](../docs/TV-PLATFORMS-PLAN.md).

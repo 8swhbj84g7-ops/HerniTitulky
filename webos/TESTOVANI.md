@@ -54,6 +54,55 @@ může tato LG větev sloučit.
 - Mobilní instalace přes komunitního správce zůstává ručně neotestovaná; vlastní
   Android instalátor je pouze návrh. Další fyzické LG modely nejsou ověřené.
 
+## Kandidát P0 0.1.0
+
+15. 11. 2026, samostatná `feature/lg-webos-receiver`, bez Android/native změn:
+
+- Původní 4 sady a nová `test-controls.cjs` prošly. Menu test pokrývá OK/šipky/
+  Zpět, lokální test bez falešného připojení, oddělený příjem dat a titulku,
+  skrytí bez oživení prošlého textu, chyby, HDMI, ukončení a nový start.
+- Test služby pokrývá živého/odmítnutého/dalšího odesílatele a hranici 5 s.
+  Nepodporované Story/účtové pakety neobsadí příjem, nevrací podporu a nebrání
+  následnému standardnímu PCT1. Nový handshake se nepřidává.
+- Build 0.1.0 má vlastní manifest ID/verze/schopností/velikosti/SHA256. Story je
+  výslovně `false`; bundlovaný manifest nepředstírá verzi skutečně instalované TV.
+- CLI metadata časů a místních UID/GID v IPK jsou normalizovaná. Dvě sestavení
+  stejného zdroje vytvořila bitově totožný IPK; obsah se také porovnává se zdroji.
+- Normalizovaný IPK se nainstaloval i znovu aktualizoval na C5 bez odinstalace.
+  SHA256 všech 12 souborů na TV odpovídal finálním zdrojům.
+- Skutečný lokální test na C5 nenastavil falešný síťový stav. Menu četlo verzi
+  z místního appinfo, přepnutí HDMI obnovilo překryv. Skrytí/obnovení fungovalo.
+- Dva reálné zdroje: UDP z Macu a z připojeného Androidu. Živý Mac nepustil druhý
+  zdroj; po jeho výpadku Android převzal příjem; Mac se vrátil až po uvolnění
+  Androidu. Není to autentizace ani rozlišení dvou procesů na jedné IP.
+- Uživatel potvrdil fyzické OK → menu, šipky/OK → lokální test, Zpět → menu → hra.
+  Následně potvrdil ukončení přes Ukončit PlayCaption. Přerušený první monitorovací
+  běh byl ručním ukončením, nikoliv důkazem automatického pádu.
+
+Kontrolovaný běh po opětovném spuštění: 0/30/60/90/120/150/180 s, překryv zůstal
+aktivní bez hlášení odmítnutého keepalive.
+
+Přejímka původního Android APK 0.20 (versionCode 31): uživatel neviděl překlad.
+Na LG bylo během 6 s zachyceno 6 platných paketů titulku a 6 paketů voleb, všechny
+s prázdným textem; maskování bylo vypnuté a blokace dalšího zdroje nebyla hlášená.
+To potvrzuje přenos těchto starých formátů, nikoliv správnost OCR/překladu původního
+APK. Uživatel následně potvrdil, že existující PlayCaption Test ve Standardním
+režimu titulky zobrazuje; předchozí neúspěšný pokus v Test APK byl v režimu Story.
+Android Test obsahuje samostatné opravy OCR/textu a ty se do LG větve nepřenášejí.
+
+Tato záměna odhalila chybějící vysvětlení nepodporovaného režimu. Přijímač nyní
+při platném Story dotazu lokálně upozorní na přepnutí do Standardního režimu;
+nevrací žádné ready/ACK a nepřebírá zdroj. Rámečky ani keepalive hlášku neschovají;
+podporovaný PCT1 ji zruší. Cizí dotaz nesmí přerušit živého vlastníka.
+Na C5 byl z Androidu odeslán kontrolovaný PCQ1: hláška se skutečně zobrazila
+a následný heartbeat běžícího Standardního režimu ji odstranil. SHA256 všech
+12 instalovaných souborů po této úpravě opět odpovídal místním zdrojům.
+
+Několikahodinové hraní, uspání/probuzení a změna DHCP adresy skutečné TV nebyly
+v této etapě provedeny. Změna adresy/broadcastu a identity je pokrytá simulacemi;
+nezaměňovat ji za zásah do domácí sítě. Samsung ani Android instalátor se netestují.
+Vydání na GitHubu a merge do master nejsou automatickou součástí sestavení.
+
 ## Automatické kontroly
 
 ```sh
@@ -61,6 +110,7 @@ node webos/test.cjs
 node webos/test-udp.cjs
 node webos/test-input.cjs
 node webos/test-receiver.cjs
+node webos/test-controls.cjs
 python3 webos/build.py
 git diff --check
 ```
