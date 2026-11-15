@@ -28,12 +28,11 @@ class TvVyber(
                             televize.platforma = TvPlatforma.values()[n]
                             dialog.dismiss()
                             platformaZmenena()
-                            vyberTelevizi()
+                            if (televize.platforma == TvPlatforma.WEBOS) lgPruvodce() else vyberTelevizi()
                         }.show()
                     1 -> vyberTelevizi()
-                    2 -> android.app.AlertDialog.Builder(activity).setTitle(platformaText(televize.platforma))
+                    2 -> if (televize.platforma == TvPlatforma.WEBOS) lgPruvodce() else android.app.AlertDialog.Builder(activity).setTitle(platformaText(televize.platforma))
                         .setMessage(t(when (televize.platforma) {
-                            TvPlatforma.WEBOS -> "tvNavodLg"
                             TvPlatforma.ANDROID_TV -> "tvNavodAndroid"
                             else -> "tvNavodNeznamy"
                         }) + "\n\n" + t("tvVerzeNeznama"))
@@ -42,6 +41,8 @@ class TvVyber(
                 }
             }.show()
     }
+
+    private fun lgPruvodce() = LgPruvodce(activity) { vyberTelevizi() }.ukaz()
 
     /** Najít televize s PlayCaption v síti a vybrat, kam posílat titulky. */
     private fun vyberTelevizi() {

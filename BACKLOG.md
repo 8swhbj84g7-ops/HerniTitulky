@@ -92,3 +92,23 @@ Karta výstupu byla po opravě výšky/odsazení vizuálně zkontrolovaná na ta
 rozlišuje vybranou TV od aktivního odesílání. Nepředstírá potvrzení příjmu UDP.
 Původní Android TV hardware dosud touto etapou nepřetestován.
 Vlastní LG instalátor a přibalený IPK zůstávají navazující etapou.
+
+## PC-005 – Průvodce přípravou LG
+
+Implementováno: pět kroků v Android aplikaci, odkazy na oficiální LG Developer,
+veřejná vydání a komunitní instalační správce. Přístup přes zvolenou platformu
+LG nebo nabídku Jak připojit televizi. Návrat k rozpracovanému kroku, přeskočení
+přípravy u již nainstalovaného přijímače a skutečné vyhledání na konci.
+Průvodce neukládá hesla, neprodlužuje Developer Mode a nepovažuje proklikání
+instrukcí za dokončenou instalaci či spojení. Vlastní instalátor IPK navazuje.
+
+Kontroly: čtyři testy navigace průvodce a šest dosavadních testů profilů/přenosu;
+`bash gradlew :app:testDebugUnitTest :app:assembleDebug`. Postup LG ověřen podle
+oficiální dokumentace Developer Mode 15. 11. 2026. Ruční přejímka první instalace
+novým uživatelem a mobilní externí správce zůstávají otevřené.
+
+Přejímka na Redmi Pad Pro (test03): automatizované UI prošlo všech pět obrazovek,
+systémové Zpět, zavření/obnovení uloženého kroku, přeskočení přípravy, návrat
+z externího odkazu a navazující discovery se skutečným seznamem LG přijímačů.
+Screenshot posledního kroku potvrdil viditelnost celého textu i navigace.
+Tento test nemění Developer Mode na TV a nenahrazuje první instalaci na čisté LG.

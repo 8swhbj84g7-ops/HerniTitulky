@@ -191,3 +191,9 @@ LG webOS** a potom **Vybrat / změnit televizi**. U staršího přijímače potv
 Dvě LG mohou mít vlastní nastavení polohy a oblastí. Vypnutá televize v seznamu
 uložených profilů neslouží k připojení přes starou IP; spusť ji a hledej znovu.
 Verze přijímače může být zatím neověřená. Tato nabídka sama IPK neinstaluje.
+
+V Android aplikaci s průvodcem otevři **Výstup titulků → Změnit → Jak připojit
+televizi** při zvolené platformě LG webOS. Příprava sítě, účet LG, Developer Mode,
+ruční instalace i první spuštění jsou rozdělené do pěti kroků. **PlayCaption LG
+už mám** přeskočí přípravu k vyhledání přijímače. Návod si pamatuje rozpracovaný
+krok; jeho dokončení samo neprokazuje instalaci ani příjem titulků.
