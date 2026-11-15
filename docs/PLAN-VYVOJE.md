@@ -67,18 +67,21 @@ Stavy: čeká / probíhá / dokončeno / blokováno. Dokončení úkolu není d�
 - **Problém/části:** čtecí fronta není síťová fronta překladače; LG zná skutečné stránky. Android/LG prezentace, `Propojeni`, `PlatnostPrekladu`.
 - **Závislosti:** P0-01/02, **ne dokončení P1/P3/P4**. **Řešení:** připravit `feature/story-mode` z P0 základu bez upstreamu; před integrací doplnit LG větev bez duplicit. Prověřit jednu čtecí frontu v Androidu a dokončení aktuálního cue přijímačem podle P0 návrhu.
 - **Testy/hotovo:** explicitní vlastník fronty, virtuální vstupy/výstupy, vyřešená vazba na poslední stránku a minimální kompatibilní přenos. **Riziko:** dvě nezávislé fronty nebo odhad času podle celého textu mohou znovu ztrácet stránky. V P0 pouze návrh; žádný nový protokol zatím není hotový.
+- **Postup:** větev `feature/story-mode` aktivní. Jádro má jediného vlastníka a přijímá připravené české stránky; skutečné LG zalomení/potvrzení a přenos zbývají. Viz [kontrakt fronty](PRIBEHOVY-REZIM.md).
 
-### P2-02 · Identita repliky a její revize — čeká
+### P2-02 · Identita repliky a její revize — probíhá
 
 - **Problém/části:** globální token zahazuje platné A po příchodu B. `StabilitaTextu`, `RemotePlayService`, deterministické testy.
 - **Závislosti:** P2-01. **Řešení:** rozlišit relaci/pořadí repliky/revizi; existující událost nové repliky či `oprava` využít, ne znovu přepisovat OCR. Zachovat jméno a barvu mluvčího.
 - **Testy/hotovo:** pozdní platné A zachované, stará revize A odmítnutá, opakované čtení neduplikuje, nová podobná replika se neztratí; Standardní regrese zůstávají. **Riziko:** identita OCR bloku není identita cue; pokročilý odhad hypotéz patří do P3.
+- **Postup:** token relace/pořadí/revize a ochrana rozečteného obsahu hotové v `CteciFronta`; simulace ověřují starý callback i dvě samostatná „Ano.“. Převod skutečných OCR událostí a barev jmen na tento kontrakt zatím nenapojený.
 
-### P2-03 · Čtecí politika s virtuálním časem — čeká
+### P2-03 · Čtecí politika s virtuálním časem — probíhá
 
 - **Problém/části:** nové výsledky nesmí přerušit čtení A. Malá samostatně testovatelná politika + skutečný zobrazovací callsite.
 - **Závislosti:** kontrakt P2-01/02; správné simulované překlady stačí. **Řešení:** pořadí A/B/C nezávislé na dokončení překladu; čas české stránky `max(1,8 s, Unicode code points / 14)`, poslední stránku dočíst, první volnou ukázat ihned.
 - **Testy/hotovo:** krátký/jednoslovný/dlouhý/vícestránkový text, emoji/diakritika, rychlé A/B/C, pauza vyprázdní frontu, přesné časy a počet zobrazení. **Riziko:** definovat bounded paměť a viditelné přetížení, bez tichého zahazování a preventivního agresivního backlog managementu.
+- **Postup:** samostatné jádro, virtuální čas, dočtení poslední stránky, pauza se zbývajícím časem a explicitní kapacitní limity implementované; 33 nových testů a 44 původních JVM testů prošlo, APK se sestavila. Zbývá skutečný zobrazovací callsite (P2-05), takže celý úkol/MVP ještě není dokončený.
 
 ### P2-04 · Napojení překladače bez ztráty pořadí — čeká
 

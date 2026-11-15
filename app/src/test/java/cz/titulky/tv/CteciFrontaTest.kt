@@ -1,0 +1,442 @@
+package cz.titulky.tv
+
+import org.junit.Assert.*
+import org.junit.Test
+
+/** Hotové české dialogy a virtuální čas; žádné čekání, Android, síť ani konzole. */
+class CteciFrontaTest {
+    private class Simulace(val fronta: CteciFronta = CteciFronta()) {
+        val zmeny = mutableListOf<Pair<Long, CteciFronta.Stranka?>>()
+        private var viditelna: CteciFronta.Stranka? = null
+
+        fun v(cas: Long): CteciFronta.Stranka? = fronta.zobraz(cas).also {
+            if (it != viditelna) { zmeny += cas to it; viditelna = it }
+        }
+
+        fun nova(text: String, cas: Long = 0): CteciFronta.Token = fronta.zarad(cas)!!.also {
+            assertEquals(CteciFronta.Prijeti.PRIJATO, fronta.priprav(it, listOf(text)))
+        }
+    }
+
+    @Test fun jednoslovnaReplikaZacneIhnedAMaMinimalniCas() {
+        val s = Simulace()
+        val token = s.nova("Ano.", 500)
+        val prvni = s.v(500)!!
+        assertEquals(token, prvni.token)
+        assertEquals(500L, prvni.odMs)
+        assertEquals(2300L, prvni.doMs)
+        assertEquals(prvni, s.v(2299))
+        assertNull(s.v(2300))
+        assertEquals(1, s.fronta.dokoncenych)
+        assertEquals(0, s.fronta.pocet)
+    }
+
+    @Test fun dlouhaCeskaVetaDostaneCelyVypoctenyCasBezStropu() {
+        val s = Simulace()
+        val text = "Trevor: Musíme se vrátit k domu, protože tam na nás pořád čekají ostatní. ".repeat(12).trim()
+        s.nova(text)
+        val p = s.v(0)!!
+        val doba = (text.codePointCount(0, text.length) * 1000L + 13) / 14
+        assertTrue(doba > 15_000)
+        assertEquals(doba, p.doMs)
+        assertEquals(text, s.v(doba - 1)!!.text)
+        assertNull(s.v(doba))
+    }
+
+    @Test fun unicodeEmojiSeNepocitaJakoDvaZnakyARychlostSeZaokrouhliNahoru() {
+        val s = Simulace()
+        s.nova("😀".repeat(29))
+        assertEquals(2072L, s.v(0)!!.doMs)
+        assertNotNull(s.v(2071))
+        assertNull(s.v(2072))
+    }
+
+    @Test fun slozenaCeskaDiakritikaMaStejnouCteciDobuJakoNfc() {
+        val s = Simulace()
+        val text = "c\u030c".repeat(28)
+        s.nova(text)
+        val p = s.v(0)!!
+        assertEquals(text, p.text)
+        assertEquals(2000L, p.doMs)
+    }
+
+    @Test fun triRychleReplikySeZobraziJednouVPoradiADoctouVPauze() {
+        val s = Simulace()
+        val a = s.nova("Trevor: Ahoj.")
+        assertEquals(a, s.v(0)!!.token)
+        val b = s.nova("Michael: Pojď.", 100)
+        val c = s.nova("Franklin: Jdu.", 200)
+        assertEquals(a, s.v(200)!!.token)
+        assertEquals(a, s.v(1799)!!.token)
+        assertEquals(b, s.v(1800)!!.token)
+        assertEquals(c, s.v(3600)!!.token)
+        assertNull(s.v(5400))
+        assertEquals(listOf(a, b, c), s.zmeny.mapNotNull { it.second?.token })
+        assertEquals(listOf(0L, 1800L, 3600L, 5400L), s.zmeny.map { it.first })
+        assertEquals(listOf(0L, 1700L, 3400L), s.zmeny.mapNotNull { it.second }.map { it.odMs - it.puvodniCasMs })
+        assertEquals(3, s.fronta.dokoncenych)
+        assertEquals(0, s.fronta.pocet)
+    }
+
+    @Test fun prekladyDokonceneObraceneNepredbehnouPuvodniRepliku() {
+        val s = Simulace()
+        val a = s.fronta.zarad(0)!!
+        val b = s.fronta.zarad(100)!!
+        val c = s.fronta.zarad(200)!!
+        s.fronta.priprav(c, listOf("Franklin: Jdu."))
+        s.fronta.priprav(b, listOf("Michael: Pojď."))
+        assertNull(s.v(500))
+        s.fronta.priprav(a, listOf("Trevor: Ahoj."))
+        assertEquals(a, s.v(5000)!!.token)
+        assertEquals(b, s.v(6800)!!.token)
+        assertEquals(c, s.v(8600)!!.token)
+        assertNull(s.v(10400))
+        assertEquals(3, s.fronta.dokoncenych)
+    }
+
+    @Test fun opravenaCekajiciRevizeZachovaPoradiAStaryVysledekNeprijme() {
+        val s = Simulace()
+        val a = s.nova("Počkej.")
+        s.v(0)
+        val b = s.fronta.zarad(100)!!
+        s.fronta.priprav(b, listOf("Chybné čtení."))
+        val c = s.nova("Jdeme.", 200)
+        val oprava = s.fronta.oprav(b)!!
+        assertEquals(b.poradi, oprava.poradi)
+        assertTrue(oprava.revize > b.revize)
+        assertEquals(CteciFronta.Prijeti.NEPLATNY_TOKEN, s.fronta.priprav(b, listOf("Pozdní stará revize.")))
+        assertFalse(s.fronta.chyba(b))
+        assertEquals(a, s.v(1799)!!.token)
+        assertNull(s.v(1800))
+        s.fronta.priprav(oprava, listOf("Správné čtení."))
+        assertEquals(oprava, s.v(2000)!!.token)
+        assertEquals(c, s.v(3800)!!.token)
+        assertNull(s.v(5600))
+        assertFalse(s.zmeny.any { it.second?.text == "Chybné čtení." })
+    }
+
+    @Test fun opakovaneVysledkyHeartbeatNerestartujiCteniAniNevytvoriDalsiPolozku() {
+        val s = Simulace()
+        val token = s.nova("Počkej.")
+        val p = s.v(0)
+        for (cas in listOf(100L, 500L, 1000L, 1799L)) {
+            assertEquals(CteciFronta.Prijeti.OPAKOVANI, s.fronta.priprav(token, listOf("Počkej.")))
+            assertEquals(p, s.v(cas))
+            assertEquals(1, s.fronta.pocet)
+        }
+        assertNull(s.v(1800))
+        assertEquals(CteciFronta.Prijeti.NEPLATNY_TOKEN, s.fronta.priprav(token, listOf("Počkej.")))
+        assertNull(s.v(3000))
+        assertEquals(2, s.zmeny.size)
+        assertEquals(1, s.fronta.dokoncenych)
+    }
+
+    @Test fun dveSamostatneStejneVetyJsouDveRepliky() {
+        val s = Simulace()
+        val a = s.nova("Ano.")
+        val b = s.nova("Ano.", 100)
+        assertNotEquals(a, b)
+        assertEquals(a, s.v(0)!!.token)
+        assertEquals(b, s.v(1800)!!.token)
+        assertNull(s.v(3600))
+        assertEquals(2, s.fronta.dokoncenych)
+    }
+
+    @Test fun rozectenaReplikaSeUzNemeniAniPriPozdniOprave() {
+        val s = Simulace()
+        val token = s.nova("Trevor: Počkej.")
+        val p = s.v(0)
+        assertNull(s.fronta.oprav(token))
+        assertEquals(CteciFronta.Prijeti.UZ_PRIPRAVENO, s.fronta.priprav(token, listOf("Jiný překlad.")))
+        assertFalse(s.fronta.chyba(token))
+        assertEquals(p, s.v(1799))
+        assertNull(s.v(1800))
+    }
+
+    @Test fun vsechnyStrankyVcetnePosledniDostanouCelyCasPredDalsiReplikou() {
+        val s = Simulace()
+        val a = s.fronta.zarad(0)!!
+        val stranky = listOf("Trevor: První stránka.", "Druhá stránka.", "Konec.")
+        s.fronta.priprav(a, stranky)
+        val b = s.nova("Michael: Ano.", 50)
+        assertEquals(stranky[0], s.v(0)!!.text)
+        assertEquals(stranky[1], s.v(1800)!!.text)
+        assertEquals(stranky[2], s.v(3600)!!.text)
+        assertEquals(a, s.v(5399)!!.token)
+        assertEquals(b, s.v(5400)!!.token)
+        assertNull(s.v(7200))
+        assertEquals(stranky, s.zmeny.mapNotNull { it.second }.filter { it.token == a }.map { it.text })
+        assertEquals(listOf(0, 1, 2), s.zmeny.mapNotNull { it.second }.filter { it.token == a }.map { it.index })
+        assertEquals(2, s.fronta.dokoncenych)
+    }
+
+    @Test fun kazdaStrankaSeCasujeZeSveCestinySamostatne() {
+        val s = Simulace()
+        val a = s.fronta.zarad(0)!!
+        s.fronta.priprav(a, listOf("č".repeat(140), "Ano."))
+        assertEquals(10000L, s.v(0)!!.doMs)
+        assertEquals(11800L, s.v(10000)!!.doMs)
+        assertNotNull(s.v(11799))
+        assertNull(s.v(11800))
+    }
+
+    @Test fun pozdniTickNesmiPreskocitDosudNezobrazeneStranky() {
+        val s = Simulace()
+        val a = s.fronta.zarad(0)!!
+        s.fronta.priprav(a, listOf("První.", "Druhá.", "Třetí."))
+        assertEquals(0, s.v(0)!!.index)
+        val druha = s.v(100_000)!!
+        assertEquals(1, druha.index)
+        assertEquals(101800L, druha.doMs)
+        assertEquals(1, s.v(101799)!!.index)
+        assertEquals(2, s.v(101800)!!.index)
+        assertNull(s.v(103600))
+    }
+
+    @Test fun interaktivniVolbaPozastaviCteniANovePrekladyMezitimDalePrichazeji() {
+        val s = Simulace()
+        val a = s.nova("Počkej.")
+        s.v(0)
+        s.fronta.pozastav(true, 500)
+        assertNull(s.v(500))
+        val b = s.nova("Jdeme.", 600)
+        assertNull(s.v(50_000))
+        s.fronta.pozastav(false, 50_000)
+        val obnovena = s.v(50_000)!!
+        assertEquals(a, obnovena.token)
+        assertEquals(51300L, obnovena.doMs)
+        assertEquals(a, s.v(51299)!!.token)
+        assertEquals(b, s.v(51300)!!.token)
+        assertNull(s.v(53100))
+        assertEquals(2, s.fronta.dokoncenych)
+    }
+
+    @Test fun opakovanePozastaveniNezkratiZbyvajiciCas() {
+        val s = Simulace()
+        s.nova("Ano.")
+        s.v(0)
+        s.fronta.pozastav(true, 500)
+        s.fronta.pozastav(true, 3000)
+        s.fronta.pozastav(false, 5000)
+        s.fronta.pozastav(false, 5100)
+        assertEquals(6300L, s.v(5100)!!.doMs)
+        assertNull(s.v(6300))
+    }
+
+    @Test fun pozastaveniPredPrvniStrankouNespotrebujeJejiCas() {
+        val s = Simulace()
+        val a = s.nova("Ano.")
+        s.fronta.pozastav(true, 0)
+        assertNull(s.v(20_000))
+        s.fronta.pozastav(false, 20_000)
+        assertEquals(a, s.v(20_000)!!.token)
+        assertEquals(21800L, s.v(20_000)!!.doMs)
+    }
+
+    @Test fun odpojeniAObnovaNaPosledniStranceNeztratiZbytekCteni() {
+        val s = Simulace()
+        val a = s.fronta.zarad(0)!!
+        val stranky = listOf("První.", "Poslední.")
+        s.fronta.priprav(a, stranky)
+        s.v(0)
+        s.v(1800)
+        s.fronta.pozastav(true, 2000)
+        assertNull(s.v(20_000))
+        assertEquals(CteciFronta.Prijeti.OPAKOVANI, s.fronta.priprav(a, stranky))
+        s.fronta.pozastav(false, 20_000)
+        assertEquals(1, s.v(20_000)!!.index)
+        assertNotNull(s.v(21599))
+        assertNull(s.v(21600))
+        assertEquals(1, s.fronta.dokoncenych)
+    }
+
+    @Test fun zmenaRelaceZrusiStareTokenyFrontuIPozastaveni() {
+        val s = Simulace()
+        val a = s.nova("Stará replika.")
+        val b = s.fronta.zarad(100)!!
+        s.v(0)
+        s.fronta.pozastav(true, 500)
+        s.fronta.reset()
+        assertEquals(0, s.fronta.pocet)
+        assertNull(s.fronta.oprav(a))
+        assertFalse(s.fronta.chyba(b))
+        assertEquals(CteciFronta.Prijeti.NEPLATNY_TOKEN, s.fronta.priprav(b, listOf("Pozdní výsledek.")))
+        val c = s.nova("Nová replika.", 500)
+        assertNotEquals(a.relace, c.relace)
+        assertEquals(c, s.v(500)!!.token)
+        assertNull(s.v(2300))
+    }
+
+    @Test fun explicitniChybaPrekladuUvolniNasledujiciReplikuAleNezahodiPripravenyText() {
+        val s = Simulace()
+        val a = s.fronta.zarad(0)!!
+        val b = s.nova("Jdeme.", 100)
+        assertNull(s.v(100))
+        assertTrue(s.fronta.chyba(a))
+        assertFalse(s.fronta.chyba(a))
+        assertFalse(s.fronta.chyba(b))
+        assertEquals(b, s.v(100)!!.token)
+        assertEquals(1, s.fronta.selhanych)
+        assertEquals(CteciFronta.Prijeti.NEPLATNY_TOKEN, s.fronta.priprav(a, listOf("Pozdní výsledek.")))
+        assertNull(s.v(1900))
+        assertEquals(1, s.fronta.dokoncenych)
+    }
+
+    @Test fun plnaFrontaOdmitneNovouReplikuVyslovneAPoDocteniUvolniMisto() {
+        val s = Simulace(CteciFronta(maxReplik = 2))
+        val a = s.nova("První.")
+        val b = s.nova("Druhá.")
+        assertNull(s.fronta.zarad(100))
+        assertEquals(2, s.fronta.pocet)
+        assertEquals(a, s.v(0)!!.token)
+        assertEquals(b, s.v(1800)!!.token)
+        val c = s.nova("Třetí.", 1800)
+        assertEquals(c, s.v(3600)!!.token)
+        assertNull(s.v(5400))
+        assertEquals(3, s.fronta.dokoncenych)
+    }
+
+    @Test fun limitPametiNicNeorezeANezahodiDrivePrijatouRepliku() {
+        val s = Simulace(CteciFronta(maxZnakuRepliky = 8))
+        val a = s.nova("Ano.")
+        val b = s.fronta.zarad(100)!!
+        assertEquals(CteciFronta.Prijeti.LIMIT_TEXTU, s.fronta.priprav(b, listOf("Dlouhý text.")))
+        assertEquals(a, s.v(0)!!.token)
+        assertNull(s.v(1800))
+        assertEquals(1, s.fronta.pocet)
+        assertEquals(1, s.fronta.dokoncenych)
+        assertEquals(0, s.fronta.selhanych)
+    }
+
+    @Test fun opravaCekajicihoTextuUvolniJehoPamet() {
+        val f = CteciFronta(maxZnakuRepliky = 6)
+        val a = f.zarad(0)!!
+        f.priprav(a, listOf("Jdeme."))
+        val nova = f.oprav(a)!!
+        assertEquals(CteciFronta.Prijeti.PRIJATO, f.priprav(nova, listOf("Jdeme.")))
+    }
+
+    @Test fun hotovyPozdejsiPrekladNesmiBlokovatPrijetiPrvnihoKvuliPameti() {
+        val s = Simulace(CteciFronta(maxReplik = 2, maxZnakuRepliky = 4))
+        val a = s.fronta.zarad(0)!!
+        val b = s.fronta.zarad(100)!!
+        assertEquals(CteciFronta.Prijeti.PRIJATO, s.fronta.priprav(b, listOf("Ano.")))
+        assertNull(s.v(1000))
+        assertEquals(CteciFronta.Prijeti.PRIJATO, s.fronta.priprav(a, listOf("Jdu.")))
+        assertEquals(a, s.v(1000)!!.token)
+        assertEquals(b, s.v(2800)!!.token)
+        assertNull(s.v(4600))
+        assertEquals(2, s.fronta.dokoncenych)
+    }
+
+    @Test fun textovyLimitPlatiProSoucetVsechStranekRepliky() {
+        val f = CteciFronta(maxZnakuRepliky = 8)
+        val a = f.zarad(0)!!
+        val b = f.zarad(100)!!
+        assertEquals(CteciFronta.Prijeti.PRIJATO, f.priprav(a, listOf("Ano.", "Ano.")))
+        assertEquals(CteciFronta.Prijeti.LIMIT_TEXTU, f.priprav(b, listOf("Jdeme.", "Ano.")))
+        assertEquals("Ano.", f.zobraz(0)!!.text)
+        assertEquals(1, f.zobraz(1800)!!.index)
+        assertNull(f.zobraz(3600))
+        assertEquals(1, f.dokoncenych)
+        assertEquals(1, f.pocet)
+    }
+
+    @Test fun resetUvolniKapacituTextuIReplik() {
+        val f = CteciFronta(maxReplik = 1, maxZnakuRepliky = 4)
+        val a = f.zarad(0)!!
+        f.priprav(a, listOf("Ano."))
+        f.zobraz(0)
+        f.reset()
+        val b = f.zarad(500)!!
+        assertEquals(CteciFronta.Prijeti.PRIJATO, f.priprav(b, listOf("Ano.")))
+        assertEquals(b, f.zobraz(500)!!.token)
+        assertEquals(0, f.dokoncenych)
+        assertEquals(0, f.selhanych)
+    }
+
+    @Test fun prekladPrvniReplikyLzeZrevidovatJestePredZobrazenim() {
+        val f = CteciFronta()
+        val stara = f.zarad(0)!!
+        val nova = f.oprav(stara)!!
+        assertEquals(CteciFronta.Prijeti.NEPLATNY_TOKEN, f.priprav(stara, listOf("Stará hypotéza.")))
+        assertEquals(CteciFronta.Prijeti.PRIJATO, f.priprav(nova, listOf("Správná replika.")))
+        assertEquals(nova, f.zobraz(500)!!.token)
+    }
+
+    @Test fun pozastaveniNaKonciStrankyNezkratiNasledujiciStranku() {
+        val f = CteciFronta()
+        val a = f.zarad(0)!!
+        f.priprav(a, listOf("První.", "Druhá."))
+        f.zobraz(0)
+        f.pozastav(true, 1800)
+        assertNull(f.zobraz(5000))
+        f.pozastav(false, 5000)
+        val p = f.zobraz(5000)!!
+        assertEquals(1, p.index)
+        assertEquals(6800L, p.doMs)
+        assertNull(f.zobraz(6800))
+    }
+
+    @Test fun viceRychlychReplikMuzeCekatZaDelsiStrankouBezPreruseni() {
+        val s = Simulace()
+        val a = s.nova("č".repeat(140))
+        s.v(0)
+        val b = s.nova("Ano.", 100)
+        val c = s.nova("Jdu.", 200)
+        assertEquals(a, s.v(9999)!!.token)
+        assertEquals(b, s.v(10000)!!.token)
+        assertEquals(c, s.v(11800)!!.token)
+        assertNull(s.v(13600))
+        assertEquals(listOf(a, b, c), s.zmeny.mapNotNull { it.second?.token })
+        assertEquals(3, s.fronta.dokoncenych)
+    }
+
+    @Test fun prijateStrankyNejdeZvenkuZmenitMutaciPuvodnihoSeznamu() {
+        val f = CteciFronta()
+        val token = f.zarad(0)!!
+        val stranky = mutableListOf("První.", "Druhá.")
+        f.priprav(token, stranky)
+        stranky[0] = "Jiný text."
+        stranky.clear()
+        assertEquals("První.", f.zobraz(0)!!.text)
+        assertEquals("Druhá.", f.zobraz(1800)!!.text)
+        assertNull(f.zobraz(3600))
+    }
+
+    @Test fun cekajiciFinalniTextSeNemeniBezNoveRevize() {
+        val f = CteciFronta()
+        val token = f.zarad(0)!!
+        f.priprav(token, listOf("Správně."))
+        assertEquals(CteciFronta.Prijeti.UZ_PRIPRAVENO, f.priprav(token, listOf("Něco jiného.")))
+        assertEquals("Správně.", f.zobraz(0)!!.text)
+    }
+
+    @Test fun dlouhyProudPostupneUvolnujeDokoncenePolozkyAVylucujeJejichPozdniDuplikaty() {
+        val f = CteciFronta(maxReplik = 1, maxZnakuRepliky = 4)
+        repeat(1000) { i ->
+            val ted = i * 1800L
+            val token = f.zarad(ted)!!
+            assertEquals(CteciFronta.Prijeti.PRIJATO, f.priprav(token, listOf("Ano.")))
+            assertEquals(token, f.zobraz(ted)!!.token)
+            assertNull(f.zobraz(ted + 1800))
+            assertEquals(CteciFronta.Prijeti.NEPLATNY_TOKEN, f.priprav(token, listOf("Ano.")))
+            assertEquals(0, f.pocet)
+        }
+        assertEquals(1000, f.dokoncenych)
+        assertEquals(0, f.selhanych)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun zpetnyCasJeChybaVolajiciho() {
+        val f = CteciFronta()
+        f.zobraz(100)
+        f.zobraz(99)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun prazdnaStrankaNeniPlatnyPreklad() {
+        val f = CteciFronta()
+        f.priprav(f.zarad(0)!!, listOf("  "))
+    }
+}

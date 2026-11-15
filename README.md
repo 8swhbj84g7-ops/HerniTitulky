@@ -37,7 +37,7 @@ PlayCaption stojí na práci jiných open-source projektů:
 - [Výchozí audit větví, testů a měření](docs/P0-VYCHOZI-STAV.md)
 - [Reprodukovatelný OCR benchmark](tools/ocr/README.md)
 
-Příběhový režim je plánovaná volitelná funkce P2. Není podmíněný dokončením všech budoucích OCR optimalizací; jeho čtecí politiku nejprve ověříme nad simulovanými českými dialogy.
+Příběhový režim je rozpracovaná volitelná funkce P2. [Samostatná čtecí fronta](docs/PRIBEHOVY-REZIM.md) je testovaná na simulovaných českých dialozích; na běžící aplikaci zatím není napojená. Vývoj nečeká na dokončení všech budoucích OCR optimalizací.
 
 ## Licence
 
