@@ -1,10 +1,10 @@
 # Shoda funkcí televizního přijímače
 
-LG 0.0.7 porovnáváme s Android režimem **titulky z telefonu/tabletu** a protokolem
+LG 0.0.10 porovnáváme s Android režimem **titulky z telefonu/tabletu** a protokolem
 v `Propojeni.kt`. Remote Play, OCR, překlad a účet konzole zajišťuje Android.
 Matice odděluje implementované vykreslení od přejímky konkrétní herní scény.
 
-| Funkce Android přijímače | LG 0.0.7 | Ověření |
+| Funkce Android přijímače | LG 0.0.10 | Ověření |
 | --- | --- | --- |
 | `PCT1`: české titulky a více řádků | Ano | Parser/UI, skutečné UDP a dřívější hraní na C5. |
 | Poloha, šířka a velikost podle zelené oblasti | Ano | Automatické testy a dosavadní běh. |
@@ -19,8 +19,11 @@ Matice odděluje implementované vykreslení od přejímky konkrétní herní sc
 | `PCV1`, vybraná `-2`: Text | Celý blok, limit 5 min stejného obsahu | Celý syntetický odstavec na C5 bez oříznutí. |
 | `PCO1`: modrý rámeček | Souřadnice, skrytí, pojistka 8 s | UDP → C5 a potvrzení pohybu z tabletu. |
 | Heartbeat neobnovuje prošlý text | Oddělené čítače titulků a voleb | Test včetně shodných ID obou kanálů. |
-| Výpadek telefonu po 5 s | Skrytí textů i všech rámečků | Test celé UI cesty. |
+| Výpadek odesílajícího zařízení po 5 s | Skrytí textů i všech rámečků | Test celé UI cesty. |
 | Zavření a znovuspuštění | Zpět zavře; spuštění obnoví odběr | TV a regresní testy životního cyklu. |
+
+Příběhový režim se vyvíjí odděleně na `feature/story-mode` a není součástí
+této samostatné LG větve.
 
 ## Význam oblastí
 
@@ -36,7 +39,7 @@ pixelovou kopií Androidu. LG dialogy stránkuje po dvou řádcích s limitem v�
 
 ## Odlišnosti zapojení a platformy
 
-- `PCS1` přenáší přihlášení z Android TV do telefonu. LG údaje konzole neuchovává,
+- Přihlašovací `PCS1` z původního protokolu přenáší přihlášení z Android TV do telefonu. LG údaje konzole neuchovává,
   proto přenos neposkytuje a discovery hlásí nespárovanou konzoli. Účet i párování
   se nastavují na Android zařízení; LG netvrdí, že má údaje, které může předat.
 - Android TV režim „Jen televize“ s vlastním Remote Play a OCR není součástí LG

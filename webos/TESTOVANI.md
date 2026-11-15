@@ -35,6 +35,25 @@
 - Skutečné herní odpovědi a úplnost jejich OCR/překladu zbývají k přejímce;
   syntetické UDP pakety je nenahrazují. Viz `SHODA-ANDROID.md`.
 
+## Samostatná LG větev 0.0.10
+
+`feature/lg-webos-receiver` obsahuje původní LG přijímač, opravy HDMI/voleb/stránek
+a přenesené úpravy vzhledu, discovery a instalace. Neobsahuje Android OCR opravy,
+čtecí frontu ani Story protokol. Ty patří na `feature/story-mode`; později se do ní
+může tato LG větev sloučit.
+
+- Automatické kontroly: 4 LG sady, syntaxe JS, obsah IPK a build distribučních zdrojů.
+- Testy pokrývají ikony 80×80/130×130, obecné hlášení zařízení, více TV/názvů,
+  zachování identity při změně IP, jiné podsítě/masky a HDMI 1/3/4 bez pevného portu.
+- Před oddělením větví byly společné LG úpravy ověřené na C5 v integrovaném buildu
+  z commitu `fbd966e`: discovery odpovídalo názvu na TV, proběhlo přepnutí HDMI,
+  zobrazení titulků/voleb/rámečků, výpadek/obnova a běh přes 150 s.
+- Toto je důkaz integrovaného buildu, nikoliv nové hardwarové přejímky samostatné
+  LG větve. Při opravě větví se instalace v TV/tabletu nemění. Pro vydání této
+  samostatné varianty zopakovat přejímku přímo s jejím IPK.
+- Mobilní instalace přes komunitního správce zůstává ručně neotestovaná; vlastní
+  Android instalátor je pouze návrh. Další fyzické LG modely nejsou ověřené.
+
 ## Automatické kontroly
 
 ```sh

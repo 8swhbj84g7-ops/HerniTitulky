@@ -9,7 +9,8 @@ Pro uživatele je určen [návod bez sestavování kódu](NAVOD-LG.md).
 
 Konzole posílá obraz hry přes HDMI do TV. Původní Android PlayCaption získává další
 kopii přes Remote Play, čte a překládá text. Přijímač na LG pouze zobrazuje výsledek.
-Android kód ani APK se kvůli tomuto přijímači nemění.
+Používá dosavadní Android protokol bez nutnosti změny APK. Tato větev neobsahuje
+Příběhový režim ani změny Android OCR; ty se vyvíjejí na `feature/story-mode`.
 
 Od verze 0.0.5 lze přijímač otevřít z nabídky aplikací na TV a vybrat HDMI přímo
 v PlayCaption. `com.webos.service.eim/getAllInputStatus` poskytne seznam vstupů;
@@ -29,8 +30,9 @@ nepovažujeme za dostupnou jen na základě existence metody.
 
 Kompatibilní protokol je v Android `Propojeni.kt`: `PLAYCAPTION_TV` na UDP 41988
 každé 2 s a příjem `PCT1`, `PCV1` a `PCO1` na UDP 41989. Posíláme příznak nespárované konzole (`0`),
-aby přihlášení zůstávalo na Android zařízení. `PCS1` se ignoruje; žádné tokeny konzole
-se nepředávají. Síťové texty se vykreslují přes `textContent`, nikoli HTML.
+aby přihlášení zůstávalo na Android zařízení. Přihlašovací `PCS1` z původní Android aplikace se ignoruje; žádné tokeny konzole
+se nepředávají. Story `PCQ1`/`PCS1` tato samostatná LG větev nepodporuje.
+Síťové texty se vykreslují přes `textContent`, nikoli HTML.
 
 Aktuální rozsah zahrnuje i volby odpovědí, dlouhé texty, modrý/žlutý/zelený rámeček
 a barvy jmen. [Matice shody s Android přijímačem](SHODA-ANDROID.md) uvádí detaily
@@ -50,8 +52,8 @@ python3 webos/build.py
 Na Windows lze použít `py -3 webos/build.py`. Aplikace nemá přidané npm knihovny;
 CLI 3.2.6 se spouští přes npx pouze pro sestavení. Výstup ve `webos/dist/`:
 
-- `cz.playcaption.overlaytest_0.0.7_all.ipk` pro instalaci do LG;
-- `PlayCaption-LG-0.0.7.zip` pro předání uživatelům: IPK, návod, licence,
+- `cz.playcaption.overlaytest_0.0.10_all.ipk` pro instalaci do LG;
+- `PlayCaption-LG-0.0.10.zip` pro předání uživatelům: IPK, návod, licence,
   přesně odpovídající zdroje přijímače a SHA256SUMS.
 
 Adresář `dist/` se necommituje. Build nečte žádné místní přihlašovací údaje,
@@ -68,21 +70,21 @@ ares-config --profile tv
 ares-setup-device
 ```
 
-Přidej TV jako `c5` s vlastní IP, portem 9922 a uživatelem `prisoner`. Na TV zapni
+Přidej TV jako `lg-tv` s vlastní IP, portem 9922 a uživatelem `prisoner`. Na TV zapni
 Key Server. Z rootu projektu pokračuj:
 
 ```sh
-ares-novacom --device c5 --getkey
-ares-install --device c5 webos/dist/cz.playcaption.overlaytest_0.0.7_all.ipk
+ares-novacom --device lg-tv --getkey
+ares-install --device lg-tv webos/dist/cz.playcaption.overlaytest_0.0.10_all.ipk
 ```
 
 Volitelné spuštění z počítače otevře stejný výběr HDMI jako spuštění z TV:
 
 ```sh
-ares-launch --device c5 cz.playcaption.overlaytest
+ares-launch --device lg-tv cz.playcaption.overlaytest
 ```
 
-Passphrase ani získaný klíč nepatří do projektu. Identifikátor `c5` je pouze příklad.
+Passphrase ani získaný klíč nepatří do projektu. Identifikátor `lg-tv` je pouze příklad.
 
 ## Předání správci projektu
 
@@ -96,6 +98,25 @@ Passphrase ani získaný klíč nepatří do projektu. Identifikátor `c5` je po
 
 Tento postup automaticky nezakládá release, nezvyšuje verzi Android aplikace a
 neprovádí commit/push. Obecná optimalizace OCR a FPS patří do samostatné změny.
+
+## Přenositelnost a vzhled
+
+- Název v launcheru a nabídce vstupů: **PlayCaption LG**. Discovery zachovává
+  **LG PlayCaption · identifikátor TV**. Stejný název je na LG při čekání; více
+  TV lze rozlišit bez změny Android APK. ID zůstává stejné po změně IP.
+- `icon.png` (80×80) a `largeIcon.png` (130×130) jsou zmenšeniny Android launcher
+  ikony `app/src/main/res/drawable-nodpi/gamelingo_ikona.png`; grafika se nemění.
+  Před zmenšením se ořízne nadbytečný černý okraj (středový výřez 256×256
+  z původních 512×512), aby symbol na LG nebyl příliš malý.
+- Runtime nemá IP, SSID, model TV, pevný HDMI port ani osobní klíč. Discovery
+  počítá broadcast z aktuálních IPv4 adres/masek a identitu TV z hostitele/MAC.
+  HDMI seznam i poslední výběr patří konkrétní instalaci TV.
+- `cz.playcaption.overlaytest` je stabilní instalační ID, nikoli vazba na testovací
+  TV. Zůstává kvůli aktualizaci starších instalací bez druhé aplikace.
+- PC není předpokladem samotného protokolu, ale podporovaný odesílač nyní dodává
+  Android. Obecný text „zařízení“ neslibuje hotovou PC aplikaci.
+- [Instalace z Androidu](INSTALACE-Z-ANDROIDU.md): existující správce a návrh
+  samostatného instalátoru přímo v PlayCaption. Nevyžaduje root.
 
 ## Omezení platformy
 

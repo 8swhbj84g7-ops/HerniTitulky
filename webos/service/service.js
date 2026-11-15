@@ -11,6 +11,7 @@ var subscriptions = {};
 var socket = null;
 var announceTimer = null;
 var ready = false;
+var receiverName = "LG PlayCaption";
 
 function notify(payload) {
     Object.keys(subscriptions).forEach(function (key) { subscriptions[key].respond(payload); });
@@ -41,7 +42,8 @@ function start() {
         });
     });
     var id = crypto.createHash("sha256").update(identity).digest("hex").slice(0, 12);
-    var announcement = Buffer.from("PLAYCAPTION_TV\tlg-" + id + "\tLG PlayCaption\t0", "utf8");
+    receiverName = "LG PlayCaption · " + id.toUpperCase();
+    var announcement = Buffer.from("PLAYCAPTION_TV\tlg-" + id + "\t" + receiverName + "\t0", "utf8");
     function announce() {
         addresses.forEach(function (address) {
             receiver.send(announcement, 41988, address, function (error) {
@@ -60,7 +62,7 @@ function start() {
     receiver.bind(41989, "0.0.0.0", function () {
         receiver.setBroadcast(true);
         ready = true;
-        notify({ returnValue: true, ready: true });
+        notify({ returnValue: true, ready: true, name: receiverName });
         announce();
         announceTimer = setInterval(announce, 2000);
     });
@@ -72,7 +74,7 @@ service.register("listen", function (message) {
         return;
     }
     subscriptions[message.uniqueToken] = message;
-    message.respond({ returnValue: true, ready: ready });
+    message.respond({ returnValue: true, ready: ready, name: receiverName });
     start();
 }, function (message) {
     delete subscriptions[message.uniqueToken];

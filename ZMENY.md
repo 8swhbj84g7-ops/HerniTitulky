@@ -6,6 +6,8 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
 
 ## Unreleased
 
+- LG přijímač: jednotný název PlayCaption LG, Android ikona v obou velikostech launcheru a hlášení pro obecné odesílající zařízení. HDMI a discovery ověřené i s jinými vstupy/podsítěmi; aktualizovaný návod včetně možnosti instalace IPK z Android správce bez PC.
+
 - LG přijímač 0.0.7: dialogy se střídají po nejvýše dvou řádcích, dlouhé repliky po stránkách. Nová replika ruší zbytek staré; text má nejvýše 18 % výšky obrazu.
 
 - LG přijímač 0.0.6: dialogové volby a zvýraznění, dlouhé texty, žlutý/modrý rámeček oblasti čtení, zelený náhled polohy a barvy jmen. Matice funkcí rozlišuje shodu TV přijímačů a OCR/párování konzole na tabletu.

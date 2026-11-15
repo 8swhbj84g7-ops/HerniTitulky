@@ -65,3 +65,12 @@ Stav: návrh pro pozdější fázi, ne důvod k přepisu aplikace nyní.
 - U budoucí verze protokolu vyhodnotit session ID a pořadí zpráv, aby se daly
   odlišit opožděné UDP pakety od restartu aplikace na stejném zařízení.
 - Návrhy posoudit až po PC-001; mohou již částečně existovat v Android kódu.
+
+## PC-003 – Instalace LG přijímače přímo z Android PlayCaption
+
+Stav: technicky prověřený návrh, vlastní instalátor zatím neimplementovaný.
+Developer Mode a Key Server uživatel aktivuje na TV; root není potřeba. Existuje
+samostatný mobilní správce s instalací místního IPK. Aktuální uživatelský návod
+obsahuje tuto možnost vedle počítačové instalace. Vlastní průvodce v PlayCaption
+vyžaduje SSH/SFTP, bezpečné párování a skutečné potvrzení dokončení instalace.
+Rozsah a přejímku popisuje [návrh instalátoru](webos/INSTALACE-Z-ANDROIDU.md).

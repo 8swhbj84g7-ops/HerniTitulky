@@ -9,11 +9,11 @@ Je to experimentální podpora, zatím ověřená na LG C5.
 - LG TV s webOS a aplikací **Developer Mode** z obchodu LG Apps.
 - **Android telefon nebo tablet**, na kterém už funguje PlayCaption a překlad hry.
   iPhone neumí spustit Android APK. Telefon/tablet nemusí mířit kamerou na televizi.
-- Počítač s Windows, macOS nebo Linuxem pro instalaci přijímače. Při hraní není potřeba.
+- Pro instalaci buď Android s aplikací webOS Dev Mode Manager, nebo počítač s Windows, macOS či Linuxem. Počítač při hraní není potřeba.
 - Konzoli zapojenou přes HDMI do LG a zařízení ve stejné domácí síti.
-  LG může být připojená kabelem a tablet přes Wi-Fi; nepoužívej oddělenou síť pro hosty.
-- ZIP **PlayCaption-LG-0.0.7.zip** poskytnutý projektem. Rozbal ho v počítači.
-  Uvnitř je instalační soubor `.ipk`, tento návod, licence a zdrojové kódy.
+  LG může být připojená kabelem a odesílající zařízení přes Wi-Fi; nepoužívej oddělenou síť pro hosty.
+- Instalační soubor **cz.playcaption.overlaytest_0.0.10_all.ipk** poskytnutý projektem
+  u změny nebo vydání na GitHubu. Pokud je zabalený v ZIPu, nejprve ho rozbal.
 
 APK patří do Android zařízení, IPK patří do LG. Na LG se nepřihlašuješ k PSN.
 Hra běží přes HDMI; Remote Play dodává kopii obrazu Android zařízení pro čtení titulků.
@@ -26,11 +26,34 @@ Hra běží přes HDMI; Remote Play dodává kopii obrazu Android zařízení pr
 4. Zapni **Dev Mode Status** a potvrď restart TV.
 5. Po restartu znovu otevři Developer Mode a zapni **Key Server**.
 6. Poznamenej si IP adresu TV z nastavení sítě a **Passphrase** z Developer Mode.
-   Passphrase slouží k připojení počítače k TV; neposílej ji do veřejných komentářů.
+   Passphrase slouží ke spárování instalačního zařízení s TV; neposílej ji do veřejných komentářů.
 
 Podrobný postup LG: [Developer Mode](https://webostv.developer.lge.com/develop/getting-started/developer-mode-app).
 
-## 2. Připoj počítač a nainstaluj přijímač
+## 2. Nainstaluj přijímač
+
+Vyber jednu cestu. LG příprava v kroku 1 je nutná pro obě. Obyčejné odeslání souboru přes Bluetooth ani otevření IPK v prohlížeči TV aplikaci nenainstaluje.
+
+### A. Z Android telefonu nebo tabletu, bez počítače
+
+Komunitní [webOS Dev Mode Manager](https://symonxdd.github.io/aphanes/) podporuje
+instalaci místního IPK přímo z Androidu. Jde o samostatnou aplikaci třetí strany,
+nikoliv o funkci, která už je zabudovaná v PlayCaption. Tento postup je podložený
+[dokumentací správce](https://symonxdd.github.io/aphanes/concepts/); na naší sestavě
+zatím není ručně odzkoušený.
+
+1. Stáhni správce z jeho [oficiálních vydání](https://github.com/symonxdd/aphanes/releases).
+2. Stáhni IPK PlayCaption do stejného Android zařízení a případný ZIP rozbal.
+3. Ve správci přidej vlastní LG podle IP adresy z Developer Mode a její Passphrase.
+   Na LG musí být zapnutý Key Server. Použij Developer Mode, ne root připojení.
+4. V části aplikací zvol instalaci z místního souboru a vyber IPK PlayCaption.
+5. Po úspěšné instalaci spusť **PlayCaption LG** ovladačem z domovské nabídky TV.
+
+Názvy tlačítek se mohou lišit podle verze správce. Pokud postup selže, použij
+počítačovou cestu níže. Přímá instalace tlačítkem z PlayCaption je samostatný
+[navržený doplněk](INSTALACE-Z-ANDROIDU.md), zatím není implementovaná.
+
+### B. Z počítače, graficky bez příkazové řádky
 
 1. Stáhni [webOS Dev Manager pro svůj počítač](https://github.com/webosbrew/dev-manager-desktop/releases/latest).
    Je to komunitní nástroj; pro tento postup nepotřebuješ příkazovou řádku ani root TV.
@@ -38,7 +61,7 @@ Podrobný postup LG: [Developer Mode](https://webostv.developer.lge.com/develop/
    zadej IP televize a Passphrase. Pokud nástroj vyžádá port a uživatele, použij port
    **9922** a uživatele **prisoner**. Nevol připojení jako root.
 3. Po připojení v části s aplikacemi použij **Install** a vyber rozbalený soubor
-   **cz.playcaption.overlaytest_0.0.7_all.ipk**.
+   **cz.playcaption.overlaytest_0.0.10_all.ipk**.
 4. Počkej na dokončení. V seznamu aplikací má přibýt **PlayCaption LG**.
    Pokud už máš náš původní HDMI test, stejný identifikátor zajistí jeho aktualizaci.
 
@@ -47,19 +70,21 @@ Názvy ovládacích prvků Dev Manageru se mohou mezi verzemi mírně lišit.
 
 ## 3. Spusť hru a titulky
 
-1. Na tabletu/telefonu spusť původní Android PlayCaption, připoj konzoli a ověř,
+1. Na odesílajícím zařízení spusť Android PlayCaption, připoj konzoli a ověř,
    že překlad funguje přímo na tomto zařízení.
 2. Na LG otevři domeček a spusť **PlayCaption LG**.
 3. V aplikaci vyber HDMI s konzolí a potvrď OK. Seznam se načítá z TV včetně názvů
    zařízení; žádné číslo HDMI není nastavené natvrdo. Aplikace přepne vstup a obnoví
    překryv titulků nad hrou. Poslední volba je příště předvybraná.
-4. Na LG se objeví výzva k výběru televize na tabletu. Pokud se výběr HDMI nepodaří,
+4. Na LG se objeví „Čekám na zařízení“. Pokud se výběr HDMI nepodaří,
    aplikace zobrazí chybu. Tlačítko **Pokračovat nad aktuálním obrazem** použij pouze
    tehdy, když už je pod aplikací vidět správný obraz hry.
 5. Na Android zařízení ukonči úvodní nastavení tlačítkem **Hotovo – hrát**.
 6. Na obrazovce s překladem najdi **vpravo nahoře přepínač 📺 Televize / 📱 Telefon**.
    Klepni na **📺 Televize**. Pro seznam dostupných televizí toto tlačítko podrž
-   a vyber **LG PlayCaption**. Pokud je v síti jediná televize, může se připojit sama.
+   a vyber **LG PlayCaption · identifikátor** shodný s kódem na obrazovce LG.
+   Každá TV má vlastní kód, takže rozlišíš i více LG ve stejné síti.
+   Pokud je v síti jediná televize, může se připojit sama.
 7. Při dalším textu ve hře se mají české titulky zobrazit i přes HDMI obraz na LG.
    Poloha, šířka a velikost odpovídají nastavení zeleného boxu na Android zařízení.
 
@@ -70,10 +95,10 @@ přebírá přihlášení z Android TV. Pro LG nepoužívej tento postup ani vol
 Android zařízení nech odemčené s otevřeným PlayCaption, ideálně na nabíječce.
 Počítač při hraní není potřeba. Pokud chceš změnit vstup, otevři znovu PlayCaption LG
 a vyber ho uvnitř aplikace. Přepnutí přes systémové menu LG může překryv zavřít;
-verze 0.0.7 nesleduje všechny změny vstupů na pozadí.
+přijímač nesleduje všechny změny vstupů na pozadí.
 Přijímač neposílá ovládací vstupy do konzole; hraješ dál svým ovladačem.
 
-Dialogy mají nejvýše dva řádky. Dlouhá replika se střídá po krátkých částech,
+Ve Standardním režimu mají dialogy nejvýše dva řádky. Dlouhá replika se střídá po krátkých částech,
 přednostně na konci věty. Nová replika nebo konec její platnosti ruší zbývající
 stránky; historie se nehromadí. Velké písmo se omezí tak, aby box zabral nejvýše
 18 % výšky obrazu. Dopisy v režimu Text a volby odpovědí mají vlastní zobrazení.
@@ -104,14 +129,14 @@ instaluj přes Install novějšího IPK a přijímač znovu spusť.
 |---|---|
 | V seznamu je jen „Jen telefon“ | Na LG otevři PlayCaption LG a vyber HDMI. Pak na Android zařízení znovu podrž 📺 Televize. Ověř společnou síť bez izolace klientů. |
 | Android chce přebírat přihlášení z TV | Jsi v jiném průvodci. Dej Zrušit → Hotovo – hrát → přepínač 📺 Televize vpravo nahoře. |
-| Překlad chybí na tabletu i LG | Nejprve řeš čtení/překlad na Android zařízení; LG dostává až jeho hotový výsledek. |
-| Na tabletu překlad je, na LG není | Ověř vybranou LG a spuštěný přijímač. Po výpadku delším než 5 s se na LG schová starý text. |
+| Překlad chybí na zařízení i LG | Nejprve řeš čtení/překlad na Android zařízení; LG dostává až jeho hotový výsledek. |
+| Na zařízení překlad je, na LG není | Ověř vybranou LG a spuštěný přijímač. Po výpadku delším než 5 s se na LG schová starý text. |
 | LG hlásí odmítnutí prodloužení překryvu | Firmware nepovolil potřebné volání. Zapiš model a verzi webOS/firmwaru; tento model zatím nelze označit za kompatibilní. |
 | Překryv zmizí přibližně po 2 minutách | Ověř přijímač 0.0.3 nebo novější, znovu ho spusť. Opakování nahlas s modelem/firmwarem; může jít o nekompatibilní systémové volání. |
 | Víceřádkový text skončí pouze posledním řádkem | Známý problém čekající na samostatné řešení. Porovnej text na Android zařízení a LG; neřeš ho opakovanou instalací přijímače. |
 
 Pro nahlášení problému stačí model LG, verze firmwaru/webOS, verze obou aplikací,
-model Android zařízení a rozdíl mezi tím, co zobrazí tablet a LG. Neposílej PSN tokeny,
+model Android zařízení a rozdíl mezi tím, co zobrazí odesílající zařízení a LG. Neposílej PSN tokeny,
 Passphrase ani soukromé klíče. Pokud posíláš fotku, stačí samotný text na obrazovce.
 
 ## Oblasti čtení a překlad odpovědí

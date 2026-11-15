@@ -51,12 +51,13 @@
                 return device && /^com\.webos\.app\.hdmi[1-9][0-9]*$/.test(device.appId || "");
             }) : [];
             if (!result.returnValue || !Array.isArray(result.devices)) {
-                inputStatus.textContent = "LG neposkytla seznam vstupů. Nech TV na HDMI a spusť přijímač z počítače.";
+                inputStatus.textContent = "LG neposkytla seznam vstupů. Pokud už vidíš obraz hry, zvol Pokračovat nad aktuálním obrazem. Jinak aplikaci zavři, vyber HDMI a znovu ji otevři.";
             } else {
                 inputStatus.textContent = "";
                 devices.forEach(function (device) {
                         var button = document.createElement("button");
-                        button.textContent = "HDMI " + device.port + " · " + String(device.label || "").slice(0, 100);
+                        button.textContent = "HDMI " + device.appId.match(/hdmi([1-9][0-9]*)$/)[1] +
+                            (device.label ? " · " + String(device.label).slice(0, 100) : "");
                         button.onclick = function () {
                             inputStatus.textContent = "Přepínám vstup a spouštím titulky…";
                             inputButtons.forEach(function (item) { item.disabled = true; });
@@ -164,7 +165,8 @@
         }
         var packet = result.packet;
         if (!packet) {
-            showStatus(result.ready ? "PlayCaption · Na tabletu vyber LG PlayCaption · Zpět = zavřít" : "PlayCaption · Spouštím příjem…");
+            var name = typeof result.name === "string" ? result.name.slice(0, 64) : "LG PlayCaption";
+            showStatus(result.ready ? "PlayCaption LG · Čekám na zařízení. Vyber „" + name + "“ · Zpět = zavřít" : "PlayCaption LG · Spouštím příjem…");
             return;
         }
         var now = Date.now();
@@ -223,7 +225,7 @@
             if (lastSeen && now - lastSeen > 5000) {
                 clearText();
                 hint.textContent = "";
-                showStatus("PlayCaption · Spojení přerušeno, čekám na tablet · Zpět = zavřít");
+                showStatus("PlayCaption LG · Spojení přerušeno, čekám na zařízení · Zpět = zavřít");
             }
         }, 250);
     }

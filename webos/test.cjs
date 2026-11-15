@@ -3,6 +3,16 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const { EventEmitter } = require('node:events');
 const parse = require('./service/protocol').parse;
+const app = JSON.parse(fs.readFileSync(__dirname + '/app/appinfo.json', 'utf8'));
+assert.equal(app.title, 'PlayCaption LG');
+assert.equal(app.version, JSON.parse(fs.readFileSync(__dirname + '/service/package.json', 'utf8')).version);
+for (const [name, size] of [[app.icon, 80], [app.largeIcon, 130]]) {
+    const png = fs.readFileSync(__dirname + '/app/' + name);
+    assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
+    assert.equal(png.readUInt32BE(16), size);
+    assert.equal(png.readUInt32BE(20), size);
+}
+assert.doesNotMatch(fs.readFileSync(__dirname + '/app/app.js', 'utf8'), /tablet/i);
 const packet = (s) => parse(Buffer.from(s));
 assert.equal(packet('OTHER\t1\t6000\ttext\t'), null);
 assert.equal(packet('PCT1\tbad\t6000\ttext\t'), null);
@@ -38,6 +48,10 @@ vm.runInNewContext(fs.readFileSync(__dirname + '/app/app.js', 'utf8'), {
 });
 const receive = p => receiverBridge().onservicecallback(JSON.stringify({ returnValue: true, source: '192.168.0.2', packet: p }));
 const tick = () => [...timers.values()].forEach(fn => fn());
+receiverBridge().onservicecallback(JSON.stringify({ returnValue: true, ready: true }));
+assert.match(elements.status.textContent, /Čekám na zařízení/);
+receiverBridge().onservicecallback(JSON.stringify({ returnValue: true, ready: true, name: 'LG PlayCaption · ABCDEF123456' }));
+assert.match(elements.status.textContent, /LG PlayCaption · ABCDEF123456/);
 receive(sample);
 assert.equal(elements.subtitle.textContent, sample.text);
 assert.equal(elements.subtitle.hidden, false);
@@ -57,6 +71,7 @@ assert.equal(elements.subtitle.hidden, true);
 assert.equal(elements.hint.hidden, true);
 now += 5100; tick();
 assert.equal(elements.status.hidden, false);
+assert.match(elements.status.textContent, /čekám na zařízení/);
 receive(sample);
 assert.equal(elements.subtitle.hidden, false);
 const oldActivity = activityBridges().at(-1);
@@ -95,6 +110,7 @@ assert.equal(activityBridges().at(-1).cancelled, true);
 
 // Služba: discovery, validace, forwarding a ukončení UDP při zrušení posledního odběru.
 const handlers = {}, sockets = [], sent = [], replies = [], serviceTimers = new Map();
+let network = { eth0: [{ internal: false, family: 'IPv4', address: '192.168.0.9', netmask: '255.255.255.0', mac: '00:11:22:33:44:55' }] };
 function Service() { this.register = (name, request, cancel) => { handlers[name] = { request, cancel }; }; }
 const dgram = { createSocket() {
     const s = new EventEmitter();
@@ -108,7 +124,7 @@ vm.runInNewContext(fs.readFileSync(__dirname + '/service/service.js', 'utf8'), {
     require(name) {
         if (name === 'webos-service') return Service;
         if (name === 'dgram') return dgram;
-        if (name === 'os') return { hostname: () => 'LG', networkInterfaces: () => ({ eth0: [{ internal: false, family: 'IPv4', address: '192.168.0.9', netmask: '255.255.255.0', mac: '00:11:22:33:44:55' }] }) };
+        if (name === 'os') return { hostname: () => 'LG', networkInterfaces: () => network };
         return require(name.startsWith('./') ? './service/' + name.slice(2) : name);
     }, Buffer, console,
     setInterval: fn => { serviceTimers.set(++nextId, fn); return nextId; }, clearInterval: id => serviceTimers.delete(id)
@@ -117,7 +133,8 @@ const request = { isSubscription: true, uniqueToken: 'a', respond: p => replies.
 handlers.listen.request(request);
 sockets[0].bound();
 assert.equal(replies.at(-1).ready, true);
-assert.match(sent[0].data, /^PLAYCAPTION_TV\tlg-[0-9a-f]{12}\tLG PlayCaption\t0$/);
+assert.match(sent[0].data, /^PLAYCAPTION_TV\tlg-[0-9a-f]{12}\tLG PlayCaption · [0-9A-F]{12}\t0$/);
+assert.equal(replies.at(-1).name, sent[0].data.split('\t')[2]);
 assert.equal(sent[0].port, 41988);
 assert.equal(sent[0].address, '192.168.0.255');
 sockets[0].emit('message', Buffer.from('PCT1\t1\t6000\tČeský text\t'), { address: '192.168.0.2' });
@@ -137,4 +154,23 @@ sockets[1].emit('error', { code: 'EADDRINUSE' });
 assert.equal(replies.at(-1).returnValue, false);
 assert.match(replies.at(-1).errorText, /EADDRINUSE/);
 assert.equal(sockets[1].closed, true);
+network = {
+    wlan0: [{ internal: false, family: 'IPv4', address: '10.42.7.130', netmask: '255.255.255.128', mac: '00:11:22:33:44:66' }],
+    eth0: [{ internal: false, family: 'IPv4', address: '172.20.16.4', netmask: '255.255.240.0', mac: '00:11:22:33:44:77' }],
+    lo: [{ internal: true, family: 'IPv4', address: '127.0.0.1', netmask: '255.0.0.0' }],
+    ipv6: [{ internal: false, family: 'IPv6', address: '::1' }]
+};
+const before = sent.length;
+handlers.listen.request(request); sockets[2].bound();
+assert.deepEqual(sent.slice(before).map(p => p.address).sort(), ['10.42.7.255', '172.20.31.255']);
+assert.notEqual(sent[before].data.split('\t')[1], sent[0].data.split('\t')[1], 'Jiná TV musí mít vlastní discovery ID.');
+assert.notEqual(sent[before].data.split('\t')[2], sent[0].data.split('\t')[2], 'Více LG musí být rozlišitelných i v Android seznamu.');
+assert.equal(replies.at(-1).name, sent[before].data.split('\t')[2]);
+handlers.listen.cancel(request);
+assert.equal(serviceTimers.size, 0);
+network = { eth0: [{ internal: false, family: 'IPv4', address: '10.1.2.3', netmask: '255.255.0.0', mac: '00:11:22:33:44:55' }] };
+handlers.listen.request(request); sockets[3].bound();
+assert.equal(sent.at(-1).data, sent[0].data, 'Změna IP stejné TV nesmí měnit její identitu ani název.');
+assert.equal(sent.at(-1).address, '10.1.255.255');
+handlers.listen.cancel(request);
 console.log('OK: opožděné odpovědi a trvalá chybová signalizace, protokol, čeština, layout, heartbeat/expirace, prodlužování overlay, výpadek/restart, UI chyby, UDP discovery a ukončení služby.');

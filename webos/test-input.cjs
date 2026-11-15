@@ -108,4 +108,11 @@ assert.match(nodes['input-status'].textContent, /neposkytla/);
 listeners.webOSRelaunch({ detail: {} });
 bridges.at(-1).onservicecallback('null');
 assert.match(nodes['input-status'].textContent, /neposkytla/);
+listeners.webOSRelaunch({ detail: {} });
+nodes['input-options'].children = [];
+bridges.at(-1).onservicecallback(JSON.stringify({ returnValue: true, devices: [
+    { appId: 'com.webos.app.hdmi1' }, { appId: 'com.webos.app.hdmi3', port: 99, label: 'Počítač' },
+    { appId: 'com.webos.app.browser', port: 2 }
+] }));
+assert.deepEqual(nodes['input-options'].children.map(b => b.textContent), ['HDMI 1', 'HDMI 3 · Počítač']);
 console.log('OK: výběr skutečného HDMI, návrat overlay ze služby, validace, timeout, uvolnění aktivity a UI.');

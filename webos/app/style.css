@@ -88,6 +88,7 @@ body {
   pointer-events: auto;
 }
 #inputs h1 { margin: 0; }
+#inputs h1 img { width: 80px; height: 80px; vertical-align: middle; margin-right: 12px; }
 #inputs button {
   display: block;
   width: 100%;
