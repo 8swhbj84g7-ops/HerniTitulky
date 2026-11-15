@@ -113,7 +113,7 @@ Stavy: čeká / probíhá / dokončeno / blokováno. Dokončení úkolu není d�
 - `TelefonActivity` má uložený přepínač, Standardní výchozí. Reset nastavení/relace a pauza pro volby jsou zapojené. PCQ1/PCS1/PCA1 je samostatná potvrzovaná cesta; Standardní PCT1/PCV1/PCO1 zůstaly.
 - 94 JVM testů bez selhání; 5 LG sad. Přímý C5 test: celé tři stránky, žádné přetečení, ACK po dočtení, následně Standardní titulek a ignorování starého Story paketu.
 - Opravené první Android runtime selhání `NetworkOnMainThreadException`: otevření, obsluha i zrušení UDP běží na pracovním vlákně. Dva instrumentační testy na Redmi prošly se StrictMode a skutečným potvrzením od C5.
-- Na tabletu `PlayCaption Test 0.20.1-story-test02`, LG 0.0.8. Zbývá uživatelská herní přejímka, skutečné dialogové volby a dlouhodobé výpadky; přepínač v přímém Android TV režimu ani telefonní dvouřádkový stránkovač nejsou součást tohoto MVP.
+- Na tabletu `PlayCaption Test 0.20.1-story-test02`, LG 0.0.8. Uživatel potvrdil, že po opětovném připojení PS5 chyba zmizela a titulky běží. Zbývá podrobná herní přejímka úplnosti rychlých replik, návratu do Standardního režimu, skutečných dialogových voleb a dlouhodobých výpadků; přepínač v přímém Android TV režimu ani telefonní dvouřádkový stránkovač nejsou součást tohoto MVP.
 
 ## P3 — pokročilé OCR pouze podle výsledků P1
 

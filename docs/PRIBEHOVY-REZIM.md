@@ -106,7 +106,7 @@ V režimu jen telefonu Android časuje celé repliky; stávající TextView je p
 
 Po zrušení Story se vykreslil Standardní PCT1 titulek. Následný starý Story paket jej nepřepsal. SHA-256 všech 11 nainstalovaných souborů na TV odpovídalo zdrojům. Lokální důkaz: `/private/tmp/playcaption-story-c5-proof.json` (není součást Git repozitáře).
 
-Android PlayCaption Test byl aktualizovaný přes `adb install -r` pod původním testovacím ID `cz.titulky.tv.ocrfixes`; původní aplikace `cz.titulky.tv` se nepřepisovala. Živá herní přejímka, chování volby v konkrétní hře, dlouhá cutscéna a delší výpadek Wi-Fi ještě nejsou potvrzené.
+Android PlayCaption Test byl aktualizovaný přes `adb install -r` pod původním testovacím ID `cz.titulky.tv.ocrfixes`; původní aplikace `cz.titulky.tv` se nepřepisovala. Podrobná herní přejímka úplnosti rychlých replik, návratu do Standardního režimu, dialogových voleb, dlouhé cutscény a delšího výpadku Wi-Fi ještě zbývá.
 
 
 ## Android runtime oprava story-test02
@@ -114,5 +114,7 @@ Android PlayCaption Test byl aktualizovaný přes `adb install -r` pod původní
 První herní pokus odhalil `NetworkOnMainThreadException`: konstrukce/otevření UDP socketu byla mimo worker. `PribehSpojeni` nyní vytváří, připojuje, obsluhuje i ruší socket na vlastním pracovním vlákně. Hlavní vlákno pouze mění opakovaný stav a požadavek ukončení.
 
 94 JVM testů a všech pět LG testovacích sad prošlo. Na Redmi prošly také oba `PribehSitTest` instrumentační testy: otevření/odeslání/zrušení při `StrictMode.detectNetwork().penaltyDeathOnNetwork()` na hlavním vlákně a skutečný dotaz z tabletu na C5 s odpovědí `ready`. Opravená instalovaná verze je `0.20.1-story-test02`.
+
+Uživatel následně při opětovném připojení PS5 a zapnutí Příběhového režimu potvrdil: chyba zmizela a titulky běží. Tím je potvrzený základní herní provoz opravené verze, nikoliv ještě úplnost všech replik, dlouhodobá stabilita nebo návrat do Standardního režimu při hraní.
 
 Testy lze spustit v odděleném diagnostickém APK podle existujícího postupu; pro druhý test dodat argument `lgHost` s adresou vlastní TV. Pokud je cílem právě používaná PlayCaption Test, zachovat její ID/podpis a data, použít pouze `adb install -r`; samotný instrumentační běh neodinstalovává aplikaci. Bez `lgHost` se pouze volitelný test skutečné TV přeskočí.
