@@ -32,6 +32,7 @@ android {
 }
 
 dependencies {
+    testImplementation("junit:junit:4.13.2")
     implementation("androidx.core:core-ktx:1.13.1")
     // Překlad přímo v televizi – zdarma, bez limitu (Google ML Kit)
     implementation("com.google.mlkit:translate:17.0.3")

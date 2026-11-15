@@ -366,7 +366,7 @@ class MainActivity : Activity() {
         konzole.addView(r)
         konzole.addView(text(t("pripojitPopis"), 14f, TEXT2), odsazeni(top = 6))
         // telefon: najít televizi a převzít od ní spárování s PS5 (bez přihlašování účtu a PINu z PS5)
-        if (telefon) {
+        if (telefon && TvProfily(this).platforma != TvPlatforma.WEBOS) {
             konzole.addView(tlacitkoZelene(t("prevzitZTv")) { prevzitSparovaniZTv() }, odsazeni(top = 12))
             // nespárovaný telefon a v síti je televize s PlayCaption → přihlašování schovat, ať nikdo neklikne špatně
             if (!udaje.sparovano) Propojeni.hledej(this, 2500) { nalez ->
@@ -444,6 +444,46 @@ class MainActivity : Activity() {
             val zobr = karta()
             zobr.addView(prepinac(t("prekryvat"), { nast.prekryvat }, { nast.prekryvat = it }, t("zapnuto"), t("vypnuto")))
             vpravo.addView(zobr, odsazeni(bottom = 18))
+        }
+
+        if (telefon) {
+            vpravo.addView(sekce(t("tvVystupNadpis")))
+            fun otevriTelevizi() {
+                TvVyber(this, { tv, platforma ->
+                    val profily = TvProfily(this)
+                    profily.zapamatuj(tv.id, tv.jmeno, tv.ip, platforma)
+                    profily.zapamatujVyber(tv.id)
+                    obnovTvKartu()
+                    if (Propojeni.Vysilac.cilIp != null) android.widget.Toast.makeText(this, t("tvUlozena").replace("{tv}", tv.jmeno), android.widget.Toast.LENGTH_LONG).show()
+                }, {
+                    TvProfily(this).pouzeTelefon = true
+                    obnovTvKartu()
+                }, { ukazHlavni() }).ukaz()
+            }
+            val vystup = vodorovne().apply {
+                gravity = Gravity.CENTER_VERTICAL
+                background = vyber(KARTA)
+                minimumHeight = dp(88)
+                setPadding(dp(22), dp(16), dp(22), dp(16))
+                isFocusable = true
+                setOnClickListener { otevriTelevizi() }
+            }
+            val popis = svisle()
+            tvNazev = text("", 21f, Color.WHITE, tucne = true).apply {
+                maxLines = 2
+                ellipsize = android.text.TextUtils.TruncateAt.END
+            }.also { popis.addView(it) }
+            tvPlatforma = text("", 14f, TEXT2).also { popis.addView(it, odsazeni(top = 4)) }
+            tvStav = text("", 15f, TEXT2).also { popis.addView(it, odsazeni(top = 6)) }
+            vystup.addView(popis, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { rightMargin = dp(16) })
+            vystup.addView(tlacitko(t("tvZmenitKratce") + "  ›", 18f) { otevriTelevizi() }.apply {
+                minimumHeight = dp(48)
+                gravity = Gravity.CENTER
+                setPadding(dp(18), dp(12), dp(18), dp(12))
+                background = vyber(SEDA, radius = 12f)
+            })
+            vpravo.addView(vystup, odsazeni(bottom = 18))
+            obnovTvKartu()
         }
 
         // co překládat
@@ -720,6 +760,35 @@ class MainActivity : Activity() {
         }
     }
 
+    private var tvNazev: TextView? = null
+    private var tvPlatforma: TextView? = null
+    private var tvStav: TextView? = null
+
+    private fun obnovTvKartu() {
+        if (!telefon) return
+        val profily = TvProfily(this)
+        val posila = Propojeni.Vysilac.cilIp != null
+        val profil = (if (posila) TvProfily.aktivniId else profily.posledniId)?.let { profily.najdi(it) }
+        val lokalni = !posila && profily.pouzeTelefon
+        tvNazev?.text = when {
+            posila -> Propojeni.Vysilac.cilJmeno.ifBlank { profil?.jmeno ?: t("tvZadnaVybrana") }
+            lokalni -> t("tvJenZarizeni")
+            else -> profil?.jmeno ?: t("tvZadnaVybrana")
+        }
+        tvPlatforma?.text = if (lokalni || profil == null) t("tvNastaveniPopis") else when (profil.platforma) {
+            TvPlatforma.WEBOS -> "LG webOS"
+            TvPlatforma.ANDROID_TV -> "Android TV / Google TV"
+            else -> t("tvPlatformaNeznama")
+        }
+        tvStav?.text = when {
+            posila -> "● " + t("tvOdesila")
+            lokalni -> t("tvJenZde")
+            profil != null -> t("tvPripravena")
+            else -> t("tvVyberVystup")
+        }
+        tvStav?.setTextColor(if (posila) Color.parseColor("#3CFF6E") else TEXT2)
+    }
+
     private var prepnoutBtn: TextView? = null
     private var xboxRadek: TextView? = null
     private var ps5Radek: TextView? = null
@@ -737,6 +806,7 @@ class MainActivity : Activity() {
     private val nejakaKonzole get() = udaje.sparovano || XboxUcet.konzole(this) != null
 
     private fun obnovStav() {
+        obnovTvKartu()
         if (!::stavText.isInitialized) return
         val (barva, klic) = when {
             !nejakaKonzole -> SEDA to "stavNesparovano"
@@ -995,7 +1065,7 @@ class MainActivity : Activity() {
         val sloupec = svisle()
         sloupec.addView(nadpisLogo())
         sloupec.addView(text(t("pripojitKonzoli"), 28f, Color.WHITE, tucne = true), odsazeni(bottom = 16))
-        if (telefon) {
+        if (telefon && TvProfily(this).platforma != TvPlatforma.WEBOS) {
             val kTv = karta()
             kTv.addView(text(t("maTvNadpis"), 18f, Color.parseColor("#FFC24B"), tucne = true))
             kTv.addView(text(t("maTv"), 16f, Color.WHITE), odsazeni(top = 6))
@@ -1206,7 +1276,7 @@ class MainActivity : Activity() {
         val sloupec = svisle()
         sloupec.addView(nadpisLogo())
         sloupec.addView(text(t("xboxNadpis"), 28f, Color.WHITE, tucne = true), odsazeni(bottom = 16))
-        if (telefon) {
+        if (telefon && TvProfily(this).platforma != TvPlatforma.WEBOS) {
             val kTv = karta()
             kTv.addView(text(t("maTvNadpis"), 18f, Color.parseColor("#FFC24B"), tucne = true))
             kTv.addView(text(t("maTv"), 16f, Color.WHITE), odsazeni(top = 6))

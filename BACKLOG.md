@@ -74,3 +74,21 @@ samostatný mobilní správce s instalací místního IPK. Aktuální uživatels
 obsahuje tuto možnost vedle počítačové instalace. Vlastní průvodce v PlayCaption
 vyžaduje SSH/SFTP, bezpečné párování a skutečné potvrzení dokončení instalace.
 Rozsah a přejímku popisuje [návrh instalátoru](webos/INSTALACE-Z-ANDROIDU.md).
+
+## PC-004 – Profily přijímačů v Android odesílači
+
+Implementováno: platforma oddělená od konkrétní TV a od aktivního výstupu.
+Každá TV má stabilní ID, poslední adresu a vlastní polohu/velikost titulků,
+zámky a oblasti čtení. Staré společné nastavení přebírá pouze původní TV;
+jazyk a účty konzole se nekopírují. Neznámou platformu potvrzuje uživatel,
+verze a schopnosti starého přijímače se neodhadují. Nalezená adresa má přednost
+před uloženou; vypnutá poslední TV se automaticky nenahradí jinou.
+
+Kontroly: `bash gradlew :app:testDebugUnitTest :app:assembleDebug` – pět testů
+profilů a test skutečného UDP přenosu na loopbacku. Ruční přejímka: dvě fyzické
+TV s odlišným nastavením, návrat na telefon a zpět, restart aplikace, původní
+Android TV režim. Uživatel na Redmi Pad Pro potvrdil nalezení a výběr C5.
+Karta výstupu byla po opravě výšky/odsazení vizuálně zkontrolovaná na tabletu:
+rozlišuje vybranou TV od aktivního odesílání. Nepředstírá potvrzení příjmu UDP.
+Původní Android TV hardware dosud touto etapou nepřetestován.
+Vlastní LG instalátor a přibalený IPK zůstávají navazující etapou.

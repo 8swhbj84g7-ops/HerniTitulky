@@ -182,3 +182,12 @@ Xbox ani jiné LG modely zatím v této sestavě nebyly otestované.
 
 Přijímač sám nečte HDMI a nepřekládá. UDP přenos původní aplikace nemá přihlašování,
 proto používej důvěryhodnou domácí síť a nepřesměrovávej jeho porty na internet.
+
+## Novější Android aplikace s profily televizí
+
+Pokud Android nabízí **Nastavení televize**, zvol zvlášť **Televizní platforma →
+LG webOS** a potom **Vybrat / změnit televizi**. U staršího přijímače potvrď,
+že vybraná TV patří k LG; její název ani vyšší číslo verze platformu nedokazují.
+Dvě LG mohou mít vlastní nastavení polohy a oblastí. Vypnutá televize v seznamu
+uložených profilů neslouží k připojení přes starou IP; spusť ji a hledej znovu.
+Verze přijímače může být zatím neověřená. Tato nabídka sama IPK neinstaluje.
