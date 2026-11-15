@@ -4,6 +4,22 @@
 Od verze 0.10 se vyvíjí jen jedna aplikace (dřívější NextGen, větev `master`) – umí „Jen televize“ i „S telefonem“.
 Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCode + versionName) a sem se dopíše, co je nového.
 
+## Unreleased
+
+- LG dokumentace: odstraněn interní pracovní plán z repozitáře i distribučního ZIPu, upřesněno předávání instalačního IPK přes Releases.
+- LG 0.1.0 (kandidát P0): nabídka přes OK/Zpět, lokální test vykreslení, dočasné skrytí a diagnostika známých stavů včetně upozornění na nepodporovaný Story režim. Jeden aktivní zdroj do 5 s bez jeho dat. Reprodukovatelný IPK a manifest verze, schopností, velikosti a SHA256; bez změny Android kódu nebo Story protokolu.
+
+- LG přijímač: jednotný název PlayCaption LG, Android ikona v obou velikostech launcheru a hlášení pro obecné odesílající zařízení. HDMI a discovery ověřené i s jinými vstupy/podsítěmi; aktualizovaný návod včetně možnosti instalace IPK z Android správce bez PC.
+
+- LG přijímač 0.0.7: dialogy se střídají po nejvýše dvou řádcích, dlouhé repliky po stránkách. Nová replika ruší zbytek staré; text má nejvýše 18 % výšky obrazu.
+
+- LG přijímač 0.0.6: dialogové volby a zvýraznění, dlouhé texty, žlutý/modrý rámeček oblasti čtení, zelený náhled polohy a barvy jmen. Matice funkcí rozlišuje shodu TV přijímačů a OCR/párování konzole na tabletu.
+
+- LG přijímač nabízí výběr HDMI přímo na TV a po přepnutí obnoví překryv; počítač je potřeba pouze k instalaci.
+- LG webOS: návod instalace a každodenního používání, lokální sestavení distribučního ZIPu a automatické testy; trvalá chybová signalizace prodlužování překryvu a ignorování opožděných odpovědí ze zrušených volání.
+- LG webOS: přijímač obnovuje systémový časovač překryvu, aby jej TV při hraní automaticky nezavírala po 120 sekundách.
+- LG webOS přijímač `webos/`: ohlašování do sítě pro stávající Android aplikaci, příjem titulků/nápovědy přes UDP, poloha a velikost podle tabletu, skrytí při výpadku spojení. Bez nutnosti upravovat Android APK.
+
 ## 0.20 (versionCode 31)
 - PS5 na telefonu: obraz jde z dekodéru přímo do paměti (jako u Xboxu) – čtení titulků 20–40 ms místo ~80 ms. Televize beze změny.
 - PS5 na telefonu: kodek H.265 (čistší obraz, ostřejší písmo) – automaticky, jen když ho telefon umí; jinak H.264.
