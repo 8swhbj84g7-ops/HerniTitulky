@@ -79,7 +79,7 @@ Stavy: čeká / probíhá / dokončeno / blokováno. Dokončení úkolu není d�
 ### P2-03 · Čtecí politika s virtuálním časem — probíhá
 
 - **Problém/části:** nové výsledky nesmí přerušit čtení A. Malá samostatně testovatelná politika + skutečný zobrazovací callsite.
-- **Závislosti:** kontrakt P2-01/02; správné simulované překlady stačí. **Řešení:** pořadí A/B/C nezávislé na dokončení překladu; čas české stránky `max(1,8 s, Unicode code points / 14)`, poslední stránku dočíst, první volnou ukázat ihned.
+- **Závislosti:** kontrakt P2-01/02; správné simulované překlady stačí. **Řešení:** pořadí A/B/C nezávislé na dokončení překladu; čas české stránky `ceil(max(1500 ms, ceil(Unicode code points × 1000 / 18)) × procenta / 100)` při výchozích 100 %, poslední stránku dočíst, první volnou ukázat ihned.
 - **Testy/hotovo:** krátký/jednoslovný/dlouhý/vícestránkový text, emoji/diakritika, rychlé A/B/C, pauza vyprázdní frontu, přesné časy a počet zobrazení. **Riziko:** definovat bounded paměť a viditelné přetížení, bez tichého zahazování a preventivního agresivního backlog managementu.
 - **Postup:** samostatné jádro, virtuální čas, dočtení poslední stránky, pauza se zbývajícím časem a explicitní kapacitní limity implementované; 33 nových testů a 44 původních JVM testů prošlo, APK se sestavila. Zobrazovací callsite je nyní napojený přes potvrzení LG; celá herní přejímka MVP ještě není dokončená.
 
@@ -170,3 +170,12 @@ Stavy: čeká / probíhá / dokončeno / blokováno. Dokončení úkolu není d�
 - **Problém/části:** možné budoucí vyšší kvalitativní požadavky. Samostatný výzkum OCR/PC/macOS/služeb.
 - **Závislosti:** prokázaná nedostatečnost současné cesty. **Řešení:** srovnat měřením; placené API jen volitelně s vlastním klíčem, nikdy povinná cesta.
 - **Testy/hotovo:** přínos/náklady/latence a ochrana klíčů doložené. **Riziko:** nový engine/server nesmí blokovat současný bezplatný provoz ani P2.
+
+### Navazující integrace správy LG – 15. 11. 2026
+
+`feature/story-mode` v commitu `3733f39` zahrnuje správu TV z `484ed6e`.
+132 JVM testů a šest LG sad prošlo. Společná testovací APK s uloženým
+spárováním je na Redmi, LG 0.2.0 na C5. Tři Android instrumentační testy
+a řízené zobrazení čtyř skutečných LG stránek včetně skrytí a následného
+Standardu prošly. Podrobnosti a limity: `PRIBEHOVY-REZIM.md`.
+Nová herní přejímka zůstává otevřená; dokončování vět/OCR se zde neměnilo.

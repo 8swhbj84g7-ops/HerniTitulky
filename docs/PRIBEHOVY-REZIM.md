@@ -140,3 +140,28 @@ Android APK, instrumentačního APK a LG IPK. Nové regrese pokrývají potlače
 PCT1 pouze při Story, pokračující PCV1, obnovu Standardu, zdrojovou relaci/ACK
 a pozastavení skrytého Story při nabídce či lokálním testu. Toto není nová
 herní přejímka na C5. Master, PR #3 ani veřejné vydání se tímto mergem nemění.
+
+## Společná verze na tabletu a LG – 15. 11. 2026
+
+Na Redmi je aktualizovaná existující `PlayCaption Profily Test`, verze
+`0.20.1-story-platforms-test01`. Původní PlayCaption i předchozí oddělená
+Story Test zůstaly zachované. Přes Android průvodce se uloženým spárováním
+proběhla aktualizace LG 0.1.0 → 0.2.0; seznam skutečně instalovaných aplikací
+na C5 potvrdil 0.2.0. Následná kontrola v průvodci zobrazila aktuální 0.2.0.
+Pomocný UI test závěrečné instalační hlášky vypršel; samotná instalace a
+následná kontrola verze jsou ověřené odděleně, nikoliv tímto neúspěšným testem.
+
+- Dva instrumentační testy na Redmi prošly: skutečná tlačítka Standardní/
+  Příběhový, ukládání procent a síťové otevření/odeslání/zrušení se StrictMode.
+- Třetí instrumentační test potvrdil `PCQ1` → `PCA1 ready` přímo z Redmi do C5.
+- Řízený test skutečného LG UI a UDP: Standardní titulek, volby, oba rámečky,
+  výpadek/obnova, Story `reading`/`done` a návrat ke Standardnímu režimu prošly.
+- Další řízený C5 test: čtyři stránky obsahovaly celý vstup ve správném pořadí
+  a bez přetečení. Skrytí trvalo 3967 ms, během něj se nezměnila stránka ani
+  nepřišlo `done`. Po obnovení se replika dočetla, následoval funkční PCT1.
+
+Lokální důkazy jsou v `/private/tmp/playcaption-story-platforms-runtime.log`,
+`playcaption-story-020-android-lg-protocol.log`, `playcaption-story-020-runtime-proof.json`
+a `playcaption-story-020-pages.json`. Tyto místní soubory se nedistribuují.
+Syntetická data neprokazují kvalitu herního OCR ani překladů. Nová herní
+přejímka rychlých replik, skutečných voleb a delšího běhu je stále otevřená.
