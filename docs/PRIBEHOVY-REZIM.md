@@ -217,3 +217,9 @@ přijímá 60 replik po sekundě a fronta zůstává nejvýše šest položek.
 Je to omezená adaptace, nikoliv garance bez zpoždění pro libovolný tok textu:
 při trvalém přetížení nebo čekání na LG ACK může fronta dále růst.
 Nic se automaticky nemaže a Standardní režim se nemění.
+
+Oprava prošla 136 JVM testy a sestavením APK; na tablet byla nainstalovaná
+`PlayCaption Profily Test 0.20.1-story-platforms-test03`, při zachovaném
+Příběhovém režimu a 100 %. Uživatel po hraní potvrdil, že je chování
+v pořádku a výrazně lepší. LG zůstává 0.2.1; používá dosavadní pole procent
+v Story paketu a aktualizace přijímače není pro tuto opravu potřeba.
