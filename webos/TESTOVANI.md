@@ -208,3 +208,19 @@ Neověřeno: první instalace na čisté/jiné LG, všechny fyzické výpadky s�
 uprostřed instalace a chování všech podporovaných verzí Androidu.
 Kontrola UI po uživatelském dokončení již instalační obrazovku nenašla;
 není evidována jako úspěšný automatický test tlačítka záložního postupu.
+
+
+### Záložní instalace a platnost – Android test07
+
+- Na Redmi Pad Pro UIAutomator prošel přepnutí Android → počítač → Android.
+  Sousední tlačítka mají fyzickou mezeru 24 px (12 dp); kontrolováno i screenshotem.
+- „Uložit LG instalační soubor“ otevřelo systémový výběr dokumentu. Po potvrzení
+  uložení do Stažených se průvodce obnovil. Exportovaný IPK měl 31 060 bajtů
+  a SHA256 shodný s přibaleným manifestem.
+- Další UI kontrola potvrdila, že export sám neoznačí TV za nainstalovanou;
+  v přímé instalační cestě zůstává Další bez potvrzené instalace zakázané.
+- Platnost Developer Mode je vysvětlená u kroků přípravy, instalace i spuštění.
+  Nejde o odpočet skutečné TV ani automatické prodlužování. Text vychází
+  z oficiální dokumentace LG, bez testování vypršení na C5.
+- Android Aphanes 1.0.2 a Windows Desktop 1.0.0 jsou odkazy na oficiální vydání;
+  samotná instalace přes externí aplikaci nebyla při této změně provedena.

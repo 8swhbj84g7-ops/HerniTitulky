@@ -9,7 +9,7 @@ Je to experimentální podpora, zatím ověřená na LG C5.
 - LG TV s webOS a aplikací **Developer Mode** z obchodu LG Apps.
 - **Android telefon nebo tablet**, na kterém už funguje PlayCaption a překlad hry.
   iPhone neumí spustit Android APK. Telefon/tablet nemusí mířit kamerou na televizi.
-- V novější Android aplikaci je instalátor LG přímo v průvodci. Ruční instalace z počítače zůstává jako záloha.
+- V novější Android aplikaci je instalátor LG přímo v průvodci. První záloha je externí Android správce; počítač je další možnost.
 - Konzoli zapojenou přes HDMI do LG a zařízení ve stejné domácí síti.
   LG může být připojená kabelem a odesílající zařízení přes Wi-Fi; nepoužívej oddělenou síť pro hosty.
 - Pro ruční instalaci navíc potřebuješ soubor **cz.playcaption.overlaytest_0.1.0_all.ipk** z vydání na GitHubu. Pro přímou instalaci jej už obsahuje Android aplikace.
@@ -49,14 +49,31 @@ Vyber jednu cestu. LG příprava v kroku 1 je nutná pro obě. Obyčejné odesl�
 Instalátor nemaže původní přijímač před aktualizací a neukládá Passphrase.
 Při chybě postupuj podle konkrétní zprávy; Key Server musí být zapnutý.
 **Zrušit čekání** nemusí zastavit instalaci, kterou už LG zahájila.
-Pokud přímá instalace nejde nebo používáš starší APK, tlačítko
-**Nedaří se? Ruční instalace z počítače** otevře záložní postup níže.
+Pokud přímá instalace nejde, tlačítko
+**Další možnosti instalace** otevře záložní postup: nejprve externí Android správce, potom volitelně počítač.
 
-### B. Z počítače, graficky bez příkazové řádky
+### B. Externí Android správce – první záložní možnost
 
-1. Stáhni [webOS Dev Manager pro svůj počítač](https://github.com/webosbrew/dev-manager-desktop/releases/latest).
+1. V PlayCaption otevři **Další možnosti instalace** a **Uložit LG instalační
+   soubor (.ipk)**. V systémovém dialogu zvol místní složku, například Stažené.
+   Ukládá se přibalený a kontrolovaný přijímač; nemusíš čekat na samostatný IPK v Releases.
+2. Nainstaluj [webOS Dev Mode Manager pro Android (Aphanes 1.0.2)](https://github.com/symonxdd/aphanes/releases/tag/v1.0.2).
+   Použij soubor `.apk` z oficiálního vydání; jde o samostatnou komunitní aplikaci.
+3. V Aphanes přidej TV podle její IP a Passphrase z Developer Mode při zapnutém Key Serveru.
+4. V části aplikací vyber instalaci místního `.ipk` a uložený soubor PlayCaption.
+5. Po dokončení spusť **PlayCaption LG** ovladačem a vyber HDMI konzole.
+
+Aphanes podle [své dokumentace](https://symonxdd.github.io/aphanes/) také nabízí
+kontrolu zbývajícího času a prodloužení Developer Mode. Celý postup v této externí
+aplikaci zatím na naší C5 nebyl otestovaný. Export IPK v PlayCaption je samostatný
+krok a neznamená, že už je přijímač v TV nainstalovaný.
+
+### C. Z počítače, graficky bez příkazové řádky
+
+1. Na Windows můžeš použít [Aphanes Desktop 1.0.0](https://github.com/symonxdd/aphanes/releases/tag/desktop-v1.0.0).
+   Pro Windows, macOS i Linux je alternativou [webOS Dev Manager pro svůj počítač](https://github.com/webosbrew/dev-manager-desktop/releases/latest).
    Je to komunitní nástroj; pro tento postup nepotřebuješ příkazovou řádku ani root TV.
-2. V Dev Manageru přidej televizi přes **Add Device**. Zvol připojení přes Developer Mode,
+2. Ve zvoleném správci přidej televizi přes **Add Device**. Zvol připojení přes Developer Mode,
    zadej IP televize a Passphrase. Pokud nástroj vyžádá port a uživatele, použij port
    **9922** a uživatele **prisoner**. Nevol připojení jako root.
 3. Po připojení v části s aplikacemi použij **Install** a vyber rozbalený soubor
@@ -137,10 +154,18 @@ ani rozlišení dvou aplikací na stejném telefonu. Používej důvěryhodnou L
 
 ## Developer Mode je potřeba prodlužovat
 
-V aplikaci Developer Mode sleduj **Remain Session** a včas použij **EXTEND** při
-připojení TV k internetu. Prodloužení zobrazení titulků není prodloužením Developer Mode.
+V aplikaci Developer Mode sleduj skutečnou zbývající dobu **Remain Session**.
+Ještě **před vypršením** připoj TV k internetu a stiskni **EXTEND**. Po vypršení
+už LG tuto relaci prodloužit nedovolí; je nutné znovu zapnout Developer Mode.
+Prodloužení zobrazení titulků není prodloužením Developer Mode.
 Pokud režim vyprší a deaktivuje se, LG vývojově nainstalované aplikace odstraní.
-Pak znovu zapni Developer Mode a zopakuj instalaci IPK. Běžné aktualizace PlayCaption
+Pak znovu zapni Developer Mode a zopakuj instalaci IPK.
+PlayCaption aktuální zbývající dobu nezjišťuje a neprodlužuje ji automaticky.
+Pro správu z Androidu lze použít Aphanes; před prodloužením počítej s tím, že
+se na TV může otevřít Developer Mode. Pravidla a odstranění aplikací při deaktivaci
+popisuje [oficiální LG návod](https://webostv.developer.lge.com/develop/getting-started/developer-mode-app).
+
+Běžné aktualizace PlayCaption
 instaluj přes Install novějšího IPK a přijímač znovu spusť.
 
 ## Když něco nefunguje

@@ -6,6 +6,8 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
 
 ## Unreleased
 
+- Android LG průvodce: oddělená tlačítka, upozornění na platnost Developer Mode u přípravy i instalace, záložní správce Aphanes pro Android před počítačem a uložení přibaleného IPK do zvolené složky.
+
 - Android: průvodce připojením LG po jednotlivých krocích, odkazy na LG Developer a instalační nástroje, návrat k rozpracovanému kroku a vyhledání přijímače na konci. Přímý instalátor přibaleného IPK přes Developer Mode/Key Server ověřuje přenos i nainstalovanou verzi; ruční postup zůstává zálohou.
 - Android telefon/tablet: oddělená volba TV platformy a konkrétního přijímače, vlastní nastavení polohy a oblastí pro každou TV, zachování původního profilu při změně IP. Přepnutí výstupu vyčistí starý přijímač; jazyk a účet konzole zůstávají společné.
 - LG dokumentace: odstraněn interní pracovní plán z repozitáře i distribučního ZIPu, upřesněno předávání instalačního IPK přes Releases.

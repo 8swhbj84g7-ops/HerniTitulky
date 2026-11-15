@@ -46,6 +46,7 @@ class LgPruvodce(private val activity: Activity, private val vyhledej: () -> Uni
     private val ui = Handler(Looper.getMainLooper())
     private val otisky = activity.getSharedPreferences("lg_ssh_otisky", Activity.MODE_PRIVATE)
     private var manualni = false
+    private var pocitac = false
     private var bezi = false
     private var faze = LgFaze.BALICEK
     private var vysledek: LgInstalaceVysledek? = null
@@ -123,10 +124,15 @@ class LgPruvodce(private val activity: Activity, private val vyhledej: () -> Uni
         })
         val obsah = LinearLayout(activity).apply { orientation = LinearLayout.VERTICAL; setPadding(0, 0, 0, dp(20)) }
         obsah.addView(text(t("lgNadpis" + stav.krok), 27f).apply { typeface = Typeface.DEFAULT_BOLD })
-        obsah.addView(text(t(if (stav.krok == 3 && !manualni) "lgAutoText" else "lgText" + stav.krok), 18f, Color.parseColor("#E2E2E8")).apply { setPadding(0, dp(18), 0, dp(14)) })
-        fun odkaz(popis: String, url: String) {
-            obsah.addView(tlacitko(t(popis) + "  ↗") { otevri(url) },
-                LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp(10) })
+        obsah.addView(text(t(if (stav.krok == 3 && !manualni) "lgAutoText" else if (stav.krok == 3 && pocitac) "lgTextPc" else "lgText" + stav.krok), 18f, Color.parseColor("#E2E2E8")).apply { setPadding(0, dp(18), 0, dp(14)) })
+        fun akce(popis: String, proved: () -> Unit) {
+            obsah.addView(tlacitko(popis, akce = proved),
+                LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { bottomMargin = dp(12) })
+        }
+        fun odkaz(popis: String, url: String) = akce(t(popis) + "  ↗") { otevri(url) }
+        if (stav.krok >= 2) {
+            obsah.addView(text(t("lgPlatnostNadpis"), 18f, Color.parseColor("#FFC978")).apply { typeface = Typeface.DEFAULT_BOLD })
+            obsah.addView(text(t("lgPlatnostText"), 16f, Color.parseColor("#E2E2E8")).apply { setPadding(0, dp(8), 0, dp(20)) })
         }
         when (stav.krok) {
             0 -> obsah.addView(tlacitko(t("lgUzMam")) { stav.prijimacMam(); vykresli() })
@@ -135,9 +141,18 @@ class LgPruvodce(private val activity: Activity, private val vyhledej: () -> Uni
             3 -> if (!manualni) {
                 instalacniPole(obsah)
             } else {
-                obsah.addView(tlacitko(t("lgZpetAutomatika")) { manualni = false; vykresli() })
-                odkaz("lgBalicek", "https://github.com/AdamRuzick4/PlayCaption-app/releases")
-                odkaz("lgSpravce", "https://github.com/webosbrew/dev-manager-desktop/releases/latest")
+                akce(t("lgZpetAutomatika")) { manualni = false; pocitac = false; vykresli() }
+                akce(t("lgUlozitIpk")) { activity.startActivity(Intent(activity, LgExportActivity::class.java)) }
+                if (!pocitac) {
+                    odkaz("lgAphanesAndroid", "https://github.com/symonxdd/aphanes/releases/tag/v1.0.2")
+                    odkaz("lgAphanesNavod", "https://symonxdd.github.io/aphanes/")
+                    akce(t("lgPouzitPc")) { pocitac = true; vykresli() }
+                } else {
+                    akce(t("lgPouzitAndroid")) { pocitac = false; vykresli() }
+                    odkaz("lgAphanesPc", "https://github.com/symonxdd/aphanes/releases/tag/desktop-v1.0.0")
+                    odkaz("lgSpravce", "https://github.com/webosbrew/dev-manager-desktop/releases/latest")
+                    odkaz("lgBalicek", "https://github.com/AdamRuzick4/PlayCaption-app/releases")
+                }
                 odkaz("lgCelyNavod", "https://github.com/AdamRuzick4/PlayCaption-app/blob/master/webos/NAVOD-LG.md")
             }
             4 -> odkaz("lgOficialniNavod", "https://webostv.developer.lge.com/develop/getting-started/developer-mode-app")
@@ -206,7 +221,7 @@ class LgPruvodce(private val activity: Activity, private val vyhledej: () -> Uni
                         chyba = null; vykresli()
                     }.setNegativeButton(t("zpet"), null).show()
             })
-            radek(tlacitko(t("lgRucniZaloha")) { manualni = true; vykresli() })
+            radek(tlacitko(t("lgRucniZaloha")) { manualni = true; pocitac = false; vykresli() })
             radek(tlacitko(t("lgUzMam")) { stav.prijimacMam(); vykresli() })
         }
     }

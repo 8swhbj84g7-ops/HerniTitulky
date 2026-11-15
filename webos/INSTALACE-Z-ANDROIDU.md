@@ -3,7 +3,10 @@
 V Android průvodci pro LG webOS je krok **Nainstalovat / aktualizovat**.
 Uživatel zadá místní IPv4 adresu a šestiznakovou Passphrase z Developer Mode.
 Na TV musí běžet Developer Mode a Key Server. Účet a heslo LG zadává pouze na TV.
-Tlačítko **Nedaří se? Ruční instalace z počítače** zachovává záložní postup.
+Tlačítko **Další možnosti instalace** nabízí nejprve externí Android správce
+Aphanes, potom volitelně počítač. Přibalený IPK lze uložit přes systémový dialog
+Androidu (Storage Access Framework); není potřeba oprávnění k celému úložišti.
+Export ověřuje stejný manifest a SHA256 jako přímý instalátor a sám nic neinstaluje.
 [Uživatelský návod](NAVOD-LG.md) popisuje přípravu a první spuštění.
 
 ## Balíček a sestavení
