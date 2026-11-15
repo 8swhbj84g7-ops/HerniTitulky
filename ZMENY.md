@@ -6,6 +6,19 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
 
 ## Unreleased
 
+- Story: podle herní přejímky GTA V je základní čtecí doba o 20 % kratší; výchozích 100 % nyní odpovídá předchozím 80 %. Shodný výpočet Android/LG 0.2.1, Standardní režim beze změny.
+
+- Integrační větev Story spojuje správu TV profilů, instalátor a Developer Mode s Android čtecí frontou. LG 0.2.0 podporuje Standardní i Příběhový režim; jeho nabídka, skrytí a lokální test pozastaví Story bez falešného dočtení. Master ani veřejné vydání se tím nemění.
+
+- Příběhový režim: kratší základní zobrazení při výchozích 100 %, posuvník délky 50–200 % po 5 % a výrazná tlačítka Standardní/Příběhový. Vyžaduje LG přijímač 0.2.0; rozčtená stránka se při změně času nerestartuje.
+
+- Volitelný Příběhový režim pro Android tablet + LG 0.0.8: čtecí fronta a potvrzené dočtení všech stránek; Standardní režim zůstává výchozí. Herní přejímka zatím probíhá.
+
+- Opakované OCR čtení stejné repliky se nespojí jako pokračování věty; regrese zachycená při telefonátu v GTA V.
+- OCR zachovává příslušnost řádků k blokům; větší řádkování uvnitř jednoho bloku nemusí vyřadit začátek repliky.
+- Jednorázově neúplný OCR snímek nepotvrdí zkrácení textu. Doplněný text lze znovu přeložit i bez závěrečné tečky.
+- Opožděné překlady kontrolují platnost textu, nastavení oblasti a spojení. Ruční režim Text je chráněn proti jednorázově neúplnému čtení celého odstavce.
+- Přidané JVM regresní testy a samostatný test skutečného ML Kit na Androidu; rozsah a omezení popisuje `docs/OCR-AUDIT.md`.
 - Android LG: společné šifrované spárování pro správu přijímače a platnost Developer Mode. Skutečná verze se kontroluje před instalací; stejný přijímač se nepřeinstaluje a novější se nevrací na starší.
 
 - Android LG: skutečný zbývající čas Developer Mode pro konkrétní TV, datum ověření, ruční kontrola a upozornění pod tři dny. Šifrované uložení relace, označení staršího/chybového údaje; bez prodlužování Developer Mode a bez změny TV přijímače.

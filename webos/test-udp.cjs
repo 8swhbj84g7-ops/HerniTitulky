@@ -33,9 +33,10 @@ const { once } = require('node:events');
                         bind(0, '127.0.0.1', callback);
                     };
                     socket.send = (data, port, host, callback) => {
-                        assert.equal(port, 41988);
-                        assert.equal(host, '127.255.255.255');
-                        send(data, discovery.address().port, '127.0.0.1', callback);
+                        if (port === 41988) {
+                            assert.equal(host, '127.255.255.255');
+                            send(data, discovery.address().port, '127.0.0.1', callback);
+                        } else { assert.equal(host, '127.0.0.1'); send(data, port, host, callback); }
                     };
                     sockets.push(socket);
                     return socket;
@@ -71,6 +72,19 @@ const { once } = require('node:events');
             sender.send(Buffer.from(text), sockets[0].address().port, '127.0.0.1');
             assert.equal((await deliveredFrame).packet.kind, kind);
         }
+        const id = 'a'.repeat(32) + '.1.1.0';
+        const capability = once(sender, 'message');
+        sender.send(Buffer.from('PCQ1\t'+id), sockets[0].address().port, '127.0.0.1');
+        assert.equal((await capability)[0].toString(), 'PCA1\t'+id+'\tready');
+        const story = new Promise(resolve=>{pending=resolve});
+        sender.send(Buffer.from('PCS1\t'+id+'\t0\tPříběh\t0.5\t0.9\t0.8\t1\t'),sockets[0].address().port,'127.0.0.1');
+        assert.equal((await story).packet.kind,'story');
+        let denied;
+        handlers.storyAck.request({payload:{id:'wrong',state:'done'},respond:r=>{denied=r}});
+        assert.equal(denied.returnValue,false);
+        const acknowledged=once(sender,'message');
+        await new Promise(resolve=>handlers.storyAck.request({payload:{id,state:'done'},respond:r=>{assert.equal(r.returnValue,true);resolve()}}));
+        assert.equal((await acknowledged)[0].toString(),'PCA1\t'+id+'\tdone');
         const closed = once(sockets[0], 'close');
         handlers.listen.cancel({ uniqueToken: 'udp-test' });
         await closed;

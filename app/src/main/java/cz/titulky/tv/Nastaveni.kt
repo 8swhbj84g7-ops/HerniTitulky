@@ -13,6 +13,15 @@ class Nastaveni(context: Context) {
 
     val jazykNeboCs get() = jazyk ?: "cs"
 
+    var pribehovy: Boolean
+        get() = prefs.getBoolean("pribehovy", false)
+        set(v) = prefs.edit().putBoolean("pribehovy", v).apply()
+
+    var casPribehuProcenta: Int
+        get() = prefs.getInt("casPribehuProcenta", CasovaniPribehu.VYCHOZI_PROCENTA)
+            .coerceIn(CasovaniPribehu.MIN_PROCENT, CasovaniPribehu.MAX_PROCENT)
+        set(v) = prefs.edit().putInt("casPribehuProcenta", v.coerceIn(CasovaniPribehu.MIN_PROCENT, CasovaniPribehu.MAX_PROCENT)).apply()
+
     /** Box s překladem přes původní titulek (jinak nad ním). */
     var prekryvat: Boolean
         get() = prefs.getBoolean("prekryvat", true)

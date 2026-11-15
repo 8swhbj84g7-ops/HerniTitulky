@@ -1,10 +1,10 @@
 # Shoda funkcí televizního přijímače
 
-LG 0.1.0 porovnáváme s Android režimem **titulky z telefonu/tabletu** a protokolem
+LG 0.2.1 porovnáváme s Android režimem **titulky z telefonu/tabletu** a protokolem
 v `Propojeni.kt`. Remote Play, OCR, překlad a účet konzole zajišťuje Android.
 Matice odděluje implementované vykreslení od přejímky konkrétní herní scény.
 
-| Funkce Android přijímače | LG 0.1.0 | Ověření |
+| Funkce Android přijímače | LG 0.2.1 | Ověření |
 | --- | --- | --- |
 | `PCT1`: české titulky a více řádků | Ano | Parser/UI, skutečné UDP a dřívější hraní na C5. |
 | Poloha, šířka a velikost podle zelené oblasti | Ano | Automatické testy a dosavadní běh. |
@@ -22,8 +22,10 @@ Matice odděluje implementované vykreslení od přejímky konkrétní herní sc
 | Výpadek odesílajícího zařízení po 5 s | Skrytí textů i všech rámečků | Test celé UI cesty. |
 | Nabídka, zavření a znovuspuštění | OK/Zpět otevře nabídku; Ukončit zavře; spuštění obnoví odběr | TV a regresní testy životního cyklu. |
 
-Příběhový režim se vyvíjí odděleně na `feature/story-mode` a není součástí
-této samostatné LG větve.
+Integrovaný Příběhový režim používá Android frontu a LG stránky s potvrzením
+`PCA1`. Výchozí časování je 100 %, rozsah 50–200 %. Skrytí, nabídka a lokální test
+pozastaví dočtení Story; Standardní časování se nemění. Automatické důkazy:
+`test-story.cjs`, `test-controls.cjs`; nová herní přejímka integrované verze zbývá.
 
 ## Význam oblastí
 

@@ -47,12 +47,21 @@
             " · poslední titulek: " + (lastCaptionAt ? Math.max(0, Math.floor((now - lastCaptionAt) / 1000)) + " s" : "žádný") +
             "\nNaposledy vybraný vstup: " + (port ? "HDMI " + port[1] : "nezvolen") +
             (otherSender ? "\nPříjem z dalšího zařízení byl odmítnut, původní zdroj je stále aktivní." : "") +
-            (hiddenByUser ? "\nTitulky jsou dočasně skryté; jejich čas běží dál." : "");
+            (hiddenByUser ? "\nTitulky jsou dočasně skryté; Příběhový režim čeká na zobrazení." : "");
+    }
+
+    function storyMasked(now) {
+        return hiddenByUser || now < testUntil || (controls && !controls.hidden) || (inputPanel && !inputPanel.hidden);
+    }
+
+    function pauseMaskedStory(now) {
+        if (receiverUI && receiverUI.storyActive() && storyMasked(now)) receiverUI.pauseStory(now);
     }
 
     function showControls(visible) {
         if (!controls) return;
         controls.hidden = !visible;
+        pauseMaskedStory(Date.now());
         if (visible) { controlIndex = 0; controlButtons[0].focus(); updateInfo(Date.now()); }
     }
 
@@ -65,10 +74,12 @@
             testSubtitle.hidden = false;
             testUntil = Date.now() + 5000;
             output.hidden = true;
+            pauseMaskedStory(Date.now());
         };
         controlButtons[2].onclick = function () {
             hiddenByUser = !hiddenByUser;
             output.hidden = hiddenByUser || testUntil > Date.now();
+            pauseMaskedStory(Date.now());
             this.textContent = hiddenByUser ? "Znovu zobrazit titulky" : "Dočasně skrýt titulky";
             updateInfo(Date.now());
         };
@@ -164,8 +175,10 @@
         status.hidden = false;
     }
 
-    function clearText() {
-        if (receiverUI) receiverUI.clear();
+    function clearText(preserveStory) {
+        if (receiverUI) {
+            if (preserveStory && receiverUI.storyActive()) receiverUI.pauseStory(Date.now()); else receiverUI.clear();
+        }
         subtitle.hidden = true;
         hint.hidden = true;
         hint.textContent = "";
@@ -226,6 +239,14 @@
         request.call("luna://com.webos.surfacemanager.screenSaver/restartUserActivityTimer", "{}");
     }
 
+    var ackBridge = null;
+    function storyAck(id, state) {
+        if (ackBridge) return;
+        var request = new PalmServiceBridge(); ackBridge = request;
+        var timeout = setTimeout(function () { if (ackBridge === request) { ackBridge = null; request.cancel(); } }, 2000);
+        request.onservicecallback = function () { clearTimeout(timeout); if (ackBridge === request) ackBridge = null; };
+        request.call("luna://cz.playcaption.overlaytest.receiver/storyAck", JSON.stringify({id:id,state:state}));
+    }
     function receive(raw) {
         var result;
         try {
@@ -258,23 +279,25 @@
             return;
         }
         var now = Date.now();
-        if (packet.kind === "subtitle") protocolWarning = "";
+        if (packet.kind === "subtitle" || packet.kind === "story") protocolWarning = "";
         receiverReady = true;
         lastDataAt = now;
         statusText = "Zařízení posílá platná data. OK / Zpět = nabídka";
         var connectionChanged = source !== result.source || (lastSeen && now - lastSeen > 5000);
-        if (connectionChanged) clearText();
+        if (connectionChanged) clearText(packet.kind === "story" && (!source || source === result.source));
         if (receiverUI && receiverUI.handle(packet, now)) {
             lastSeen = now;
             source = result.source;
             status.hidden = !activityWarning && !protocolWarning;
             return;
         }
+        if (packet.kind !== "story" && receiverUI && receiverUI.storyActive()) return;
+        if (packet.kind === "story" && receiverUI && receiverUI.oldStory(packet.id)) return;
         // Opakované pakety jsou heartbeat; nesmějí znovu zobrazit již prošlý titulek.
         var changed = packet.id !== lastId || connectionChanged;
         lastSeen = now;
         status.hidden = !activityWarning && !protocolWarning;
-        if (!changed) return;
+        if (!changed && packet.kind !== "story") return;
         lastId = packet.id;
         if (packet.text) lastCaptionAt = now;
         source = result.source;
@@ -289,7 +312,12 @@
         subtitle.style.width = (width * 100) + "%";
         var viewport = document.documentElement ? document.documentElement.clientHeight : 1080;
         subtitle.style.fontSize = Math.min(38 * (layout ? layout[3] : 1), (viewport * 0.18 - 32) / 2.7) + "px";
-        if (receiverUI) receiverUI.caption(packet, now);
+        if (receiverUI && packet.kind === "story") {
+            subtitleUntil = Infinity;
+            packet.paused = packet.paused || Boolean(storyMasked(now));
+            var state = receiverUI.story(packet, now);
+            if (state) storyAck(packet.id, state);
+        } else if (receiverUI) receiverUI.caption(packet, now);
         if (packet.hint !== hint.textContent) {
             hint.textContent = packet.hint;
             hint.hidden = !packet.hint;
@@ -311,14 +339,18 @@
         keepOverlayOpen();
         timer = setInterval(function () {
             var now = Date.now();
-            if (receiverUI) receiverUI.tick(now);
+            if (receiverUI) {
+                if (lastSeen && now - lastSeen > 5000) receiverUI.pauseStory(now);
+                pauseMaskedStory(now);
+                receiverUI.tick(now);
+            }
             if (now - lastActivity >= 45000) keepOverlayOpen();
             if (now >= subtitleUntil) subtitle.hidden = true;
             if (now >= hintUntil) hint.hidden = true;
             if (testSubtitle && now >= testUntil) testSubtitle.hidden = true;
             if (output) output.hidden = hiddenByUser || now < testUntil;
             if (lastSeen && now - lastSeen > 5000) {
-                clearText();
+                clearText(true);
                 hint.textContent = "";
                 showStatus("PlayCaption LG · Spojení přerušeno, čekám na zařízení · OK / Zpět = nabídka");
             }

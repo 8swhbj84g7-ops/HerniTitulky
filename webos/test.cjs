@@ -154,19 +154,30 @@ assert.notEqual(replies.at(-1).packet?.text, 'Cizí heartbeat');
 now += 1;
 sockets[0].emit('message', Buffer.from('PCT1\t4\t6000\tPřevzetí po výpadku\t'), { address: '192.168.0.3' });
 assert.equal(replies.at(-1).packet.text, 'Převzetí po výpadku');
-const unsupported = replies.length;
-const sentBeforeUnsupported = sent.length;
+const storyCount = replies.length;
+const sentBeforeStory = sent.length;
 now += 10000;
-for (const text of ['PCS1\tZADOST', 'PCQ1\t'+'a'.repeat(32)+'.0.0.0',
-    'PCS1\t'+'a'.repeat(32)+'.0.1.0\t0\tStory\t0.5\t0.9\t0.8\t1\t']) {
-    sockets[0].emit('message', Buffer.from(text), { address: '192.168.0.4' });
-}
-assert.equal(replies.length, unsupported+1);
-assert.equal(replies.at(-1).unsupportedStory,true,'Story se pouze místně vysvětlí, neprohlásí za podporované.');
-assert.equal(replies.at(-1).packet,undefined);
-assert.equal(sent.length,sentBeforeUnsupported,'Žádné ready/ACK pro nepodporované Story.');
-sockets[0].emit('message', Buffer.from('PCT1\t5\t6000\tStandardní fallback\t'), { address: '192.168.0.2' });
-assert.equal(replies.at(-1).packet.text, 'Standardní fallback');
+const storyId = 'a'.repeat(32)+'.0.1.0';
+sockets[0].emit('message', Buffer.from('PCS1\tZADOST'), {address:'192.168.0.4',port:40000});
+assert.equal(replies.length,storyCount,'Neplatné Story nesmí obsadit příjem.');
+sockets[0].emit('message', Buffer.from('PCQ1\t'+storyId), {address:'192.168.0.4',port:40000});
+assert.equal(sent.at(-1).data,'PCA1\t'+storyId+'\tready');
+assert.equal(sent.length,sentBeforeStory+1);
+// Dotaz na schopnosti nesmí přebrat ani prodloužit vlastnictví zdroje.
+sockets[0].emit('message', Buffer.from('PCT1\t5\t6000\tStandardní fallback\t'), {address:'192.168.0.2'});
+assert.equal(replies.at(-1).packet.text,'Standardní fallback');
+const leased = replies.length;
+sockets[0].emit('message', Buffer.from('PCS1\t'+storyId+'\t0\tCizí Story\t0.5\t0.9\t0.8\t1\t'), {address:'192.168.0.4',port:40000});
+assert.equal(replies.at(-1).otherSender,true,'Cizí Story nesmí obejít aktivní zdroj.');
+assert.equal(sent.length,sentBeforeStory+1,'Cizímu zdroji neposílat ACK.');
+now += 5000;
+sockets[0].emit('message', Buffer.from('PCS1\t'+storyId+'\t0\tStory\t0.5\t0.9\t0.8\t1\t'), {address:'192.168.0.4',port:40000});
+assert.equal(replies.at(-1).packet.kind,'story');
+now += 5000;
+sockets[0].emit('message', Buffer.from('PCT1\t6\t6000\tStandard po Story\t'), {address:'192.168.0.2'});
+let staleAck;
+handlers.storyAck.request({payload:{id:storyId,state:'done'},respond:r=>staleAck=r});
+assert.equal(staleAck.returnValue,false,'Po změně zdroje neodesílat ACK původnímu Story.');
 const count = replies.length;
 sockets[0].emit('message', Buffer.from('PCS1\tZADOST'), {});
 assert.equal(replies.length, count, 'Přijímač nesmí předávat přihlašovací údaje.');

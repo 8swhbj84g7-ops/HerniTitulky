@@ -35,6 +35,13 @@
 - Skutečné herní odpovědi a úplnost jejich OCR/překladu zbývají k přejímce;
   syntetické UDP pakety je nenahrazují. Viz `SHODA-ANDROID.md`.
 
+## Story MVP 0.0.8 a časování 0.0.9
+
+- Přidán `test-story.cjs`: časování skutečných českých stránek, dočtení, pauza/obnova, opakovaná potvrzení a generační reset.
+- Skutečný C5 test přes UDP a DOM: 3 stránky, celý obsah, nulové přetečení, potvrzení až po čtecím minimu; po zrušení fungoval Standardní titulek. Viz `docs/PRIBEHOVY-REZIM.md`.
+- Nová herní přejímka a dlouhý běh ještě zbývají.
+
+- LG 0.0.9: parser 9/10 polí, procenta 50–200, kratší výchozí základ a změna až od následující stránky prošly v `test-story.cjs`. Skutečná C5: stejný text 2252 ms při 100 % a 1932 ms při 80 %, následně funkční Standardní titulek. Podrobnosti v `docs/PRIBEHOVY-REZIM.md`.
 ## Samostatná LG větev 0.0.10
 
 `feature/lg-webos-receiver` obsahuje původní LG přijímač, opravy HDMI/voleb/stránek
@@ -110,6 +117,7 @@ node webos/test.cjs
 node webos/test-udp.cjs
 node webos/test-input.cjs
 node webos/test-receiver.cjs
+node webos/test-story.cjs
 node webos/test-controls.cjs
 python3 webos/build.py
 git diff --check
@@ -270,3 +278,19 @@ na C5 se v této poslední změně záměrně neměnila verze ani neodinstalová
 Dřívější skutečná instalace/aktualizace z Androidu je popsaná výše u test06.
 Další fyzická LG, všechny výpadky sítě a původní Android TV hardware touto etapou
 nebyly znovu přetestované. Žádné automatické prodlužování Developer Mode.
+
+## Integrace Story se správou LG (0.2.0)
+
+Větev `feature/story-mode` slučuje `feature/tv-platform-management` (`484ed6e`).
+Historické záznamy 0.1.0 výše popisují samostatný přijímač bez Story; integrovaná
+0.2.0 podporuje oba režimy. Android nadále vlastní jedinou čtecí frontu, LG jen
+stránkuje aktuální repliku a potvrzuje její dočtení.
+
+- Šest Node sad přes `python3 webos/build.py`: parser/UI, UDP, HDMI, stránky,
+  ovládání i Story včetně procent. Nové regrese pokrývají zachování zdrojové
+  relace pro Story, zneplatnění ACK po změně odesílatele a pozastavení při
+  skrytí/menu/lokálním testu.
+- Android `VysilacTest` zachovává generační ochranu při změně TV a ověřuje,
+  že Story potlačí pouze standardní titulky; kanál voleb dál funguje a po
+  vypnutí Story se obnoví PCT1 heartbeat.
+- Tento záznam neprohlašuje nové hraní s integrovanou verzí za dokončené.

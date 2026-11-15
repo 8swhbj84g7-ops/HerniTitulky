@@ -11,11 +11,11 @@ var subscriptions = {};
 var socket = null;
 var announceTimer = null;
 var ready = false;
+var storyPeer = null;
 var receiverName = "LG PlayCaption";
 var sender = null;
 var senderSeen = 0;
 var rejectedAt = 0;
-var storyWarningAt = 0;
 
 function notify(payload) {
     Object.keys(subscriptions).forEach(function (key) { subscriptions[key].respond(payload); });
@@ -25,10 +25,10 @@ function stop() {
     clearInterval(announceTimer);
     announceTimer = null;
     ready = false;
+    storyPeer = null;
     sender = null;
     senderSeen = 0;
     rejectedAt = 0;
-    storyWarningAt = 0;
     if (socket) socket.close();
     socket = null;
 }
@@ -66,14 +66,7 @@ function start() {
     receiver.on("message", function (buffer, remote) {
         var packet = parse(buffer);
         var now = Date.now();
-        if (!packet) {
-            if (buffer.length <= 8192 && /^PCQ1\t[a-f0-9]{32}\.\d{1,10}\.\d{1,10}\.\d{1,10}$/.test(buffer.toString("utf8")) &&
-                (!sender || sender === remote.address || now - senderSeen >= 5000) && (!storyWarningAt || now - storyWarningAt >= 5000)) {
-                storyWarningAt = now;
-                notify({ returnValue: true, unsupportedStory: true });
-            }
-            return;
-        }
+        if (!packet) return;
         // Starý Android mění UDP porty: do budoucího párování držíme zdroj podle IP.
         if (sender && sender !== remote.address && now - senderSeen < 5000) {
             if (!rejectedAt || now - rejectedAt >= 5000) {
@@ -82,8 +75,14 @@ function start() {
             }
             return;
         }
+        if (packet.kind === "storyQuery") {
+            receiver.send(Buffer.from("PCA1\t" + packet.id + "\tready"), remote.port, remote.address, function () {});
+            return;
+        }
+        if (sender !== remote.address) storyPeer = null;
         sender = remote.address;
         senderSeen = now;
+        if (packet.kind === "story") storyPeer = {id:packet.id,address:remote.address,port:remote.port};
         notify({ returnValue: true, packet: packet, source: remote.address });
     });
     receiver.bind(41989, "0.0.0.0", function () {
@@ -106,4 +105,14 @@ service.register("listen", function (message) {
 }, function (message) {
     delete subscriptions[message.uniqueToken];
     if (Object.keys(subscriptions).length === 0) stop();
+});
+
+service.register("storyAck", function (message) {
+    var p = message.payload || {};
+    if (!socket || !storyPeer || p.id !== storyPeer.id || ["reading", "done"].indexOf(p.state) < 0) {
+        message.respond({returnValue:false}); return;
+    }
+    socket.send(Buffer.from("PCA1\t" + p.id + "\t" + p.state), storyPeer.port, storyPeer.address, function (error) {
+        message.respond({returnValue:!error});
+    });
 });

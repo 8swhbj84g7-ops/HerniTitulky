@@ -14,12 +14,13 @@ const html=fs.readFileSync(__dirname+'/app/index.html','utf8');
 const nodes=Object.fromEntries([...html.matchAll(/id="([^"]+)"/g)].map(m=>[m[1],new Element()]));
 nodes.output.hidden=false;
 const listeners={},bridges=[],intervals=new Set();let input='com.webos.app.hdmi3';
-function Bridge(){bridges.push(this);this.call=(uri,payload)=>{this.uri=uri;this.payload=JSON.parse(payload)};this.cancel=()=>{this.cancelled=true};}
+function Bridge(){bridges.push(this);this.call=(uri,payload)=>{this.uri=uri;this.payload=JSON.parse(payload);if(uri.endsWith("/storyAck"))this.onservicecallback("{\"returnValue\":true}")};this.cancel=()=>{this.cancelled=true};}
 const document={documentElement:{clientHeight:1080},getElementById:id=>nodes[id],createElement:()=>new Element(),
     createTextNode:t=>({textContent:t}),addEventListener:(n,f)=>{listeners[n]=f}};
 function XHR(){this.open=()=>{};this.send=()=>{this.responseText=fs.readFileSync(__dirname+'/app/appinfo.json','utf8');this.onload()};}
 const window={PalmSystem:{launchParams:'{"resumeOverlay":true}'},close:()=>closed++,addEventListener:(n,f)=>{listeners[n]=f}};
 const context=vm.createContext({window,document,PalmServiceBridge:Bridge,XMLHttpRequest:XHR,Date:{now:()=>now},
+    setTimeout:()=>0,clearTimeout:()=>{},
     localStorage:{getItem:()=>input,setItem:(k,v)=>{input=v}},
     setInterval:f=>{tick=f;intervals.add(f);return f},clearInterval:f=>intervals.delete(f)});
 vm.runInContext(fs.readFileSync(__dirname+'/app/receiver-ui.js','utf8'),context);
@@ -69,4 +70,20 @@ key(461);nodes['close-app'].onclick();assert.equal(closed,1);assert.equal(interv
 assert.equal(receiver().cancelled,true);
 assert.equal(bridges.some(b=>b.uri.endsWith('/storyAck')),false,'Lokální test/skrytí nic nepotvrzují jako dočtené.');
 listeners.webOSRelaunch({detail:{resumeOverlay:true}});assert.equal(nodes.controls.hidden,true);assert.equal(intervals.size,1);
-console.log('OK: menu OK/šipky/Zpět, test bez falešného spojení, pravdivé stavy, skrytí bez obnovení prošlého textu, chyba, HDMI, zavření/relaunch.');
+const storyId='b'.repeat(32)+'.1.1.0';
+const storyText='Příběhový titulek, který musí být vidět dost dlouho, než se posune čtecí fronta.';
+const story=()=>send('PCS1\t'+storyId+'\t0\t'+storyText+'\t0.5\t0.9\t0.8\t1\t\tD:100');
+const ack=()=>bridges.filter(b=>b.uri.endsWith('/storyAck')).at(-1)?.payload.state;
+story();assert.equal(ack(),'reading');
+key(13);nodes['toggle-output'].onclick();key(461);
+for(let n=0;n<40;n++){now+=250;story();tick();assert.equal(ack(),'reading','Skryté Story nesmí být dočtené.');}
+key(13);nodes['toggle-output'].onclick();key(461);story();
+assert.equal(nodes.subtitle.hidden,false);
+for(let n=0;n<40 && ack()!=='done';n++){now+=250;tick();story();}
+assert.equal(ack(),'done','Po zobrazení musí Story pokračovat a dočíst se.');
+// Lokální test má vlastní masku a nesmí dočíst následující Story.
+const nextStory=()=>send('PCS1\t'+'b'.repeat(32)+'.1.2.0\t0\tDalší příběhová replika.\t0.5\t0.9\t0.8\t1\t\tD:100');
+nextStory();key(13);key(40);key(13);
+for(let n=0;n<16;n++){now+=250;nextStory();tick();assert.equal(ack(),'reading');}
+assert.equal(nodes.output.hidden,true);
+console.log('OK: Story s novým menu, skrytí a lokální test pozastaví dočtení; obnovení zachová repliku.');

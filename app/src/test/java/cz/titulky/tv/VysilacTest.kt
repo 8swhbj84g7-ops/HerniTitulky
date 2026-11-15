@@ -8,6 +8,36 @@ import java.net.InetAddress
 import java.net.SocketTimeoutException
 
 class VysilacTest {
+    @Test fun storySuppressesOnlyStandardSubtitlesAndRestoresThemAfterSwitch() {
+        DatagramSocket(Propojeni.PORT_TITULKY, InetAddress.getByName("127.0.0.1")).use { tv ->
+            tv.soTimeout = 100
+            fun receive(ms: Long): List<String> {
+                val packets = mutableListOf<String>()
+                val until = System.currentTimeMillis() + ms
+                while (System.currentTimeMillis() < until) {
+                    val packet = DatagramPacket(ByteArray(8192), 8192)
+                    try { tv.receive(packet); packets.add(String(packet.data, 0, packet.length, Charsets.UTF_8)) }
+                    catch (_: SocketTimeoutException) {}
+                }
+                return packets
+            }
+            try {
+                Propojeni.Vysilac.pribehRidi = true
+                Propojeni.Vysilac.nastavCil("127.0.0.1", "Story")
+                Propojeni.Vysilac.zmena("Standard čeká", 6000, "")
+                Propojeni.Vysilac.nastavVolby(listOf("Volba během Story"), 0)
+                val story = receive(1300)
+                assertFalse(story.any { it.startsWith("PCT1") })
+                assertTrue(story.any { it.startsWith("PCV1") && "Volba během Story" in it })
+                Propojeni.Vysilac.pribehRidi = false
+                assertTrue(receive(1300).any { it.startsWith("PCT1") && "Standard čeká" in it })
+            } finally {
+                Propojeni.Vysilac.pribehRidi = false
+                Propojeni.Vysilac.nastavCil(null, "")
+            }
+        }
+    }
+
     @Test fun switchingClearsOldReceiverAndNeverReplaysOldTextOnNewReceiver() {
         val a = DatagramSocket(Propojeni.PORT_TITULKY, InetAddress.getByName("127.0.0.1"))
         // Dva cíle na jednom loopbacku fungují i na macOS bez dalšího síťového aliasu.
