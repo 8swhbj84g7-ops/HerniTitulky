@@ -1,8 +1,9 @@
 # Instalace LG přijímače z Androidu
 
-V Android průvodci pro LG webOS je krok **Nainstalovat / aktualizovat**.
+V Android průvodci pro LG webOS je krok **Ověřit TV a verzi přijímače**,
+po kterém se nabídne instalace, aktualizace nebo spuštění bez přeinstalování.
 Uživatel zadá místní IPv4 adresu a šestiznakovou Passphrase z Developer Mode.
-Na TV musí běžet Developer Mode a Key Server. Účet a heslo LG zadává pouze na TV.
+Na TV musí běžet Developer Mode; Key Server je potřeba jen pro první či nové spárování. Účet a heslo LG zadává pouze na TV.
 Tlačítko **Další možnosti instalace** nabízí nejprve externí Android správce
 Aphanes, potom volitelně počítač. Přibalený IPK lze uložit přes systémový dialog
 Androidu (Storage Access Framework); není potřeba oprávnění k celému úložišti.
@@ -33,7 +34,17 @@ Manifest uvádí také protokoly a schopnosti; nevydáváme jej za zjištěnou v
   domácí síti; nejde o nezávislé ověření výrobce TV. C5 Developer Mode nabízí
   pouze starší podpis `ssh-rsa`; kompatibilita je povolená jen pro tuto SSH relaci,
   bez vypnutí kontroly otisku a bez změny globální konfigurace JSch.
-- SFTP nahraje vlastní náhodně pojmenovaný IPK do `/media/developer/temp`, přečte
+- Po autentizaci ověříme stabilní ID stejným výpočtem jako discovery přijímače
+  (hostname a aktivní MAC adresy). SSH klíč se uloží AES-GCM s Android Keystore,
+  vázaný AAD na ID TV a účel `:ssh`. IP je jen vyhledávací pomůcka; kontrola otisku
+  i skutečného ID chrání proti záměně po změně IP. Session token se načte ve stejném
+  spojení, uloží odděleně a připraví pro ověření času. Jeho nedostupnost neblokuje IPK.
+- Přes SFTP nejdříve načteme skutečné `appinfo.json`. Pouze chyba chybějícího souboru
+  znamená nenainstalovaný přijímač. ID a číselnou verzi ověřujeme; neznámý formát
+  nesmí vést k přepsání. Stejná či novější verze se jen spustí, bez uploadu/install.
+  Verze se znovu čte i při následném potvrzení instalace, aby starší výsledek UI
+  neumožnil downgrade. Samotná shoda verze není tvrzení o všech schopnostech přijímače.
+- Při potřebné instalaci SFTP nahraje vlastní náhodně pojmenovaný IPK do `/media/developer/temp`, přečte
   jej zpět a porovná bajty. Předchozí přijímač se neodinstalovává.
 - `com.webos.appInstallService/dev/install` musí potvrdit konečný úspěch.
   Samotné přijetí požadavku nestačí. Následuje kontrola skutečného `appinfo.json`
@@ -46,8 +57,8 @@ pokračovat i po zavření Android dialogu. Při přerušení takového požadav
 ponecháváme, aby jej LG mohla dočíst; po potvrzeném konci odstraníme pouze vlastní
 přenesený soubor. Neprovádíme hromadný úklid TV.
 
-Passphrase ani soukromý klíč se neukládají do souborů, preferencí či logů.
-Vstupní pole se nezálohují; veřejný SSH otisk není přihlašovací tajemství.
+Passphrase se neukládá. Soukromý klíč se ukládá pouze zašifrovaný pomocí
+Android Keystore; nikdy do logů ani v čitelné podobě. Vstupní pole se nezálohují; veřejný SSH otisk není přihlašovací tajemství.
 Veřejné/hostitelské adresy, přesměrování HTTP a příliš velké odpovědi se odmítají.
 MVP podporuje místní IPv4; IPv6 a DNS jména nejsou implementované.
 
@@ -75,7 +86,8 @@ instalace na čisté TV a jiné modely tím nejsou ověřené.
 službu a neprodlužuje relaci. Po prvním propojení se tento session token uloží
 AES-GCM šifrovaně s klíčem v Android Keystore; AAD jej váže na stabilní ID TV.
 Android zálohování je vypnuté. Token, URL s tokenem, Passphrase ani soukromý klíč
-se nelogují. SSH klíč a Passphrase se stejně jako dříve drží pouze v paměti operace.
+se nelogují. Passphrase zůstává pouze v paměti operace. SSH klíč pro další spojení je uložený
+odděleně, šifrovaně a s jiným AAD než session token.
 
 `LgDevMode` používá pouze HTTPS GET na pevnou službu LG
 `developer.lge.com/secure/CheckDevModeSession.dev`, bez přesměrování a cache HTTP.

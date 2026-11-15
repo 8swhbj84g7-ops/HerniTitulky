@@ -5,6 +5,7 @@ import com.jcraft.jsch.ChannelSftp
 import com.jcraft.jsch.JSch
 import com.jcraft.jsch.KeyPair
 import com.jcraft.jsch.Session
+import com.jcraft.jsch.SftpException
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
@@ -14,18 +15,23 @@ import java.net.Socket
 import java.net.SocketTimeoutException
 import java.util.UUID
 
-internal data class LgInstalaceVysledek(val verze: String, val spusteno: Boolean)
+internal enum class LgStavVerze { CHYBI, AKTUALNI, AKTUALIZACE, NOVEJSI }
+internal data class LgKontrola(val id: String, val verze: String?, val dostupna: String, val stav: LgStavVerze)
+internal data class LgInstalaceVysledek(val verze: String, val spusteno: Boolean, val zmeneno: Boolean = true)
 
 internal class LgInstalator(
     private val zdroj: LgZdrojBalicku,
     private val znamyOtisk: (String) -> String?,
-    private val ulozOtisk: (String, String) -> Unit
+    private val ulozOtisk: (String, String) -> Unit,
+    private val uloziste: LgDevUloziste? = null,
+    private val ocekavaneId: String? = null
 ) {
     @Volatile private var zruseno = false
     @Volatile private var session: Session? = null
     @Volatile private var http: Socket? = null
     private var faze = LgFaze.BALICEK
     private var platnost = 0L
+    private var skutecneId = ""
 
     fun zrus() {
         zruseno = true
@@ -40,6 +46,13 @@ internal class LgInstalator(
     fun nainstaluj(adresa: String, passphrase: CharArray, prubeh: (LgFaze) -> Unit): LgInstalaceVysledek {
         lateinit var b: LgBalicek
         return pripojene(adresa, passphrase, prubeh, { b = zdroj.nacti() }) { ssh, krok ->
+            krok(LgFaze.KONTROLA)
+            val stav = zkontroluj(ssh, b)
+            if (stav.stav == LgStavVerze.AKTUALNI || stav.stav == LgStavVerze.NOVEJSI) {
+                val spusteno = spust()
+                kontrola()
+                return@pripojene LgInstalaceVysledek(stav.verze!!, spusteno, false)
+            }
             krok(LgFaze.PRENOS)
             val cesta = "/media/developer/temp/playcaption-" + UUID.randomUUID().toString() + ".ipk"
             var pozadovanaInstalace = false
@@ -61,11 +74,8 @@ internal class LgInstalator(
                 val info = sftp.get("/media/developer/apps/usr/palm/applications/$LG_APP_ID/appinfo.json").use { omezene(it, 16384) }
                 LgInstalacniProtokol.verze(JSONObject(info.toString(Charsets.UTF_8)), b)
                 kontrola()
-                val spusteno = runCatching {
-                    luna("luna://com.webos.applicationManager/launch", JSONObject().put("id", LG_APP_ID), false) {
-                        it.optBoolean("returnValue", false)
-                    }
-                }.isSuccess
+                uloziste?.prijimac(skutecneId, b.verze)
+                val spusteno = spust()
                 kontrola()
                 return@pripojene LgInstalaceVysledek(b.verze, spusteno)
             } finally {
@@ -77,21 +87,68 @@ internal class LgInstalator(
         }
     }
 
+    fun zkontroluj(adresa: String, passphrase: CharArray, prubeh: (LgFaze) -> Unit): LgKontrola {
+        lateinit var b: LgBalicek
+        return pripojene(adresa, passphrase, prubeh, { b = zdroj.nacti() }) { ssh, krok ->
+            krok(LgFaze.KONTROLA)
+            zkontroluj(ssh, b)
+        }
+    }
+
+    private fun zkontroluj(ssh: Session, b: LgBalicek): LgKontrola {
+        val sftp = ssh.openChannel("sftp") as ChannelSftp
+        try {
+            sftp.connect(8000)
+            val cesta = "/media/developer/apps/usr/palm/applications/$LG_APP_ID/appinfo.json"
+            val info = try { sftp.get(cesta).use { omezene(it, 16384) } }
+                catch (e: SftpException) { if (e.id == ChannelSftp.SSH_FX_NO_SUCH_FILE) null else throw e }
+            val version = info?.let {
+                val json = JSONObject(it.toString(Charsets.UTF_8))
+                if (json.optString("id") != LG_APP_ID) throw LgInstalacniChyba(LgChyba.OVERENI)
+                json.getString("version")
+            }
+            val stav = LgInstalacniProtokol.stavVerze(version, b.verze)
+            uloziste?.prijimac(skutecneId, version)
+            return LgKontrola(skutecneId, version, b.verze, stav)
+        } finally { sftp.disconnect() }
+    }
+
+    private fun spust() = runCatching {
+        luna("luna://com.webos.applicationManager/launch", JSONObject().put("id", LG_APP_ID), false) {
+            it.optBoolean("returnValue", false)
+        }
+    }.isSuccess
+
     /** Pouze čtení relace; neinstaluje přijímač a nemění Developer Mode. */
     fun nactiRelaci(adresa: String, passphrase: CharArray): String = pripojene(adresa, passphrase, {}, {}) { ssh, krok ->
         krok(LgFaze.OVERENI)
+        prectiRelaci(ssh)
+    }
+
+    private fun prectiRelaci(ssh: Session): String {
         val sftp = ssh.openChannel("sftp") as ChannelSftp
         try {
             sftp.connect(8000)
             val data = sftp.get("/var/luna/preferences/devmode_enabled").use { omezene(it, 1024) }
             try {
-                data.toString(Charsets.US_ASCII).trim().also { require(it.matches(Regex("[A-Za-z0-9]{8,256}"))) }
+                return data.toString(Charsets.US_ASCII).trim().also { require(it.matches(Regex("[A-Za-z0-9]{8,256}"))) }
             } finally { data.fill(0) }
         } catch (e: Exception) {
             if (e is LgInstalacniChyba) throw e
             throw LgInstalacniChyba(LgChyba.RELACE)
-        }
-        finally { sftp.disconnect() }
+        } finally { sftp.disconnect() }
+    }
+
+    private fun identita(ssh: Session): String {
+        val channel = ssh.openChannel("exec") as ChannelExec
+        // Stejná identita jako discovery přijímače; nezávisí na instalaci IPK ani IP adrese.
+        channel.setCommand("""/usr/bin/node -e 'var os=require("os"),c=require("crypto"),i=os.hostname(),n=os.networkInterfaces();Object.keys(n).forEach(function(k){n[k].forEach(function(a){if(!a.internal&&a.family==="IPv4")i+=a.mac;});});console.log("lg-"+c.createHash("sha256").update(i).digest("hex").slice(0,12));'""")
+        val input = channel.inputStream
+        try {
+            channel.connect(8000)
+            val value = omezene(input, 128).toString(Charsets.US_ASCII).trim()
+            return LgInstalacniProtokol.identita(value, ocekavaneId)
+        } finally { channel.disconnect() }
     }
 
     private fun <T> pripojene(adresa: String, passphrase: CharArray, prubeh: (LgFaze) -> Unit,
@@ -108,15 +165,28 @@ internal class LgInstalator(
         fun krok(f: LgFaze) { kontrola(); faze = f; prubeh(f) }
         try {
             val ip = LgInstalacniProtokol.adresa(adresa)
-            if (heslo.size != 6) throw LgInstalacniChyba(LgChyba.PASSPHRASE)
+            if (heslo.isNotEmpty() && heslo.size != 6) throw LgInstalacniChyba(LgChyba.PASSPHRASE)
             krok(LgFaze.BALICEK)
             predPripojenim()
             krok(LgFaze.KLIC)
-            key = nactiKlic(ip)
-            overHeslo(jsch, key, heslo)
-            jsch.addIdentity("playcaption-lg", key, null, heslo)
+            val savedId = ocekavaneId ?: uloziste?.parovaniId(ip)
+            val zeZalohy = heslo.isEmpty()
+            key = if (zeZalohy) {
+                try { savedId?.let { uloziste?.ssh(it) } ?: throw LgInstalacniChyba(LgChyba.PAROVANI) }
+                catch (_: Exception) { throw LgInstalacniChyba(LgChyba.PAROVANI) }
+            } else {
+                val encrypted = nactiKlic(ip)
+                try { odemkni(jsch, encrypted, heslo) } finally { encrypted.fill(0) }
+            }
+            try { jsch.addIdentity("playcaption-lg", key, null, null) }
+            catch (e: Exception) {
+                if (zeZalohy) throw LgInstalacniChyba(LgChyba.PAROVANI)
+                throw e
+            }
             krok(LgFaze.PRIPOJENI)
-            val otisk = LgSshOtisk(znamyOtisk(ip))
+            val expected = savedId?.let { uloziste?.otisk(it) } ?: znamyOtisk(ip)
+            if (zeZalohy && expected == null) throw LgInstalacniChyba(LgChyba.PAROVANI)
+            val otisk = LgSshOtisk(expected)
             jsch.hostKeyRepository = otisk
             val ssh = jsch.getSession("prisoner", ip, 9922).also { session = it }
             nastavKompatibilitu(ssh)
@@ -128,7 +198,14 @@ internal class LgInstalator(
                 throw e
             }
             // shortcut: první spárování důvěřuje domácí síti a klíči Key Serveru; pozdější změnu identity odmítáme.
-            ulozOtisk(ip, otisk.novy ?: throw LgInstalacniChyba(LgChyba.SSH))
+            val host = otisk.novy ?: throw LgInstalacniChyba(LgChyba.SSH)
+            skutecneId = identita(ssh)
+            if (zeZalohy && savedId != skutecneId) throw LgInstalacniChyba(LgChyba.IDENTITA)
+            ulozOtisk(ip, host)
+            uloziste?.parovani(skutecneId, ip, host, key)
+            // Kontrola relace je doplněk: její odmítnutí nesmí zablokovat instalaci přijímače.
+            uloziste?.let { store -> runCatching { store.token(skutecneId, prectiRelaci(ssh)) } }
+            kontrola()
             return akce(ssh, ::krok)
         } catch (e: Exception) {
             if (zruseno) throw LgInstalacniChyba(LgChyba.ZRUSENO)
@@ -140,7 +217,7 @@ internal class LgInstalator(
                 LgFaze.PRIPOJENI -> LgChyba.SSH
                 LgFaze.PRENOS -> LgChyba.PRENOS
                 LgFaze.INSTALACE -> LgChyba.INSTALACE
-                LgFaze.OVERENI -> LgChyba.OVERENI
+                LgFaze.OVERENI, LgFaze.KONTROLA -> LgChyba.OVERENI
             })
         } finally {
             limit.cancel()
@@ -211,6 +288,24 @@ internal class LgInstalator(
     }
 
     companion object {
+        fun vytvor(context: android.content.Context, profilId: String? = null): LgInstalator {
+            val app = context.applicationContext
+            val pins = app.getSharedPreferences("lg_ssh_otisky", android.content.Context.MODE_PRIVATE)
+            return LgInstalator(LgAssetBalicek(app), { pins.getString(lgSha256(it.toByteArray()), null) },
+                { ip, hash -> pins.edit().putString(lgSha256(ip.toByteArray()), hash).apply() }, LgDevUloziste(app), profilId)
+        }
+
+        internal fun odemkni(jsch: JSch, key: ByteArray, heslo: ByteArray): ByteArray {
+            val pair = KeyPair.load(jsch, key, null)
+            try {
+                if (!pair.isEncrypted) throw LgInstalacniChyba(LgChyba.KEY_SERVER)
+                if (!pair.decrypt(heslo)) throw LgInstalacniChyba(LgChyba.PASSPHRASE)
+                val out = ByteArrayOutputStream()
+                pair.writePrivateKey(out)
+                return out.toByteArray()
+            } finally { pair.dispose() }
+        }
+
         internal fun nastavKompatibilitu(ssh: Session) {
             // Developer Mode na C5 nabízí pouze ssh-rsa; povolujeme jej jen tomuto spojení s kontrolou otisku.
             for (key in listOf("server_host_key", "PubkeyAcceptedAlgorithms"))

@@ -38,16 +38,25 @@ Vyber jednu cestu. LG příprava v kroku 1 je nutná pro obě. Obyčejné odesl�
 1. V Android PlayCaption otevři **Výstup titulků → Změnit**, vyber platformu
    **LG webOS** a **Jak připojit televizi**.
 2. Projdi přípravu do kroku **Nainstaluj PlayCaption LG**. Zadej IP adresu TV
-   bez portu a Passphrase z Developer Mode (6 znaků, rozlišuje velká a malá písmena).
-   Nezadávej heslo účtu LG.
-3. Stiskni **Nainstalovat / aktualizovat**. Nech TV i zařízení zapnuté a počkej
-   na **Nainstalováno a ověřeno** s číslem verze. Balíček je přibalený v APK;
-   samotná instalace probíhá přes domácí síť bez stahování z internetu.
-4. Přijímač se pokusí spustit. Pokud se nespustí, otevři **PlayCaption LG**
-   ovladačem. Vyber HDMI konzole a pokračuj v průvodci vyhledáním televize.
+   bez portu. Při prvním použití zapni na TV Key Server a opiš Passphrase
+   (6 znaků, rozlišuje velká a malá písmena). Nezadávej heslo účtu LG.
+3. Stiskni **Ověřit TV a verzi přijímače**. Aplikace bezpečně uloží spárování,
+   zjistí skutečnou verzi v této TV a připraví kontrolu zbývajícího času Developer Mode.
+   Pro kontrolu času je potřeba internet; instalace z přibaleného IPK jej nepotřebuje.
+4. Podle výsledku použij **Nainstalovat PlayCaption LG**, **Aktualizovat přijímač**
+   nebo **Spustit přijímač bez přeinstalování**. Stejná verze se znovu neinstaluje
+   a novější přijímač se nepřepíše starším. Před instalací se verze kontroluje znovu.
+5. Nech TV i Android zařízení zapnuté a počkej na potvrzení výsledku.
+   Vyber na TV HDMI konzole a pokračuj v průvodci vyhledáním televize.
+   Pokud se přijímač nespustí, otevři **PlayCaption LG** ovladačem.
+
+Při dalším použití stejné TV nech Passphrase prázdnou: použije se uložené
+spárování a Key Server už není potřeba. Je-li klíč po resetu či novém Developer
+Mode nepoužitelný, zapni znovu Key Server a zadej Passphrase. Případnou změnu
+identity potvrď pouze po kontrole, že jde opravdu o tvoji televizi.
 
 Instalátor nemaže původní přijímač před aktualizací a neukládá Passphrase.
-Při chybě postupuj podle konkrétní zprávy; Key Server musí být zapnutý.
+Při chybě postupuj podle konkrétní zprávy; Key Server je nutný při prvním nebo novém párování.
 **Zrušit čekání** nemusí zastavit instalaci, kterou už LG zahájila.
 Pokud přímá instalace nejde, tlačítko
 **Další možnosti instalace** otevře záložní postup: nejprve externí Android správce, potom volitelně počítač.
@@ -160,10 +169,13 @@ Pokud režim vyprší a deaktivuje se, LG vývojově nainstalované aplikace ods
 Pak znovu zapni Developer Mode a zopakuj instalaci IPK.
 V novější Android aplikaci klepni na údaj **Developer Mode** na kartě vybrané
 televize, případně otevři **Výstup titulků → Změnit → Platnost Developer Mode**.
-Při prvním použití zvol **Načíst údaj z TV**, zapni na této TV Key Server a zadej
-její Passphrase. Tím se pouze přečte údaj pro kontrolu relace; nic se neinstaluje.
+Při prvním ověření přijímače v instalačním průvodci se kontrola času nastaví
+na stejné TV automaticky. Pokud přijímač instaloval někdo jiný nebo používáš
+starší spárování, zvol **Načíst údaj z TV**. U uloženého klíče může Passphrase
+zůstat prázdná; jinak zapni na této TV Key Server a opiš ji. Nic se tím neinstaluje.
 Tento údaj se uloží šifrovaně pomocí Android Keystore pro konkrétní TV.
-Passphrase a soukromý SSH klíč se nadále neukládají.
+Passphrase se neukládá. SSH klíč je uložený odděleně a rovněž šifrovaně,
+aby jej bylo možné použít pro další ověření a aktualizace bez opisování Passphrase.
 
 Potom lze čas ověřovat přes **Zkontrolovat** bez opakovaného opisování Passphrase.
 Kontrola potřebuje internet: dotaz s údajem relace míří přímo na službu LG.

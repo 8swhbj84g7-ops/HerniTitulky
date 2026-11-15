@@ -40,7 +40,8 @@ internal class LgDevDialog(private val activity: Activity, private val profil: T
             override fun run() {
                 if (!dialog.isShowing || activity.isDestroyed) return
                 if (dialog.window?.decorView?.hasWindowFocus() == true) LgDevMode.obnov(activity, profil.id)
-                text.text = lgDevPopis(activity, profil.id) + "\n\n" + t("lgCasRucniObnova")
+                val prijimac = LgDevUloziste(activity).verzePrijimace(profil.id)
+                text.text = lgDevPopis(activity, profil.id) + (if (prijimac != null) "\n" + t("lgVerzePosledni").replace("{verze}", prijimac.ifEmpty { t("lgChybiPrijimac") }) else "") + "\n\n" + t("lgCasRucniObnova")
                 val store = LgDevUloziste(activity)
                 dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = store.maRelaci(profil.id) && !LgDevMode.bezi(profil.id)
                 dialog.getButton(AlertDialog.BUTTON_NEUTRAL).isEnabled = !LgDevMode.bezi(profil.id)
@@ -67,8 +68,8 @@ internal class LgDevDialog(private val activity: Activity, private val profil: T
             addView(pass)
         }
         val otisky = activity.getSharedPreferences("lg_ssh_otisky", Activity.MODE_PRIVATE)
-        val job = LgInstalator(LgAssetBalicek(activity), { otisky.getString(lgSha256(it.toByteArray()), null) },
-            { ip, hash -> otisky.edit().putString(lgSha256(ip.toByteArray()), hash).apply() })
+        val job = LgInstalator.vytvor(activity, profil.id)
+        if (LgDevUloziste(activity).maParovani(profil.ip)) pass.hint = t("lgParovaniUlozene")
         val dialog = AlertDialog.Builder(activity).setTitle(t("lgCasNacistTv"))
             .setView(box).setPositiveButton(t("lgCasNacistTv"), null).setNegativeButton(t("zpet"), null).create()
         val zruseno = java.util.concurrent.atomic.AtomicBoolean(false)
@@ -92,7 +93,10 @@ internal class LgDevDialog(private val activity: Activity, private val profil: T
                         if (e is LgInstalacniChyba && e.kod == LgChyba.IDENTITA) {
                             AlertDialog.Builder(activity).setTitle(t("lgNoveParovani"))
                                 .setMessage(t("lgNoveParovaniPopis").replace("{ip}", profil.ip))
-                                .setPositiveButton(t("ano")) { _, _ -> otisky.edit().remove(lgSha256(profil.ip.toByteArray())).apply() }
+                                .setPositiveButton(t("ano")) { _, _ ->
+                                    otisky.edit().remove(lgSha256(profil.ip.toByteArray())).apply()
+                                    LgDevUloziste(activity).zapomenParovani(profil.ip, profil.id)
+                                }
                                 .setNegativeButton(t("zpet"), null).show()
                         }
                         dialog.getButton(AlertDialog.BUTTON_POSITIVE).isEnabled = true

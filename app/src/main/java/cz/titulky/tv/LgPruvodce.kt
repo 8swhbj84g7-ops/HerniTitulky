@@ -50,6 +50,8 @@ class LgPruvodce(private val activity: Activity, private val vyhledej: () -> Uni
     private var bezi = false
     private var faze = LgFaze.BALICEK
     private var vysledek: LgInstalaceVysledek? = null
+    private var prijimac: LgKontrola? = null
+    private var overenaIp = ""
     private var chyba: LgChyba? = null
     private var instalator: LgInstalator? = null
     private var stavInstalace: TextView? = null
@@ -197,27 +199,44 @@ class LgPruvodce(private val activity: Activity, private val vyhledej: () -> Uni
         ip.setText(zadanaIp)
         val pass = pole(t("lgPassphrase"), true)
         radek(ip); radek(pass)
+        if (LgDevUloziste(activity).maParovani(zadanaIp)) radek(text(t("lgParovaniUlozene"), 16f))
         stavInstalace = text(when {
             bezi -> t("lgFaze" + faze.name)
             chyba != null -> t("lgChyba" + chyba!!.name)
-            vysledek != null -> t("lgOvereno").replace("{verze}", vysledek!!.verze) + "\n" + t(if (vysledek!!.spusteno) "lgSpusteno" else "lgSpustRucne")
+            vysledek != null -> t(if (vysledek!!.zmeneno) "lgOvereno" else "lgBezPrepisu").replace("{verze}", vysledek!!.verze) + "\n" + t(if (vysledek!!.spusteno) "lgSpusteno" else "lgSpustRucne")
+            prijimac != null -> t("lgVerze" + prijimac!!.stav.name).replace("{tv}", prijimac!!.verze.orEmpty()).replace("{apk}", prijimac!!.dostupna)
             else -> t("lgPripravenoInstalace")
         }, 17f, Color.parseColor(when { chyba != null -> "#FF9191"; vysledek != null -> "#3CFF6E"; else -> "#B2B3BF" })).also { radek(it) }
         if (bezi) {
             radek(ProgressBar(activity))
             radek(tlacitko(t("lgZrusitInstalaci")) { instalator?.zrus() })
         } else {
-            radek(tlacitko(t("lgInstalovat"), hlavni = true) {
+            fun heslo(): CharArray {
                 zadanaIp = ip.text.toString().trim()
-                val heslo = pass.text.toString().toCharArray()
+                val value = pass.text.toString().toCharArray()
                 pass.text.clear()
-                spustInstalaci(heslo)
-            })
+                return value
+            }
+            radek(tlacitko(t("lgOveritTv"), hlavni = prijimac == null) { spustInstalaci(heslo(), true) })
+            prijimac?.let { p ->
+                radek(tlacitko(t(when (p.stav) {
+                    LgStavVerze.CHYBI -> "lgInstalovatNove"
+                    LgStavVerze.AKTUALIZACE -> "lgAktualizovat"
+                    else -> "lgSpustitPrijimac"
+                }), hlavni = true) {
+                    val secret = heslo()
+                    spustInstalaci(secret, zadanaIp != overenaIp)
+                })
+            }
             if (chyba == LgChyba.IDENTITA) radek(tlacitko(t("lgNoveParovani")) {
                 AlertDialog.Builder(activity).setTitle(t("lgNoveParovani"))
                     .setMessage(t("lgNoveParovaniPopis").replace("{ip}", zadanaIp))
                     .setPositiveButton(t("ano")) { _, _ ->
                         otisky.edit().remove(lgSha256(zadanaIp.toByteArray())).apply()
+                        val profiles = TvProfily(activity)
+                        val id = prijimac?.id ?: profiles.posledniId?.let { profiles.najdi(it) }?.takeIf { it.platforma == TvPlatforma.WEBOS && it.ip == zadanaIp }?.id
+                        LgDevUloziste(activity).zapomenParovani(zadanaIp, id)
+                        prijimac = null
                         chyba = null; vykresli()
                     }.setNegativeButton(t("zpet"), null).show()
             })
@@ -226,26 +245,43 @@ class LgPruvodce(private val activity: Activity, private val vyhledej: () -> Uni
         }
     }
 
-    private fun spustInstalaci(heslo: CharArray) {
+    private fun spustInstalaci(heslo: CharArray, jenKontrola: Boolean) {
         if (bezi) { heslo.fill('\u0000'); return }
         bezi = true; chyba = null; vysledek = null; faze = LgFaze.BALICEK
-        val job = LgInstalator(LgAssetBalicek(activity), { ip -> otisky.getString(lgSha256(ip.toByteArray()), null) },
-            { ip, otisk -> otisky.edit().putString(lgSha256(ip.toByteArray()), otisk).apply() })
+        val ipOperace = zadanaIp
+        val profiles = TvProfily(activity)
+        val expected = prijimac?.takeIf { overenaIp == ipOperace }?.id
+            ?: profiles.posledniId?.let { profiles.najdi(it) }?.takeIf { it.platforma == TvPlatforma.WEBOS && it.ip == ipOperace }?.id
+        val job = LgInstalator.vytvor(activity, expected)
         instalator = job
         vykresli()
         Thread {
             try {
-                val hotovo = job.nainstaluj(zadanaIp, heslo) { f ->
+                val prubeh: (LgFaze) -> Unit = { f ->
                     ui.post { if (dialog.isShowing && !activity.isDestroyed && instalator === job) {
                         faze = f; stavInstalace?.text = t("lgFaze" + f.name)
                     } }
                 }
+                if (jenKontrola) {
+                    val stav = job.zkontroluj(ipOperace, heslo, prubeh)
+                    val profiles = TvProfily(activity)
+                    val old = profiles.najdi(stav.id)
+                    profiles.zapamatuj(stav.id, old?.jmeno ?: "LG PlayCaption · " + stav.id.removePrefix("lg-").uppercase(), ipOperace, TvPlatforma.WEBOS)
+                    LgDevMode.obnov(activity, stav.id)
+                    ui.post { if (dialog.isShowing && !activity.isDestroyed && instalator === job) {
+                        bezi = false; prijimac = stav; overenaIp = ipOperace; vykresli()
+                    } }
+                } else {
+                    val hotovo = job.nainstaluj(ipOperace, heslo, prubeh)
+                    prijimac?.id?.let { LgDevMode.obnov(activity, it) }
+                    ui.post { if (dialog.isShowing && !activity.isDestroyed && instalator === job) {
+                        bezi = false; vysledek = hotovo; vykresli()
+                    } }
+                }
+            } catch (e: Exception) {
+                val kod = (e as? LgInstalacniChyba)?.kod ?: LgChyba.OVERENI
                 ui.post { if (dialog.isShowing && !activity.isDestroyed && instalator === job) {
-                    bezi = false; vysledek = hotovo; vykresli()
-                } }
-            } catch (e: LgInstalacniChyba) {
-                ui.post { if (dialog.isShowing && !activity.isDestroyed && instalator === job) {
-                    bezi = false; chyba = e.kod; vykresli()
+                    bezi = false; chyba = kod; prijimac = null; vykresli()
                 } }
             } finally { heslo.fill('\u0000') }
         }.apply { isDaemon = true }.start()

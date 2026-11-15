@@ -3,9 +3,9 @@ package cz.titulky.tv
 import org.json.JSONObject
 import java.net.InetAddress
 
-internal enum class LgChyba { ADRESA, BALICEK, KEY_SERVER, PASSPHRASE, IDENTITA, SSH, PRENOS, INSTALACE, OVERENI, CAS, ZRUSENO, RELACE }
+internal enum class LgChyba { ADRESA, BALICEK, KEY_SERVER, PASSPHRASE, IDENTITA, SSH, PRENOS, INSTALACE, OVERENI, CAS, ZRUSENO, RELACE, PAROVANI }
 internal class LgInstalacniChyba(val kod: LgChyba) : Exception(kod.name)
-internal enum class LgFaze { BALICEK, KLIC, PRIPOJENI, PRENOS, INSTALACE, OVERENI }
+internal enum class LgFaze { BALICEK, KLIC, PRIPOJENI, PRENOS, INSTALACE, OVERENI, KONTROLA }
 
 internal object LgInstalacniProtokol {
     fun adresa(value: String): String {
@@ -41,6 +41,34 @@ internal object LgInstalacniProtokol {
         val state = json.optJSONObject("details")?.optString("state").orEmpty().uppercase()
         if ("FAILED" in state || "ERROR" in state || state in listOf("CANCELLED", "CANCELED")) throw LgInstalacniChyba(LgChyba.INSTALACE)
         return if (state == "INSTALLED" || state == "SUCCESS" || state.startsWith("SUCCESS_")) true else null
+    }
+
+    fun identita(value: String, ocekavaneId: String?): String {
+        if (!value.matches(Regex("lg-[a-f0-9]{12}")) || (ocekavaneId != null && value != ocekavaneId))
+            throw LgInstalacniChyba(LgChyba.IDENTITA)
+        return value
+    }
+
+    /** Číselné části, nikoli lexikografické řazení; neznámou verzi nikdy nepřepisujeme. */
+    fun porovnejVerze(instalovana: String, dostupna: String): Int {
+        fun casti(v: String): List<Int> {
+            if (!v.matches(Regex("[0-9]{1,8}\\.[0-9]{1,8}\\.[0-9]{1,8}"))) throw LgInstalacniChyba(LgChyba.OVERENI)
+            return v.split('.').map { it.toInt() }
+        }
+        val a = casti(instalovana); val b = casti(dostupna)
+        for (i in 0..2) if (a[i] != b[i]) return a[i].compareTo(b[i])
+        return 0
+    }
+
+    fun stavVerze(instalovana: String?, dostupna: String): LgStavVerze {
+        porovnejVerze(dostupna, dostupna)
+        if (instalovana == null) return LgStavVerze.CHYBI
+        val rozdil = porovnejVerze(instalovana, dostupna)
+        return when {
+            rozdil > 0 -> LgStavVerze.NOVEJSI
+            rozdil == 0 -> LgStavVerze.AKTUALNI
+            else -> LgStavVerze.AKTUALIZACE
+        }
     }
 
     fun verze(json: JSONObject, balicek: LgBalicek) {

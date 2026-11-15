@@ -72,7 +72,7 @@ přibaleného IPK není důkaz verze nainstalovaného přijímače.
 
 Adresář `dist/` se necommituje. Samotný push zdrojů tedy nenahraje instalační IPK.
 Pro běžné uživatele se sestavený IPK nebo ZIP přiloží k vydání v GitHub Releases;
-pokud tam LG balíček chybí, je zatím dostupné pouze sestavení ze zdrojů.
+samostatný IPK lze také uložit z nové Android aplikace přes LG průvodce.
 Build nečte žádné místní přihlašovací údaje,
 nepřipojuje se k TV a nic nezveřejňuje. ID zůstává stejné jako u původního testu,
 aby bylo možné aktualizovat existující instalace. Při změně verze uprav `appinfo.json`,
@@ -83,7 +83,7 @@ do APK. Samostatné sestavení výše zůstává pro ruční distribuci.
 
 ## Instalace přes CLI pro vývojáře
 
-Uživatelský návod používá webOS Dev Manager. Alternativa s již nastaveným CLI:
+Uživatelský návod upřednostňuje přímou instalaci z Android PlayCaption. Alternativa s již nastaveným CLI:
 
 ```sh
 ares-config --profile tv
@@ -106,18 +106,29 @@ ares-launch --device lg-tv cz.playcaption.overlaytest
 
 Passphrase ani získaný klíč nepatří do projektu. Identifikátor `lg-tv` je pouze příklad.
 
-## Předání správci projektu
+## Předání správci projektu a vydání
 
-1. Přidat složku `webos/`, `BACKLOG.md` a změny hlavního README / ZMENY do stejné změny.
-2. Spustit `python3 webos/build.py` a `git diff --check`.
-3. Dokončit dostupnou ruční přejímku na TV podle `TESTOVANI.md`; uvést skutečné limity ověření.
-4. Po schválení změny přidat vytvořený ZIP k odpovídajícímu GitHub Release jako
-   experimentální LG přijímač. ZIP obsahuje i zdroje této konkrétní verze (AGPLv3).
-5. Do popisu vydání přidat odkaz na `webos/NAVOD-LG.md` a zdůraznit požadavek
-   Android telefonu/tabletu a Developer Mode. Nepopisovat to jako samostatný překlad v LG.
+1. Android větev obsahuje profily TV, LG průvodce, přibalený IPK a správu přijímače.
+   Kód LG přijímače 0.1.0 se touto etapou nemění. Story/OCR a Samsung nejsou součástí.
+2. Pro lokální kontrolu použij `bash gradlew :app:testDebugUnitTest :app:assembleDebug`.
+   Pro veřejné vydání použij dosavadní podepsané Android release sestavení. Vedle
+   Android SDK a JDK potřebuješ Python 3.9+, Node.js 20+ a npx; Gradle automaticky
+   spustí LG build a vloží jeho IPK/manifest do APK. Debug APK nenahrazuje podepsanou
+   aktualizaci původní aplikace.
+3. Produkční číslo verze a podpis Android APK řeší správce při vlastním vydání;
+   tato větev je sama nezvyšuje a nevytváří release/tag.
+4. K APK přilož také `webos/dist/PlayCaption-LG-0.1.0.zip`, případně samostatný IPK
+   a manifest. To slouží uživatelům ruční instalace. ZIP obsahuje odpovídající zdroje
+   přijímače a licenci. Pro instalaci přímo z Androidu další download IPK potřeba není.
+5. V popisu vydání odkaž na `webos/NAVOD-LG.md`: LG vyžaduje Developer Mode,
+   hlavním produktem a překladačem zůstává Android. Neslibuj překlad přímo na LG.
+6. Aktuální důkazy a limity jsou v `TESTOVANI.md`. Samotný push či merge ještě
+   nepublikuje APK, IPK ani ZIP; `webos/dist/` a Android build výstupy se necommitují.
 
-Tento postup automaticky nezakládá release, nezvyšuje verzi Android aplikace a
-neprovádí commit/push. Obecná optimalizace OCR a FPS patří do samostatné změny.
+První spárování slouží pro instalaci/aktualizace i čas Developer Mode. Systém
+neukládá Passphrase; SSH klíč a session token ukládá v Androidu šifrovaně pro každou
+TV zvlášť. Přijímač se předem neodinstalovává; stejná či novější verze se nepřepíše.
+Automatické prodlužování Developer Mode není implementované.
 
 ## Přenositelnost a vzhled
 

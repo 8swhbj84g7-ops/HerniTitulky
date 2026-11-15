@@ -245,3 +245,28 @@ není evidována jako úspěšný automatický test tlačítka záložního post
 První nastavení času je samostatný jednorázový krok pro konkrétní TV, není ještě
 navázané automaticky na instalátor. Bez automatického prodlužování, notifikací
 na pozadí či simulování expirování skutečné TV. Další fyzická LG není ověřená.
+
+
+### Společné spárování a ochrana verzí – Android test10
+
+- První ověření s Passphrase na C5 vrátilo skutečnou verzi 0.1.0 a stav aktuálního
+  přijímače. Uživatel výsledek potvrdil. Šifrovaný SSH záznam vznikl pro stejné
+  stabilní ID jako discovery; v diagnostice se kontroloval jen počet a velikost obálky.
+- UIAutomator provedl další ověření a spuštění bez Passphrase. Výsledek výslovně
+  uváděl zachovanou verzi bez přeinstalování. `stat` instalačního `appinfo.json`
+  před/po operaci potvrdil nezměněný čas modifikace.
+- Po aktualizaci/restartu APK další ověření znovu vrátilo aktuální 0.1.0 bez
+  opisování Passphrase. Obrazovka byla vizuálně zkontrolovaná; uložené spojení
+  má vlastní vysvětlení a tlačítka jsou oddělená.
+- `:app:testDebugUnitTest :app:assembleDebug`: 30 JVM testů bez selhání.
+  Nové případy: číselné porovnání verzí (včetně 0.10 proti 0.9), stejná/novější
+  verze, neznámé formáty, nezávislost identity TV na IP, odemknutý RSA klíč bez
+  další Passphrase a oddělení šifrovaného SSH materiálu od session tokenu/jiné TV.
+- Instalace i samostatné čtení relace sdílejí autentizované připojení. První
+  spárování připravuje i kontrolu času; do LG přijímače se kvůli tomu nic nepřidává.
+
+Nové větve chybějící/starší/novější verze jsou pokryté rozhodovacími testy;
+na C5 se v této poslední změně záměrně neměnila verze ani neodinstalovával přijímač.
+Dřívější skutečná instalace/aktualizace z Androidu je popsaná výše u test06.
+Další fyzická LG, všechny výpadky sítě a původní Android TV hardware touto etapou
+nebyly znovu přetestované. Žádné automatické prodlužování Developer Mode.

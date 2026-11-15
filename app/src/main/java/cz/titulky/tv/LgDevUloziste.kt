@@ -26,9 +26,28 @@ internal class LgDevUloziste(context: Context) {
     }
     fun token(id: String): String = rozbal(klic(), id, prefs.getString(k(id) + ".token", null) ?: error("No session"))
     fun token(id: String, token: String) = synchronized(ZAMEK) {
+        if (runCatching { token(id) }.getOrNull() == token) return@synchronized
         require(token.matches(Regex("[A-Za-z0-9]{8,256}")))
         val data = zabal(klic(), id, token)
         prefs.edit().putString(k(id) + ".token", data).remove(k(id) + ".sekundy").remove(k(id) + ".overeno").apply()
+    }
+    fun parovaniId(ip: String): String? = prefs.getString("ip." + k(ip), null)
+    fun maParovani(ip: String) = parovaniId(ip)?.let { prefs.contains(k(it) + ".ssh") } == true
+    fun ssh(id: String): ByteArray? = prefs.getString(k(id) + ".ssh", null)?.let { rozbalBytes(klic(), id + ":ssh", it) }
+    fun otisk(id: String) = prefs.getString(k(id) + ".host", null)
+    fun parovani(id: String, ip: String, host: String, key: ByteArray) {
+        require(id.matches(Regex("lg-[a-f0-9]{12}")) && key.size in 256..8192)
+        val encrypted = zabalBytes(klic(), id + ":ssh", key)
+        prefs.edit().putString(k(id) + ".ssh", encrypted).putString(k(id) + ".host", host)
+            .putString("ip." + k(ip), id).apply()
+    }
+    fun prijimac(id: String, verze: String?) {
+        prefs.edit().putString(k(id) + ".receiver", verze ?: "").putLong(k(id) + ".receiverChecked", System.currentTimeMillis()).apply()
+    }
+    fun verzePrijimace(id: String) = prefs.getString(k(id) + ".receiver", null)
+    fun zapomenParovani(ip: String, profilId: String? = null) {
+        val id = profilId ?: parovaniId(ip) ?: return
+        prefs.edit().remove(k(id) + ".ssh").remove(k(id) + ".host").remove("ip." + k(ip)).apply()
     }
     private fun klic(): SecretKey = synchronized(ZAMEK) {
         val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
@@ -40,21 +59,24 @@ internal class LgDevUloziste(context: Context) {
     companion object {
         private const val ALIAS = "playcaption-lg-session-v1"
         private val ZAMEK = Any()
-        internal fun zabal(key: SecretKey, id: String, token: String): String {
+        internal fun zabal(key: SecretKey, id: String, token: String) = zabalBytes(key, id, token.toByteArray())
+        internal fun rozbal(key: SecretKey, id: String, data: String) = rozbalBytes(key, id, data).toString(Charsets.UTF_8)
+        internal fun zabalBytes(key: SecretKey, id: String, data: ByteArray): String {
+            require(data.size <= 8192)
             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
             cipher.init(Cipher.ENCRYPT_MODE, key)
             cipher.updateAAD(id.toByteArray())
             require(cipher.iv.size == 12)
-            return Base64.getEncoder().encodeToString(cipher.iv + cipher.doFinal(token.toByteArray()))
+            return Base64.getEncoder().encodeToString(cipher.iv + cipher.doFinal(data))
         }
-        internal fun rozbal(key: SecretKey, id: String, data: String): String {
-            require(data.length <= 1024)
+        internal fun rozbalBytes(key: SecretKey, id: String, data: String): ByteArray {
+            require(data.length <= 16384)
             val bytes = Base64.getDecoder().decode(data)
             require(bytes.size > 28)
             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
             cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(128, bytes.copyOfRange(0, 12)))
             cipher.updateAAD(id.toByteArray())
-            return cipher.doFinal(bytes.copyOfRange(12, bytes.size)).toString(Charsets.UTF_8)
+            return cipher.doFinal(bytes.copyOfRange(12, bytes.size))
         }
     }
 }

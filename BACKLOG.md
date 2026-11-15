@@ -68,12 +68,12 @@ Stav: návrh pro pozdější fázi, ne důvod k přepisu aplikace nyní.
 
 ## PC-003 – Instalace LG přijímače přímo z Android PlayCaption
 
-Stav: technicky prověřený návrh, vlastní instalátor zatím neimplementovaný.
-Developer Mode a Key Server uživatel aktivuje na TV; root není potřeba. Existuje
-samostatný mobilní správce s instalací místního IPK. Aktuální uživatelský návod
-obsahuje tuto možnost vedle počítačové instalace. Vlastní průvodce v PlayCaption
-vyžaduje SSH/SFTP, bezpečné párování a skutečné potvrzení dokončení instalace.
-Rozsah a přejímku popisuje [návrh instalátoru](webos/INSTALACE-Z-ANDROIDU.md).
+Implementováno v `feature/tv-platform-management`: místní instalace přibaleného
+IPK, společné šifrované spárování, kontrola skutečné verze před přenosem, aktualizace
+bez odinstalování a odmítnutí downgradu. Stejná verze se jen spustí. Prvotní
+spárování připraví také ověřování času Developer Mode. Záloha je externí Android
+správce, export IPK a volitelně počítač. Detaily a limity v `webos/TESTOVANI.md`.
+Internetové stahování novějšího IPK a vlastní backend nejsou součástí MVP.
 
 ## PC-004 – Profily přijímačů v Android odesílači
 
@@ -121,4 +121,4 @@ datum ověření, ruční kontrola a zvýraznění pod tři dny. První propojen
 jednorázově Key Server a Passphrase; pak je relace uložená šifrovaně pro stabilní
 ID TV. Kontrola nejvýše hodinově při viditelné kartě, starší/chybný údaj označený.
 Žádné automatické prodlužování ani změna přijímače LG. Testy a důkazy v `webos/TESTOVANI.md`.
-Prvotní propojení času zatím není automaticky součástí instalace.
+Prvotní propojení času je součástí ověření TV v instalačním průvodci; stejný šifrovaně uložený klíč slouží k dalším aktualizacím.

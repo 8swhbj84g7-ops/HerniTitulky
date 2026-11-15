@@ -94,4 +94,34 @@ class LgInstalatorTest {
         chyba(LgChyba.INSTALACE) { LgInstalacniProtokol.instalace(JSONObject("""{"details":{"state":"FAILED"},"id":"cz.playcaption.overlaytest"}""")) }
     }
 
+    @Test fun versionPolicyProtectsSameNewerAndUnrecognisedReceivers() {
+        assertEquals(LgStavVerze.CHYBI, LgInstalacniProtokol.stavVerze(null, "0.1.0"))
+        assertEquals(LgStavVerze.AKTUALNI, LgInstalacniProtokol.stavVerze("0.1.0", "0.1.0"))
+        assertEquals(LgStavVerze.AKTUALIZACE, LgInstalacniProtokol.stavVerze("0.0.10", "0.1.0"))
+        assertEquals(LgStavVerze.NOVEJSI, LgInstalacniProtokol.stavVerze("0.10.0", "0.9.9"))
+        assertEquals(LgStavVerze.NOVEJSI, LgInstalacniProtokol.stavVerze("1.0.0", "0.99.99"))
+        assertEquals(LgStavVerze.AKTUALIZACE, LgInstalacniProtokol.stavVerze("1.2.9", "1.2.10"))
+        for (version in listOf("garbage", "0.1", "1.2.3.4", "1.0.0-story", "999999999999999.0.0"))
+            chyba(LgChyba.OVERENI) { LgInstalacniProtokol.stavVerze(version, "0.1.0") }
+    }
+    @Test fun persistedSshKeyDecryptsWithoutPassphraseAndCanBeWiped() {
+        val j=JSch(); val k=KeyPair.genKeyPair(j,KeyPair.RSA,2048)
+        try {
+            val encrypted=ByteArrayOutputStream().also { k.writePrivateKey(it,"Ab12Cd".toByteArray()) }.toByteArray()
+            val plain=LgInstalator.odemkni(j,encrypted,"Ab12Cd".toByteArray())
+            val identity=KeyPair.load(j,plain,null)
+            try { assertFalse(identity.isEncrypted) } finally { identity.dispose() }
+            plain.fill(0); assertTrue(plain.all { it==0.toByte() })
+            chyba(LgChyba.PASSPHRASE) { LgInstalator.odemkni(j,encrypted,"wrong!".toByteArray()) }
+        } finally { k.dispose() }
+    }
+
+    @Test fun numericIpDoesNotReplaceStableReceiverIdentity() {
+        val id="lg-abcdef123456"
+        assertEquals(id,LgInstalacniProtokol.identita(id,id))
+        assertEquals(id,LgInstalacniProtokol.identita(id,null))
+        for (other in listOf("lg-000000000000", "lg-ABCDEF123456", "arbitrary", ""))
+            chyba(LgChyba.IDENTITA) { LgInstalacniProtokol.identita(other,id) }
+    }
+
 }

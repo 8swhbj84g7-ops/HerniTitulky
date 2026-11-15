@@ -53,4 +53,14 @@ class LgDevModeTest {
         catch (e: LgInstalacniChyba) { assertEquals(LgChyba.ZRUSENO, e.kod) }
         assertTrue(pass.all { it == '\u0000' })
     }
+    @Test fun sshMaterialEncryptedSeparatelyFromSessionAndOtherTv() {
+        val key=SecretKeySpec(ByteArray(32) { it.toByte() }, "AES")
+        val data=ByteArray(2048) { (it % 251).toByte() }
+        val encrypted=LgDevUloziste.zabalBytes(key,"tv-A:ssh",data)
+        assertArrayEquals(data,LgDevUloziste.rozbalBytes(key,"tv-A:ssh",encrypted))
+        for (aad in listOf("tv-A","tv-B:ssh")) {
+            try { LgDevUloziste.rozbalBytes(key,aad,encrypted); fail("Wrong purpose or TV accepted") } catch (_: Exception) {}
+        }
+    }
+
 }

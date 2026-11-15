@@ -40,6 +40,16 @@ PlayCaption je šířen pod licencí **GNU AGPLv3** (viz soubor [LICENSE](LICENS
 
 PlayCaption je neoficiální projekt a nemá nic společného se společností Sony Interactive Entertainment. PlayStation a PS5 jsou ochranné známky jejich vlastníků.
 
+## LG v Android aplikaci
+
+Vyber LG webOS a projdi průvodcem. Jedno spárování slouží k instalaci, kontrole
+verze, aktualizaci i zobrazení platnosti Developer Mode. Přibalený přijímač se
+instaluje pouze tehdy, když v TV chybí nebo je starší. Novější se nepřepisuje.
+Párovací klíč a údaj relace jsou uložené šifrovaně v Android zařízení; heslo LG ani
+Passphrase se neukládají. Samotná instalace běží v místní síti, kontrola času
+potřebuje spojení přímo se službou LG. PlayCaption Developer Mode neprodlužuje.
+Externí Android správce a počítačový postup zůstávají záložními možnostmi.
+
 ## Sestavení Android APK s LG přijímačem
 
 Vedle Android SDK a JDK potřebuješ Python 3.9+ a Node.js 20+ s npx.

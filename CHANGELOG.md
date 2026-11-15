@@ -4,6 +4,8 @@
 
 ### Změněno
 
+- Android LG: společné šifrované spárování pro správu přijímače a platnost Developer Mode. Skutečná verze se kontroluje před instalací; stejný přijímač se nepřeinstaluje a novější se nevrací na starší.
+
 - Android LG: skutečný zbývající čas Developer Mode pro konkrétní TV, datum ověření, ruční kontrola a upozornění pod tři dny. Šifrované uložení relace, označení staršího/chybového údaje; bez prodlužování Developer Mode a bez změny TV přijímače.
 
 - Android LG průvodce: oddělená tlačítka, upozornění na platnost Developer Mode u přípravy i instalace, záložní správce Aphanes pro Android před počítačem a uložení přibaleného IPK do zvolené složky.
