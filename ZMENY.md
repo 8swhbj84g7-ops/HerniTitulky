@@ -6,6 +6,8 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
 
 ## Unreleased
 
+- Story: od tří čekajících replik se časování automaticky exponenciálně zkracuje, nejvýše na polovinu uživatelské doby a ne pod podporovaných 50 %. Platí od další stránky, bez zahazování replik; po odbavení se vrací nastavená rychlost. Stav ukazuje aktivní dohánění. LG aktualizace není potřeba.
+
 - Story: podle herní přejímky GTA V je základní čtecí doba o 20 % kratší; výchozích 100 % nyní odpovídá předchozím 80 %. Shodný výpočet Android/LG 0.2.1, Standardní režim beze změny.
 
 - Integrační větev Story spojuje správu TV profilů, instalátor a Developer Mode s Android čtecí frontou. LG 0.2.0 podporuje Standardní i Příběhový režim; jeho nabídka, skrytí a lokální test pozastaví Story bez falešného dočtení. Master ani veřejné vydání se tím nemění.
