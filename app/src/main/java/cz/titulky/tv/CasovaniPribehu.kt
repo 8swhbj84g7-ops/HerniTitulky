@@ -9,6 +9,6 @@ internal object CasovaniPribehu {
         require(procenta in MIN_PROCENT..MAX_PROCENT)
         val nfc = java.text.Normalizer.normalize(text, java.text.Normalizer.Form.NFC)
         val zaklad = maxOf(1500L, (nfc.codePointCount(0, nfc.length) * 1000L + 17) / 18)
-        return (zaklad * procenta + 99) / 100
+        return (zaklad * procenta * 80 + 9999) / 10000
     }
 }

@@ -50,7 +50,7 @@
             captionOffset += end;
             var letters = Array.from(rest.slice(0, end).normalize("NFC")).length;
             var storyDuration = captionPacket.adjustableTiming ?
-                Math.ceil(Math.max(1500, Math.ceil(letters * 1000 / 18)) * captionPacket.durationPercent / 100) :
+                Math.ceil(Math.max(1500, Math.ceil(letters * 1000 / 18)) * captionPacket.durationPercent * 80 / 10000) :
                 Math.max(1800, Math.ceil(letters * 1000 / 14));
             captionNext = now + (captionPacket.kind === "story" ? storyDuration : Math.max(2000, 1000 + end * 50));
         }

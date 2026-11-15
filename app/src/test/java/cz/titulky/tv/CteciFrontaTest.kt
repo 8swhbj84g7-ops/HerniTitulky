@@ -6,6 +6,8 @@ import org.junit.Test
 /** Hotové české dialogy a virtuální čas; žádné čekání, Android, síť ani konzole. */
 class CteciFrontaTest {
     private class Simulace(val fronta: CteciFronta = CteciFronta()) {
+        // Scénáře pořadí a pauz drží pevné časy; výchozí základ ověřuje CasovaniPribehuTest.
+        init { fronta.nastavCasovani(125) }
         val zmeny = mutableListOf<Pair<Long, CteciFronta.Stranka?>>()
         private var viditelna: CteciFronta.Stranka? = null
 
@@ -61,19 +63,19 @@ class CteciFrontaTest {
     }
 
     @Test fun triRychleReplikySeZobraziJednouVPoradiADoctouVPauze() {
-        val s = Simulace()
+        val s = Simulace().apply { fronta.nastavCasovani(100) }
         val a = s.nova("Trevor: Ahoj.")
         assertEquals(a, s.v(0)!!.token)
         val b = s.nova("Michael: Pojď.", 100)
         val c = s.nova("Franklin: Jdu.", 200)
         assertEquals(a, s.v(200)!!.token)
-        assertEquals(a, s.v(1499)!!.token)
-        assertEquals(b, s.v(1500)!!.token)
-        assertEquals(c, s.v(3000)!!.token)
-        assertNull(s.v(4500))
+        assertEquals(a, s.v(1199)!!.token)
+        assertEquals(b, s.v(1200)!!.token)
+        assertEquals(c, s.v(2400)!!.token)
+        assertNull(s.v(3600))
         assertEquals(listOf(a, b, c), s.zmeny.mapNotNull { it.second?.token })
-        assertEquals(listOf(0L, 1500L, 3000L, 4500L), s.zmeny.map { it.first })
-        assertEquals(listOf(0L, 1400L, 2800L), s.zmeny.mapNotNull { it.second }.map { it.odMs - it.puvodniCasMs })
+        assertEquals(listOf(0L, 1200L, 2400L, 3600L), s.zmeny.map { it.first })
+        assertEquals(listOf(0L, 1100L, 2200L), s.zmeny.mapNotNull { it.second }.map { it.odMs - it.puvodniCasMs })
         assertEquals(3, s.fronta.dokoncenych)
         assertEquals(0, s.fronta.pocet)
     }
@@ -309,7 +311,7 @@ class CteciFrontaTest {
     }
 
     @Test fun opravaCekajicihoTextuUvolniJehoPamet() {
-        val f = CteciFronta(maxZnakuRepliky = 6)
+        val f = CteciFronta(maxZnakuRepliky = 6).apply { nastavCasovani(125) }
         val a = f.zarad(0)!!
         f.priprav(a, listOf("Jdeme."))
         val nova = f.oprav(a)!!
@@ -330,7 +332,7 @@ class CteciFrontaTest {
     }
 
     @Test fun textovyLimitPlatiProSoucetVsechStranekRepliky() {
-        val f = CteciFronta(maxZnakuRepliky = 8)
+        val f = CteciFronta(maxZnakuRepliky = 8).apply { nastavCasovani(125) }
         val a = f.zarad(0)!!
         val b = f.zarad(100)!!
         assertEquals(CteciFronta.Prijeti.PRIJATO, f.priprav(a, listOf("Ano.", "Ano.")))
@@ -343,7 +345,7 @@ class CteciFrontaTest {
     }
 
     @Test fun resetUvolniKapacituTextuIReplik() {
-        val f = CteciFronta(maxReplik = 1, maxZnakuRepliky = 4)
+        val f = CteciFronta(maxReplik = 1, maxZnakuRepliky = 4).apply { nastavCasovani(125) }
         val a = f.zarad(0)!!
         f.priprav(a, listOf("Ano."))
         f.zobraz(0)
@@ -356,7 +358,7 @@ class CteciFrontaTest {
     }
 
     @Test fun prekladPrvniReplikyLzeZrevidovatJestePredZobrazenim() {
-        val f = CteciFronta()
+        val f = CteciFronta().apply { nastavCasovani(125) }
         val stara = f.zarad(0)!!
         val nova = f.oprav(stara)!!
         assertEquals(CteciFronta.Prijeti.NEPLATNY_TOKEN, f.priprav(stara, listOf("Stará hypotéza.")))
@@ -365,7 +367,7 @@ class CteciFrontaTest {
     }
 
     @Test fun pozastaveniNaKonciStrankyNezkratiNasledujiciStranku() {
-        val f = CteciFronta()
+        val f = CteciFronta().apply { nastavCasovani(125) }
         val a = f.zarad(0)!!
         f.priprav(a, listOf("První.", "Druhá."))
         f.zobraz(0)
@@ -393,7 +395,7 @@ class CteciFrontaTest {
     }
 
     @Test fun prijateStrankyNejdeZvenkuZmenitMutaciPuvodnihoSeznamu() {
-        val f = CteciFronta()
+        val f = CteciFronta().apply { nastavCasovani(125) }
         val token = f.zarad(0)!!
         val stranky = mutableListOf("První.", "Druhá.")
         f.priprav(token, stranky)
@@ -405,7 +407,7 @@ class CteciFrontaTest {
     }
 
     @Test fun cekajiciFinalniTextSeNemeniBezNoveRevize() {
-        val f = CteciFronta()
+        val f = CteciFronta().apply { nastavCasovani(125) }
         val token = f.zarad(0)!!
         f.priprav(token, listOf("Správně."))
         assertEquals(CteciFronta.Prijeti.UZ_PRIPRAVENO, f.priprav(token, listOf("Něco jiného.")))
@@ -413,7 +415,7 @@ class CteciFrontaTest {
     }
 
     @Test fun dlouhyProudPostupneUvolnujeDokoncenePolozkyAVylucujeJejichPozdniDuplikaty() {
-        val f = CteciFronta(maxReplik = 1, maxZnakuRepliky = 4)
+        val f = CteciFronta(maxReplik = 1, maxZnakuRepliky = 4).apply { nastavCasovani(125) }
         repeat(1000) { i ->
             val ted = i * 1500L
             val token = f.zarad(ted)!!
@@ -429,14 +431,14 @@ class CteciFrontaTest {
 
     @Test(expected = IllegalArgumentException::class)
     fun zpetnyCasJeChybaVolajiciho() {
-        val f = CteciFronta()
+        val f = CteciFronta().apply { nastavCasovani(125) }
         f.zobraz(100)
         f.zobraz(99)
     }
 
     @Test(expected = IllegalArgumentException::class)
     fun prazdnaStrankaNeniPlatnyPreklad() {
-        val f = CteciFronta()
+        val f = CteciFronta().apply { nastavCasovani(125) }
         f.priprav(f.zarad(0)!!, listOf("  "))
     }
 }

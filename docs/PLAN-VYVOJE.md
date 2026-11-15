@@ -79,7 +79,7 @@ Stavy: čeká / probíhá / dokončeno / blokováno. Dokončení úkolu není d�
 ### P2-03 · Čtecí politika s virtuálním časem — probíhá
 
 - **Problém/části:** nové výsledky nesmí přerušit čtení A. Malá samostatně testovatelná politika + skutečný zobrazovací callsite.
-- **Závislosti:** kontrakt P2-01/02; správné simulované překlady stačí. **Řešení:** pořadí A/B/C nezávislé na dokončení překladu; čas české stránky `ceil(max(1500 ms, ceil(Unicode code points × 1000 / 18)) × procenta / 100)` při výchozích 100 %, poslední stránku dočíst, první volnou ukázat ihned.
+- **Závislosti:** kontrakt P2-01/02; správné simulované překlady stačí. **Řešení:** pořadí A/B/C nezávislé na dokončení překladu; čas české stránky `ceil(max(1500 ms, ceil(Unicode code points × 1000 / 18)) × procenta × 80 / 10000)` při výchozích 100 %, poslední stránku dočíst, první volnou ukázat ihned.
 - **Testy/hotovo:** krátký/jednoslovný/dlouhý/vícestránkový text, emoji/diakritika, rychlé A/B/C, pauza vyprázdní frontu, přesné časy a počet zobrazení. **Riziko:** definovat bounded paměť a viditelné přetížení, bez tichého zahazování a preventivního agresivního backlog managementu.
 - **Postup:** samostatné jádro, virtuální čas, dočtení poslední stránky, pauza se zbývajícím časem a explicitní kapacitní limity implementované; 33 nových testů a 44 původních JVM testů prošlo, APK se sestavila. Zobrazovací callsite je nyní napojený přes potvrzení LG; celá herní přejímka MVP ještě není dokončená.
 

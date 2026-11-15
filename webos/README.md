@@ -10,7 +10,7 @@ Pro uživatele je určen [návod bez sestavování kódu](NAVOD-LG.md).
 Konzole posílá obraz hry přes HDMI do TV. Původní Android PlayCaption získává další
 kopii přes Remote Play, čte a překládá text. Přijímač na LG pouze zobrazuje výsledek.
 Standardní režim používá dosavadní Android protokol. Integrační větev `feature/story-mode`
-přidává čtecí frontu na Androidu a potvrzované stránkování na LG 0.2.0.
+přidává čtecí frontu na Androidu a potvrzované stránkování na LG 0.2.1.
 
 Od verze 0.0.5 lze přijímač otevřít z nabídky aplikací na TV a vybrat HDMI přímo
 v PlayCaption. `com.webos.service.eim/getAllInputStatus` poskytne seznam vstupů;
@@ -59,10 +59,10 @@ python3 webos/build.py
 Na Windows lze použít `py -3 webos/build.py`. Aplikace nemá přidané npm knihovny;
 CLI 3.2.6 se spouští přes npx pouze pro sestavení. Výstup ve `webos/dist/`:
 
-- `cz.playcaption.overlaytest_0.2.0_all.ipk` pro instalaci do LG;
+- `cz.playcaption.overlaytest_0.2.1_all.ipk` pro instalaci do LG;
 - `receiver-manifest.json`: schema, platforma, ID, verze, protokoly/schopnosti,
   skutečná velikost IPK a SHA256; výslovně `story: true`;
-- `PlayCaption-LG-0.2.0.zip` pro předání uživatelům: IPK, návod, licence,
+- `PlayCaption-LG-0.2.1.zip` pro předání uživatelům: IPK, návod, licence,
   přesně odpovídající zdroje přijímače a SHA256SUMS.
 
 Build normalizuje časy a UID/GID z CLI archivů; dvě stejná sestavení ve stejném
@@ -96,7 +96,7 @@ Key Server. Z rootu projektu pokračuj:
 
 ```sh
 ares-novacom --device lg-tv --getkey
-ares-install --device lg-tv webos/dist/cz.playcaption.overlaytest_0.2.0_all.ipk
+ares-install --device lg-tv webos/dist/cz.playcaption.overlaytest_0.2.1_all.ipk
 ```
 
 Volitelné spuštění z počítače otevře stejný výběr HDMI jako spuštění z TV:
@@ -110,7 +110,7 @@ Passphrase ani získaný klíč nepatří do projektu. Identifikátor `lg-tv` je
 ## Předání správci projektu a vydání
 
 1. Android větev obsahuje profily TV, LG průvodce, přibalený IPK a správu přijímače.
-   Integrovaný LG přijímač 0.2.0 zachovává nabídku a Standardní režim, přidává Story.
+   Integrovaný LG přijímač 0.2.1 zachovává nabídku a Standardní režim, přidává Story.
    Samsung není součástí.
 2. Pro lokální kontrolu použij `bash gradlew :app:testDebugUnitTest :app:assembleDebug`.
    Pro veřejné vydání použij dosavadní podepsané Android release sestavení. Vedle
@@ -119,7 +119,7 @@ Passphrase ani získaný klíč nepatří do projektu. Identifikátor `lg-tv` je
    aktualizaci původní aplikace.
 3. Produkční číslo verze a podpis Android APK řeší správce při vlastním vydání;
    tato větev je sama nezvyšuje a nevytváří release/tag.
-4. K APK přilož také `webos/dist/PlayCaption-LG-0.2.0.zip`, případně samostatný IPK
+4. K APK přilož také `webos/dist/PlayCaption-LG-0.2.1.zip`, případně samostatný IPK
    a manifest. To slouží uživatelům ruční instalace. ZIP obsahuje odpovídající zdroje
    přijímače a licenci. Pro instalaci přímo z Androidu další download IPK potřeba není.
 5. V popisu vydání odkaž na `webos/NAVOD-LG.md`: LG vyžaduje Developer Mode,

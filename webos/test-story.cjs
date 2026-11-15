@@ -49,17 +49,17 @@ function percentPacket(n,text,percent) {
 }
 for(const percent of ['0','49','201','NaN','80.5'])assert.equal(percentPacket(1,'Test.',percent),null);
 const timed=new window.PlayCaptionReceiverUI(document);
-for(const [n,percent,ms] of [[1,100,1500],[2,80,1200],[3,120,1800]]) {
+for(const [n,percent,ms] of [[1,100,1200],[2,80,960],[3,120,1440]]) {
     const p=percentPacket(n,'Ano.',percent);assert.equal(p.durationPercent,percent);
     assert.equal(p.colors[0],-65536);timed.story(p,0);timed.tick(ms-1);assert.equal(sub.hidden,false);
     timed.tick(ms);assert.equal(timed.story(p,ms),'done');
 }
 const text='První stránka zůstane stejně dlouhá. Druhá stránka se přečte rychleji a celá.';
 timed.story(percentPacket(4,text,100),0);
-const first=sub.textContent,firstMs=Math.max(1500,Math.ceil(Array.from(first).length*1000/18));
+const first=sub.textContent,firstMs=Math.ceil(Math.max(1500,Math.ceil(Array.from(first).length*1000/18))*.8);
 timed.story(percentPacket(4,text,50),100);timed.tick(firstMs-1);assert.equal(sub.textContent,first);
 timed.tick(firstMs);assert.notEqual(sub.textContent,first);
-const secondMs=Math.ceil(Math.max(1500,Math.ceil(Array.from(sub.textContent).length*1000/18))*.5);
+const secondMs=Math.ceil(Math.max(1500,Math.ceil(Array.from(sub.textContent).length*1000/18))*.4);
 const second=sub.textContent;timed.tick(firstMs+secondMs-1);assert.equal(sub.textContent,second);assert.equal(sub.hidden,false);
 timed.tick(firstMs+secondMs);assert.ok(sub.hidden||sub.textContent!==second);
 console.log('OK: Story stránky/časování, procenta, živá změna bez restartu stránky, ACK, pauza/obnova a Standardní parser.');

@@ -1,6 +1,6 @@
 # Příběhový režim: čtecí fronta
 
-Větev `feature/story-mode`. Integrační MVP je napojené na Android překladač a LG přijímač 0.2.0. Standardní režim zůstává výchozí a zachovává dosavadní překladovou i zobrazovací cestu. Nový režim se zapíná v PlayCaption Test na obrazovce TelefonActivity.
+Větev `feature/story-mode`. Integrační MVP je napojené na Android překladač a LG přijímač 0.2.1. Standardní režim zůstává výchozí a zachovává dosavadní překladovou i zobrazovací cestu. Nový režim se zapíná v PlayCaption Test na obrazovce TelefonActivity.
 
 `CteciFronta.kt` je čistý Kotlin bez Android závislostí, vláken, sítě a vlastních hodin. Volání serializuje jediný vlastník, Android. LG zde nemá vlastní příběhovou frontu.
 
@@ -31,10 +31,10 @@ Android vlastní celou čtecí frontu a předává LG vždy jen jednu aktuální
 Každá stránka má dobu:
 
 ```text
-ceil(max(1500 ms, ceil(počet Unicode code pointů po NFC × 1000 / 18)) × procenta / 100)
+ceil(max(1500 ms, ceil(počet Unicode code pointů po NFC × 1000 / 18)) × procenta × 80 / 10000)
 ```
 
-Výchozí hodnota je **100 % nového kratšího základu**. Posuvník dovoluje 50–200 % po 5 %. Nižší procenta znamenají kratší zobrazení. Změna platí od další stránky; nerozběhne znovu aktuální stránku ani nezmění její zbývající čas při pauze. Základ je proti původním 14 znakům/s a minimu 1800 ms přibližně o 17–22 % kratší. Je to pracovní nastavení podle herní zpětné vazby, nikoliv tvrzení o standardu streamovacích služeb.
+Výchozí hodnota je **100 % nového kratšího základu**. Posuvník dovoluje 50–200 % po 5 %. Nižší procenta znamenají kratší zobrazení. Změna platí od další stránky; nerozběhne znovu aktuální stránku ani nezmění její zbývající čas při pauze. Po herní přejímce je základ od LG 0.2.1 ještě o 20 % kratší: nových 100 % odpovídá předchozím 80 %. Je to pracovní nastavení podle herní zpětné vazby, nikoliv tvrzení o standardu streamovacích služeb.
 
 Původní text se nemění. NFC při počítání sjednotí například `č` a `c` + kombinující háček. Doplňkové Unicode znaky, například běžné emoji, se nepočítají jako dvě UTF-16 jednotky. Nejde o obecné počítání všech složených emoji jako jednoho grafému.
 
@@ -48,11 +48,11 @@ Test `triRychleReplikySeZobraziJednouVPoradiADoctouVPauze`:
 
 | Zdrojový příchod | Český dialog | Zobrazení |
 | ---: | --- | --- |
-| 0 ms | Trevor: Ahoj. | 0–1500 ms |
-| 100 ms | Michael: Pojď. | 1500–3000 ms |
-| 200 ms | Franklin: Jdu. | 3000–4500 ms |
+| 0 ms | Trevor: Ahoj. | 0–1200 ms |
+| 100 ms | Michael: Pojď. | 1200–2400 ms |
+| 200 ms | Franklin: Jdu. | 2400–3600 ms |
 
-Tři přijaté a dokončené repliky, žádné přeskočení nebo předčasné přerušení. V této simulaci čtecí prodleva je 0 / 1400 / 2800 ms a fronta se vyprázdní v 4500 ms. Není to naměřená latence při hraní.
+Tři přijaté a dokončené repliky, žádné přeskočení nebo předčasné přerušení. V této simulaci čtecí prodleva je 0 / 1100 / 2200 ms a fronta se vyprázdní v 3600 ms. Není to naměřená latence při hraní.
 
 Další test dokončí překlady v pořadí C → B → A. Fronta čeká na platné A a zachová původní pořadí. Jiný test pustí 1000 postupně čtených replik při kapacitě jediné položky; dokončené položky se odstraňují a jejich pozdní výsledky se odmítají.
 
@@ -85,7 +85,7 @@ Testy používají skutečný produkční adaptér `PribehovaRelace` a překlado
 
 Na Android tabletu otevři **PlayCaption Test**, připoj PS5/Xbox a vyber LG. Na obrazovce překladu jsou dvě tlačítka **Standardní** a **Příběhový**; vybrané je zelené. V Příběhovém režimu se pod nimi ukáže posuvník **Délka zobrazení: 100 %**. Po zapnutí se ukazuje velikost fronty nebo důvod čekání/chyby. Nastavení se ukládá, výchozí je Standardní.
 
-Na LG spusť přijímač 0.2.0 a HDMI vyber přímo v něm. Starší LG přijímač zůstává kompatibilní se Standardním režimem. Pro Story s procenty aktualizuj obě aplikace; LG 0.0.8 nepodporuje nový paket s procenty. Při potížích přepni tlačítkem zpět na Standardní.
+Na LG spusť přijímač 0.2.1 a HDMI vyber přímo v něm. Starší LG přijímač zůstává kompatibilní se Standardním režimem. Pro Story s procenty aktualizuj obě aplikace; LG 0.0.8 nepodporuje nový paket s procenty. Při potížích přepni tlačítkem zpět na Standardní.
 
 Přepnutí režimu, jazyka, zdrojové oblasti, cílové TV nebo relace konzole resetuje Story frontu a neplatné výsledky se již nezobrazí. Zmizení samotného anglického titulku frontu nemaže. Při aktivních dialogových volbách se pozastaví čtení aktuálního příběhového titulku. Syntetické rámečky a Text používají nadále svoje původní kanály.
 
@@ -165,3 +165,19 @@ Lokální důkazy jsou v `/private/tmp/playcaption-story-platforms-runtime.log`,
 a `playcaption-story-020-pages.json`. Tyto místní soubory se nedistribuují.
 Syntetická data neprokazují kvalitu herního OCR ani překladů. Nová herní
 přejímka rychlých replik, skutečných voleb a delšího běhu je stále otevřená.
+
+### Herní přejímka a nový výchozí základ
+
+Uživatel potvrdil fungování společné verze na GTA V. Při sledování herního
+seriálu fronta na 100 % rostla příliš; po snížení na 80 % bylo čtení v pořádku.
+Na základě této přejímky používají Android i LG 0.2.1 o 20 % kratší základ.
+Posuvník má nadále výchozích 100 %; ty odpovídají předchozím 80 %. Krátká
+stránka má při 100 % 1200 ms, 180 znaků 8000 ms. Standardní režim a staré
+devítipolové Story pakety zachovávají své časování. Dosavadní vlastní
+procenta se automaticky nepřepisují. Nejde o garanci nulové fronty pro
+libovolně rychlý dialog.
+
+Ověření úpravy základu: 132 JVM testů, šest LG sad a sestavení APK/IPK prošly.
+Na Redmi je `story-platforms-test02`, na C5 LG 0.2.1. V tomto testovacím
+profilu se uložených 80 % změnilo na 100 %; ostatní uložené údaje zůstaly
+beze změny. Nové hraní s touto výchozí hodnotou ještě nebylo potvrzené.

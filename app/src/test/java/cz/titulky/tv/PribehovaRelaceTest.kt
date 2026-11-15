@@ -52,8 +52,8 @@ class PribehovaRelaceTest {
     @Test fun lokalniVystupPouzivaCasovaniFronty() {
         val s = Scena(); s.nova("A"); s.nova("B"); s.hotovo[0]("Ano."); s.hotovo[1]("Jdu.")
         assertEquals("Ano.", s.r.krok(0, false, false)!!.text)
-        assertEquals("Jdu.", s.r.krok(1500, false, false)!!.text)
-        assertNull(s.r.krok(3000, false, false))
+        assertEquals("Jdu.", s.r.krok(1200, false, false)!!.text)
+        assertNull(s.r.krok(2400, false, false))
     }
     @Test fun selhaniVystupuSeNepocitaJakoDokonceneCteni() {
         val f=CteciFronta();val t=f.zarad(0)!!;f.priprav(t,listOf("Připravená."));f.zobraz(0,true)
