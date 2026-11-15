@@ -108,7 +108,8 @@ def main():
     files["source/LICENSE"] = (ROOT / "LICENSE").read_bytes()
     files["source/BACKLOG.md"] = (ROOT / "BACKLOG.md").read_bytes()
     sources = ["README.md", "NAVOD-LG.md", "TESTOVANI.md", "SHODA-ANDROID.md", "INSTALACE-Z-ANDROIDU.md", "test.cjs", "test-udp.cjs", "test-input.cjs", "test-receiver.cjs", "test-controls.cjs", "test-story.cjs", "build.py"]
-    sources += [str(p.relative_to(HERE)) for folder in ["app", "service"] for p in sorted((HERE / folder).iterdir())]
+    # as_posix: na Windows by relative_to dalo "app\\app.js" a název v ZIPu by nesouhlasil
+    sources += [p.relative_to(HERE).as_posix() for folder in ["app", "service"] for p in sorted((HERE / folder).iterdir())]
     for name in sources:
         files["source/webos/" + name] = (HERE / name).read_bytes()
     files["SHA256SUMS"] = "".join(hashlib.sha256(data).hexdigest() + "  " + name + "\n" for name, data in sorted(files.items())).encode()
