@@ -66,3 +66,23 @@ instalace na čisté TV a jiné modely tím nejsou ověřené.
 - [LG Developer Mode](https://webostv.developer.lge.com/develop/getting-started/developer-mode-app)
 - [Oficiální webOS CLI](https://github.com/webos-tools/cli): `lib/base/novacom.js`,
   `lib/install.js`, `files/conf/command-service.json`.
+
+
+## Informace o platnosti Developer Mode v Androidu
+
+`LgInstalator.nactiRelaci` sdílí ověřené SSH připojení s instalátorem, ale pouze
+čte `/var/luna/preferences/devmode_enabled`. Nepřenáší IPK, nevolá instalační
+službu a neprodlužuje relaci. Po prvním propojení se tento session token uloží
+AES-GCM šifrovaně s klíčem v Android Keystore; AAD jej váže na stabilní ID TV.
+Android zálohování je vypnuté. Token, URL s tokenem, Passphrase ani soukromý klíč
+se nelogují. SSH klíč a Passphrase se stejně jako dříve drží pouze v paměti operace.
+
+`LgDevMode` používá pouze HTTPS GET na pevnou službu LG
+`developer.lge.com/secure/CheckDevModeSession.dev`, bez přesměrování a cache HTTP.
+Odpověď musí mít úspěšný výsledek a rozpoznaný čas; neznámý formát není nula.
+Cache uchovává počet sekund a čas ověření pro každou TV zvlášť. Starší odpověď
+z předchozího propojení nesmí přepsat novou relaci. Ruční kontrola je dostupná
+v detailu TV, automatická nejvýše hodinově při viditelné kartě.
+Žádná nová služba na pozadí, plánovač, vlastní backend ani změna LG přijímače.
+Čerstvost má limit 24 hodin; při chybě se ponechá označený poslední údaj.
+Pod tři dny se zobrazí připomínka ručního prodloužení. Běžící titulky neobnovují relaci.

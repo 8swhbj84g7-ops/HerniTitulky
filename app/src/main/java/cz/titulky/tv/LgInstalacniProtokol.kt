@@ -3,7 +3,7 @@ package cz.titulky.tv
 import org.json.JSONObject
 import java.net.InetAddress
 
-internal enum class LgChyba { ADRESA, BALICEK, KEY_SERVER, PASSPHRASE, IDENTITA, SSH, PRENOS, INSTALACE, OVERENI, CAS, ZRUSENO }
+internal enum class LgChyba { ADRESA, BALICEK, KEY_SERVER, PASSPHRASE, IDENTITA, SSH, PRENOS, INSTALACE, OVERENI, CAS, ZRUSENO, RELACE }
 internal class LgInstalacniChyba(val kod: LgChyba) : Exception(kod.name)
 internal enum class LgFaze { BALICEK, KLIC, PRIPOJENI, PRENOS, INSTALACE, OVERENI }
 

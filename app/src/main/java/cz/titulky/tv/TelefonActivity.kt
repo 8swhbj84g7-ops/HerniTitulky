@@ -341,6 +341,9 @@ class TelefonActivity : Activity() {
             setPadding(dp(12), dp(10), dp(12), dp(10))
             setOnClickListener { spravaTelevize() }
         })
+        obal.addView(LgDevModeView(this) {
+            TvProfily.aktivniId?.let { TvProfily(this).najdi(it) }
+        })
         obal.addView(TextView(this).apply {
             text = t("tvUpravit")
             textSize = 14f

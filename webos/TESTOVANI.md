@@ -224,3 +224,24 @@ není evidována jako úspěšný automatický test tlačítka záložního post
   z oficiální dokumentace LG, bez testování vypršení na C5.
 - Android Aphanes 1.0.2 a Windows Desktop 1.0.0 jsou odkazy na oficiální vydání;
   samotná instalace přes externí aplikaci nebyla při této změně provedena.
+
+
+### Zbývající čas Developer Mode – Android test09
+
+- C5 vrátila přes kontrolní službu LG úspěch a čas `999:32:04`.
+  Kontrolní nástroj držel session token pouze v paměti a nevypisoval jej.
+- V Androidu uživatel provedl prvotní načtení z TV. Karta i detail zobrazily
+  přibližně 41 dní a 15 hodin, datum ověření a ruční kontrolu.
+- `:app:testDebugUnitTest :app:assembleDebug`: 26 JVM testů bez selhání.
+  Nové případy: dlouhé hodiny, chybná odpověď není nula, stáří a posun hodin,
+  hranice 72 hodin, AES-GCM vazba na konkrétní TV, změněný ciphertext a zrušené čtení.
+- Po aktualizaci/restartu testovací APK zůstal čas zachovaný. UIAutomator pak
+  provedl Zkontrolovat bez opakované Passphrase; datum v uloženém ověření se posunulo.
+  První pokus UI kontroly nenašel kartu při přechodu obrazovky; opakovaný průchod
+  na zobrazené hlavní kartě prošel. Karta i detail byly vizuálně zkontrolované.
+- Kontrola app dat potvrdila jednu šifrovanou relaci a jeden veřejný časový záznam;
+  citlivý obsah se nevypisoval. LG přijímač zůstal 0.1.0 bez změny zdrojů či instalace.
+
+První nastavení času je samostatný jednorázový krok pro konkrétní TV, není ještě
+navázané automaticky na instalátor. Bez automatického prodlužování, notifikací
+na pozadí či simulování expirování skutečné TV. Další fyzická LG není ověřená.

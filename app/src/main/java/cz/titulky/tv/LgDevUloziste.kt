@@ -1,0 +1,60 @@
+package cz.titulky.tv
+
+import android.content.Context
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
+import java.security.KeyStore
+import java.util.Base64
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
+import javax.crypto.spec.GCMParameterSpec
+
+internal class LgDevUloziste(context: Context) {
+    private val prefs = context.getSharedPreferences("lg_dev_mode", Context.MODE_PRIVATE)
+    private fun k(id: String) = lgSha256(id.toByteArray())
+    fun maRelaci(id: String) = prefs.contains(k(id) + ".token")
+    fun verze(id: String) = prefs.getString(k(id) + ".token", null)?.let { lgSha256(it.toByteArray()) }
+    fun cas(id: String): LgDevCas? {
+        val key = k(id)
+        return if (prefs.contains("$key.sekundy")) LgDevCas(prefs.getLong("$key.sekundy", 0), prefs.getLong("$key.overeno", 0)) else null
+    }
+    fun cas(id: String, verze: String, value: LgDevCas): Boolean = synchronized(ZAMEK) {
+        if (verze(id) != verze) return@synchronized false
+        prefs.edit().putLong(k(id) + ".sekundy", value.sekundy).putLong(k(id) + ".overeno", value.overeno).apply()
+        true
+    }
+    fun token(id: String): String = rozbal(klic(), id, prefs.getString(k(id) + ".token", null) ?: error("No session"))
+    fun token(id: String, token: String) = synchronized(ZAMEK) {
+        require(token.matches(Regex("[A-Za-z0-9]{8,256}")))
+        val data = zabal(klic(), id, token)
+        prefs.edit().putString(k(id) + ".token", data).remove(k(id) + ".sekundy").remove(k(id) + ".overeno").apply()
+    }
+    private fun klic(): SecretKey = synchronized(ZAMEK) {
+        val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+        (store.getKey(ALIAS, null) as? SecretKey) ?: KeyGenerator.getInstance("AES", "AndroidKeyStore").apply {
+            init(KeyGenParameterSpec.Builder(ALIAS, KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM).setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE).build())
+        }.generateKey()
+    }
+    companion object {
+        private const val ALIAS = "playcaption-lg-session-v1"
+        private val ZAMEK = Any()
+        internal fun zabal(key: SecretKey, id: String, token: String): String {
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            cipher.init(Cipher.ENCRYPT_MODE, key)
+            cipher.updateAAD(id.toByteArray())
+            require(cipher.iv.size == 12)
+            return Base64.getEncoder().encodeToString(cipher.iv + cipher.doFinal(token.toByteArray()))
+        }
+        internal fun rozbal(key: SecretKey, id: String, data: String): String {
+            require(data.length <= 1024)
+            val bytes = Base64.getDecoder().decode(data)
+            require(bytes.size > 28)
+            val cipher = Cipher.getInstance("AES/GCM/NoPadding")
+            cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(128, bytes.copyOfRange(0, 12)))
+            cipher.updateAAD(id.toByteArray())
+            return cipher.doFinal(bytes.copyOfRange(12, bytes.size)).toString(Charsets.UTF_8)
+        }
+    }
+}

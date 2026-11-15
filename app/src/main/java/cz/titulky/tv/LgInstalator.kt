@@ -38,39 +38,8 @@ internal class LgInstalator(
     }
 
     fun nainstaluj(adresa: String, passphrase: CharArray, prubeh: (LgFaze) -> Unit): LgInstalaceVysledek {
-        var key: ByteArray? = null
-        val heslo = passphrase.concatToString().toByteArray(Charsets.UTF_8)
-        passphrase.fill('\u0000')
-        val jsch = JSch()
-        platnost = System.nanoTime() + 120_000_000_000L
-        val limit = java.util.Timer(true)
-        limit.schedule(object : java.util.TimerTask() {
-            override fun run() { runCatching { http?.close() }; runCatching { session?.disconnect() } }
-        }, 120000)
-        fun krok(f: LgFaze) { kontrola(); faze = f; prubeh(f) }
-        try {
-            val ip = LgInstalacniProtokol.adresa(adresa)
-            if (heslo.size != 6) throw LgInstalacniChyba(LgChyba.PASSPHRASE)
-            krok(LgFaze.BALICEK)
-            val b = zdroj.nacti()
-            krok(LgFaze.KLIC)
-            key = nactiKlic(ip)
-            overHeslo(jsch, key, heslo)
-            jsch.addIdentity("playcaption-lg", key, null, heslo)
-            krok(LgFaze.PRIPOJENI)
-            val otisk = LgSshOtisk(znamyOtisk(ip))
-            jsch.hostKeyRepository = otisk
-            val ssh = jsch.getSession("prisoner", ip, 9922).also { session = it }
-            nastavKompatibilitu(ssh)
-            ssh.setConfig("PreferredAuthentications", "publickey")
-            ssh.setConfig("StrictHostKeyChecking", "yes")
-            ssh.timeout = 8000
-            try { ssh.connect(8000) } catch (e: Exception) {
-                if (otisk.zmeneny) throw LgInstalacniChyba(LgChyba.IDENTITA)
-                throw e
-            }
-            // shortcut: první spárování důvěřuje domácí síti a klíči Key Serveru; pozdější změnu identity odmítáme.
-            ulozOtisk(ip, otisk.novy ?: throw LgInstalacniChyba(LgChyba.SSH))
+        lateinit var b: LgBalicek
+        return pripojene(adresa, passphrase, prubeh, { b = zdroj.nacti() }) { ssh, krok ->
             krok(LgFaze.PRENOS)
             val cesta = "/media/developer/temp/playcaption-" + UUID.randomUUID().toString() + ".ipk"
             var pozadovanaInstalace = false
@@ -98,17 +67,73 @@ internal class LgInstalator(
                     }
                 }.isSuccess
                 kontrola()
-                return LgInstalaceVysledek(b.verze, spusteno)
+                return@pripojene LgInstalaceVysledek(b.verze, spusteno)
             } finally {
                 // Pouze vlastní náhodně pojmenovaný dočasný balíček; nainstalovaná aplikace se nemaže.
                 // Při přerušení může LG stále číst IPK; soubor jí v takovém případě ponecháme.
                 if (!pozadovanaInstalace || potvrzenaInstalace) runCatching { sftp.rm(cesta) }
                 sftp.disconnect()
             }
+        }
+    }
+
+    /** Pouze čtení relace; neinstaluje přijímač a nemění Developer Mode. */
+    fun nactiRelaci(adresa: String, passphrase: CharArray): String = pripojene(adresa, passphrase, {}, {}) { ssh, krok ->
+        krok(LgFaze.OVERENI)
+        val sftp = ssh.openChannel("sftp") as ChannelSftp
+        try {
+            sftp.connect(8000)
+            val data = sftp.get("/var/luna/preferences/devmode_enabled").use { omezene(it, 1024) }
+            try {
+                data.toString(Charsets.US_ASCII).trim().also { require(it.matches(Regex("[A-Za-z0-9]{8,256}"))) }
+            } finally { data.fill(0) }
+        } catch (e: Exception) {
+            if (e is LgInstalacniChyba) throw e
+            throw LgInstalacniChyba(LgChyba.RELACE)
+        }
+        finally { sftp.disconnect() }
+    }
+
+    private fun <T> pripojene(adresa: String, passphrase: CharArray, prubeh: (LgFaze) -> Unit,
+                              predPripojenim: () -> Unit, akce: (Session, (LgFaze) -> Unit) -> T): T {
+        var key: ByteArray? = null
+        val heslo = passphrase.concatToString().toByteArray(Charsets.UTF_8)
+        passphrase.fill('\u0000')
+        val jsch = JSch()
+        platnost = System.nanoTime() + 120_000_000_000L
+        val limit = java.util.Timer(true)
+        limit.schedule(object : java.util.TimerTask() {
+            override fun run() { runCatching { http?.close() }; runCatching { session?.disconnect() } }
+        }, 120000)
+        fun krok(f: LgFaze) { kontrola(); faze = f; prubeh(f) }
+        try {
+            val ip = LgInstalacniProtokol.adresa(adresa)
+            if (heslo.size != 6) throw LgInstalacniChyba(LgChyba.PASSPHRASE)
+            krok(LgFaze.BALICEK)
+            predPripojenim()
+            krok(LgFaze.KLIC)
+            key = nactiKlic(ip)
+            overHeslo(jsch, key, heslo)
+            jsch.addIdentity("playcaption-lg", key, null, heslo)
+            krok(LgFaze.PRIPOJENI)
+            val otisk = LgSshOtisk(znamyOtisk(ip))
+            jsch.hostKeyRepository = otisk
+            val ssh = jsch.getSession("prisoner", ip, 9922).also { session = it }
+            nastavKompatibilitu(ssh)
+            ssh.setConfig("PreferredAuthentications", "publickey")
+            ssh.setConfig("StrictHostKeyChecking", "yes")
+            ssh.timeout = 8000
+            try { ssh.connect(8000) } catch (e: Exception) {
+                if (otisk.zmeneny) throw LgInstalacniChyba(LgChyba.IDENTITA)
+                throw e
+            }
+            // shortcut: první spárování důvěřuje domácí síti a klíči Key Serveru; pozdější změnu identity odmítáme.
+            ulozOtisk(ip, otisk.novy ?: throw LgInstalacniChyba(LgChyba.SSH))
+            return akce(ssh, ::krok)
         } catch (e: Exception) {
             if (zruseno) throw LgInstalacniChyba(LgChyba.ZRUSENO)
-            if (e is LgInstalacniChyba) throw e
             if (e is SocketTimeoutException || System.nanoTime() > platnost) throw LgInstalacniChyba(LgChyba.CAS)
+            if (e is LgInstalacniChyba) throw e
             throw LgInstalacniChyba(when (faze) {
                 LgFaze.BALICEK -> LgChyba.BALICEK
                 LgFaze.KLIC -> LgChyba.KEY_SERVER

@@ -475,6 +475,11 @@ class MainActivity : Activity() {
             }.also { popis.addView(it) }
             tvPlatforma = text("", 14f, TEXT2).also { popis.addView(it, odsazeni(top = 4)) }
             tvStav = text("", 15f, TEXT2).also { popis.addView(it, odsazeni(top = 6)) }
+            popis.addView(LgDevModeView(this) {
+                val p = TvProfily(this)
+                if (p.pouzeTelefon && Propojeni.Vysilac.cilIp == null) null
+                else (if (Propojeni.Vysilac.cilIp != null) TvProfily.aktivniId else p.posledniId)?.let { p.najdi(it) }
+            })
             vystup.addView(popis, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { rightMargin = dp(16) })
             vystup.addView(tlacitko(t("tvZmenitKratce") + "  ›", 18f) { otevriTelevizi() }.apply {
                 minimumHeight = dp(48)

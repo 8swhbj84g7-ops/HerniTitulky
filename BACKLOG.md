@@ -91,7 +91,7 @@ Android TV režim. Uživatel na Redmi Pad Pro potvrdil nalezení a výběr C5.
 Karta výstupu byla po opravě výšky/odsazení vizuálně zkontrolovaná na tabletu:
 rozlišuje vybranou TV od aktivního odesílání. Nepředstírá potvrzení příjmu UDP.
 Původní Android TV hardware dosud touto etapou nepřetestován.
-Vlastní LG instalátor a přibalený IPK zůstávají navazující etapou.
+Vlastní LG instalátor a přibalený IPK jsou implementované; aktuální přejímka je v `webos/TESTOVANI.md`.
 
 ## PC-005 – Průvodce přípravou LG
 
@@ -100,7 +100,7 @@ veřejná vydání a komunitní instalační správce. Přístup přes zvolenou 
 LG nebo nabídku Jak připojit televizi. Návrat k rozpracovanému kroku, přeskočení
 přípravy u již nainstalovaného přijímače a skutečné vyhledání na konci.
 Průvodce neukládá hesla, neprodlužuje Developer Mode a nepovažuje proklikání
-instrukcí za dokončenou instalaci či spojení. Vlastní instalátor IPK navazuje.
+instrukcí za dokončenou instalaci či spojení. Přímý instalátor IPK je také implementovaný.
 
 Kontroly: čtyři testy navigace průvodce a šest dosavadních testů profilů/přenosu;
 `bash gradlew :app:testDebugUnitTest :app:assembleDebug`. Postup LG ověřen podle
@@ -112,3 +112,13 @@ systémové Zpět, zavření/obnovení uloženého kroku, přeskočení přípra
 z externího odkazu a navazující discovery se skutečným seznamem LG přijímačů.
 Screenshot posledního kroku potvrdil viditelnost celého textu i navigace.
 Tento test nemění Developer Mode na TV a nenahrazuje první instalaci na čisté LG.
+
+
+## PC-006 – Informace o platnosti Developer Mode
+
+Implementováno v Androidu: čas z kontrolní služby LG na kartě konkrétní TV,
+datum ověření, ruční kontrola a zvýraznění pod tři dny. První propojení vyžaduje
+jednorázově Key Server a Passphrase; pak je relace uložená šifrovaně pro stabilní
+ID TV. Kontrola nejvýše hodinově při viditelné kartě, starší/chybný údaj označený.
+Žádné automatické prodlužování ani změna přijímače LG. Testy a důkazy v `webos/TESTOVANI.md`.
+Prvotní propojení času zatím není automaticky součástí instalace.

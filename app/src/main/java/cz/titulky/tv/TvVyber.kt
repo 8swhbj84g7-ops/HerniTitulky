@@ -19,9 +19,10 @@ class TvVyber(
     }
 
     fun ukaz() {
+        val lg = (if (Propojeni.Vysilac.cilIp != null) TvProfily.aktivniId else televize.posledniId)?.let { televize.najdi(it) }?.takeIf { it.platforma == TvPlatforma.WEBOS }
         android.app.AlertDialog.Builder(activity)
             .setTitle(t("tvNastaveni"))
-            .setItems(arrayOf(t("tvPlatforma") + ": " + platformaText(televize.platforma), t("tvZmenit"), t("tvInformace"), t("tvJenTelefon"))) { _, i ->
+            .setItems(arrayOf(t("tvPlatforma") + ": " + platformaText(televize.platforma), t("tvZmenit"), t("tvInformace"), t("tvJenTelefon")) + if (lg != null) arrayOf(t("lgCasMenu") + " · " + lg.jmeno) else emptyArray()) { _, i ->
                 when (i) {
                     0 -> android.app.AlertDialog.Builder(activity).setTitle(t("tvPlatforma"))
                         .setSingleChoiceItems(TvPlatforma.values().map { platformaText(it) }.toTypedArray(), televize.platforma.ordinal) { dialog, n ->
@@ -37,6 +38,7 @@ class TvVyber(
                             else -> "tvNavodNeznamy"
                         }) + "\n\n" + t("tvVerzeNeznama"))
                         .setPositiveButton("OK", null).show()
+                    4 -> lg?.let { LgDevDialog(activity, it).ukaz() }
                     else -> lokalne()
                 }
             }.show()

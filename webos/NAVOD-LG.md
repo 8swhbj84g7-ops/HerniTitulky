@@ -158,7 +158,21 @@ už LG tuto relaci prodloužit nedovolí; je nutné znovu zapnout Developer Mode
 Prodloužení zobrazení titulků není prodloužením Developer Mode.
 Pokud režim vyprší a deaktivuje se, LG vývojově nainstalované aplikace odstraní.
 Pak znovu zapni Developer Mode a zopakuj instalaci IPK.
-PlayCaption aktuální zbývající dobu nezjišťuje a neprodlužuje ji automaticky.
+V novější Android aplikaci klepni na údaj **Developer Mode** na kartě vybrané
+televize, případně otevři **Výstup titulků → Změnit → Platnost Developer Mode**.
+Při prvním použití zvol **Načíst údaj z TV**, zapni na této TV Key Server a zadej
+její Passphrase. Tím se pouze přečte údaj pro kontrolu relace; nic se neinstaluje.
+Tento údaj se uloží šifrovaně pomocí Android Keystore pro konkrétní TV.
+Passphrase a soukromý SSH klíč se nadále neukládají.
+
+Potom lze čas ověřovat přes **Zkontrolovat** bez opakovaného opisování Passphrase.
+Kontrola potřebuje internet: dotaz s údajem relace míří přímo na službu LG.
+Při otevřené kartě se kontroluje nejvýše jednou za hodinu. U času se uvádí datum
+posledního ověření; z něj se dopočítává přibližný zbytek. Údaj starší než 24 hodin,
+chyba kontroly či změna hodin telefonu jsou označené jako starší stav.
+Při méně než třech dnech se čerstvý údaj zvýrazní a připomene ruční EXTEND.
+Po novém přihlášení do Developer Mode může být potřeba **Načíst údaj z TV** znovu.
+PlayCaption Developer Mode neprodlužuje ani neposílá upozornění na pozadí.
 Pravidla a odstranění aplikací při deaktivaci popisuje [oficiální LG návod](https://webostv.developer.lge.com/develop/getting-started/developer-mode-app).
 
 Běžné aktualizace PlayCaption
