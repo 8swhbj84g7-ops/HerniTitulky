@@ -17,6 +17,11 @@ internal class CteciFronta(private val maxReplik: Int = 128, private val maxZnak
     private var pozastaveno = false
     private var zbyvaMs = 0L
     private var posledniCasMs = 0L
+    private var casProcenta = CasovaniPribehu.VYCHOZI_PROCENTA
+    fun nastavCasovani(procenta: Int) {
+        require(procenta in CasovaniPribehu.MIN_PROCENT..CasovaniPribehu.MAX_PROCENT)
+        casProcenta = procenta
+    }
     var dokoncenych = 0
         private set
     var selhanych = 0
@@ -127,8 +132,7 @@ internal class CteciFronta(private val maxReplik: Int = 128, private val maxZnak
     private fun stranka(replika: Replika, index: Int, tedMs: Long): Stranka {
         val stranky = replika.stranky!!
         val text = stranky[index]
-        val nfc = java.text.Normalizer.normalize(text, java.text.Normalizer.Form.NFC)
-        val dobaMs = maxOf(1800L, (nfc.codePointCount(0, nfc.length) * 1000L + 13) / 14)
+        val dobaMs = CasovaniPribehu.dobaMs(text, casProcenta)
         return Stranka(replika.token, index, stranky.size, text, replika.puvodniCasMs,
             tedMs, Math.addExact(tedMs, dobaMs)).also { aktualni = it }
     }

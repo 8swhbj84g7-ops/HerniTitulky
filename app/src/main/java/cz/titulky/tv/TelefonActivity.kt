@@ -820,11 +820,56 @@ class TelefonActivity : Activity() {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.parseColor("#111114"))
             addView(lista, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-            addView(TextView(this@TelefonActivity).apply {
-                fun obnov() { text = if (nast.pribehovy) "Příběhový režim · ZAPNUTO" else "Standardní režim · přepnout na Příběhový" }
-                obnov(); textSize = 15f; setTextColor(Color.parseColor("#3CFF6E")); setPadding(dp(16), dp(10), dp(16), dp(10))
-                setOnClickListener { nast.pribehovy = !nast.pribehovy; obnov() }
-            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+            val rezimy = LinearLayout(this@TelefonActivity).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(14), dp(8), dp(14), dp(8))
+            }
+            val tlacitka = LinearLayout(this@TelefonActivity)
+            val standard = android.widget.Button(this@TelefonActivity).apply { text = "Standardní"; isAllCaps = false }
+            val pribehovy = android.widget.Button(this@TelefonActivity).apply { text = "Příběhový"; isAllCaps = false }
+            val casObal = LinearLayout(this@TelefonActivity).apply { orientation = LinearLayout.VERTICAL }
+            val casPopis = TextView(this@TelefonActivity).apply { textSize = 14f; setTextColor(Color.WHITE) }
+            fun obnovRezim() {
+                for ((button, vybrano) in listOf(standard to !nast.pribehovy, pribehovy to nast.pribehovy)) {
+                    button.isSelected = vybrano
+                    button.contentDescription = "${button.text} režim" + if (vybrano) ", vybráno" else ""
+                    button.typeface = Typeface.DEFAULT_BOLD
+                    button.minHeight = dp(48)
+                    button.setTextColor(if (vybrano) Color.BLACK else Color.WHITE)
+                    button.background = zaobleni(Color.parseColor(if (vybrano) "#3CFF6E" else "#303038")).apply {
+                        setStroke(dp(2), Color.parseColor(if (vybrano) "#3CFF6E" else "#737380"))
+                    }
+                    button.elevation = dp(2).toFloat()
+                }
+                casObal.visibility = if (nast.pribehovy) View.VISIBLE else View.GONE
+            }
+            standard.setOnClickListener { nast.pribehovy = false; obnovRezim() }
+            pribehovy.setOnClickListener { nast.pribehovy = true; obnovRezim() }
+            tlacitka.addView(standard, LinearLayout.LayoutParams(0, dp(48), 1f).apply { rightMargin = dp(8) })
+            tlacitka.addView(pribehovy, LinearLayout.LayoutParams(0, dp(48), 1f))
+            fun obnovCas() { casPopis.text = "Délka zobrazení: ${nast.casPribehuProcenta} %" }
+            obnovCas()
+            casObal.addView(casPopis)
+            casObal.addView(android.widget.SeekBar(this@TelefonActivity).apply {
+                max = (CasovaniPribehu.MAX_PROCENT - CasovaniPribehu.MIN_PROCENT) / 5
+                progress = (nast.casPribehuProcenta - CasovaniPribehu.MIN_PROCENT) / 5
+                contentDescription = "Délka zobrazení příběhových titulků v procentech"
+                setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
+                    override fun onProgressChanged(sb: android.widget.SeekBar, p: Int, odUzivatele: Boolean) {
+                        if (odUzivatele) { nast.casPribehuProcenta = CasovaniPribehu.MIN_PROCENT + p * 5; obnovCas() }
+                    }
+                    override fun onStartTrackingTouch(sb: android.widget.SeekBar) {}
+                    override fun onStopTrackingTouch(sb: android.widget.SeekBar) {}
+                })
+            }, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(40)))
+            casObal.addView(TextView(this@TelefonActivity).apply {
+                text = "100 % = výchozí čas · méně % = kratší zobrazení. Platí od další stránky."
+                textSize = 12f; setTextColor(Color.parseColor("#B6B6C2"))
+            })
+            rezimy.addView(tlacitka)
+            rezimy.addView(casObal)
+            obnovRezim()
+            addView(rezimy, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
             addView(stavRadek, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         }
         tip = TextView(this).apply {

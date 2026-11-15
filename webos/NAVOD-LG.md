@@ -138,4 +138,4 @@ proto používej důvěryhodnou domácí síť a nepřesměrovávej jeho porty n
 
 ## Volitelný Příběhový režim (testovací MVP)
 
-Vyžaduje LG přijímač 0.0.8 a odpovídající PlayCaption Test na Androidu. V Android obrazovce překladu klepni na „Standardní režim · přepnout na Příběhový“. Android řídí čtecí frontu, LG zobrazuje jedinou repliku po stránkách a potvrzuje dočtení. Stejným tlačítkem se vrátíš do Standardního režimu. Při čekání na podporovaný LG přijímač zkontroluj verzi a spuštění nad HDMI přímo z aplikace. Jde o experimentální MVP k hernímu ověření.
+Vyžaduje LG přijímač 0.0.9 a odpovídající PlayCaption Test na Androidu. V Android obrazovce překladu klepni na tlačítko **Příběhový**. Pod tlačítky se objeví **Délka zobrazení**: výchozí 100 % už používá kratší výpočet, posuvník 50–200 % jej násobí. Nižší procenta zkracují zobrazení; změna platí od další stránky. Android řídí čtecí frontu, LG zobrazuje jedinou repliku po stránkách a potvrzuje dočtení. Tlačítkem **Standardní** se vrátíš do původního režimu. Při čekání na podporovaný LG přijímač zkontroluj verzi a spuštění nad HDMI přímo z aplikace. Jde o experimentální MVP k hernímu ověření.

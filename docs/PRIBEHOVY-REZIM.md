@@ -1,8 +1,8 @@
 # Příběhový režim: čtecí fronta
 
-Větev `feature/story-mode`. Integrační MVP je napojené na Android překladač a LG přijímač 0.0.8. Standardní režim zůstává výchozí a zachovává dosavadní překladovou i zobrazovací cestu. Nový režim se zapíná v PlayCaption Test na obrazovce TelefonActivity.
+Větev `feature/story-mode`. Integrační MVP je napojené na Android překladač a LG přijímač 0.0.9. Standardní režim zůstává výchozí a zachovává dosavadní překladovou i zobrazovací cestu. Nový režim se zapíná v PlayCaption Test na obrazovce TelefonActivity.
 
-`CteciFronta.kt` je čistý Kotlin bez Android závislostí, vláken, sítě a vlastních hodin. Volání serializuje jediný vlastník, výhledově Android. LG zde nemá vlastní příběhovou frontu.
+`CteciFronta.kt` je čistý Kotlin bez Android závislostí, vláken, sítě a vlastních hodin. Volání serializuje jediný vlastník, Android. LG zde nemá vlastní příběhovou frontu.
 
 ## Vstupy a pravidla
 
@@ -31,8 +31,10 @@ Android vlastní celou čtecí frontu a předává LG vždy jen jednu aktuální
 Každá stránka má dobu:
 
 ```text
-max(1800 ms, ceil(počet Unicode code pointů po NFC × 1000 / 14))
+ceil(max(1500 ms, ceil(počet Unicode code pointů po NFC × 1000 / 18)) × procenta / 100)
 ```
+
+Výchozí hodnota je **100 % nového kratšího základu**. Posuvník dovoluje 50–200 % po 5 %. Nižší procenta znamenají kratší zobrazení. Změna platí od další stránky; nerozběhne znovu aktuální stránku ani nezmění její zbývající čas při pauze. Základ je proti původním 14 znakům/s a minimu 1800 ms přibližně o 17–22 % kratší. Je to pracovní nastavení podle herní zpětné vazby, nikoliv tvrzení o standardu streamovacích služeb.
 
 Původní text se nemění. NFC při počítání sjednotí například `č` a `c` + kombinující háček. Doplňkové Unicode znaky, například běžné emoji, se nepočítají jako dvě UTF-16 jednotky. Nejde o obecné počítání všech složených emoji jako jednoho grafému.
 
@@ -46,11 +48,11 @@ Test `triRychleReplikySeZobraziJednouVPoradiADoctouVPauze`:
 
 | Zdrojový příchod | Český dialog | Zobrazení |
 | ---: | --- | --- |
-| 0 ms | Trevor: Ahoj. | 0–1800 ms |
-| 100 ms | Michael: Pojď. | 1800–3600 ms |
-| 200 ms | Franklin: Jdu. | 3600–5400 ms |
+| 0 ms | Trevor: Ahoj. | 0–1500 ms |
+| 100 ms | Michael: Pojď. | 1500–3000 ms |
+| 200 ms | Franklin: Jdu. | 3000–4500 ms |
 
-Tři přijaté a dokončené repliky, žádné přeskočení nebo předčasné přerušení. V této simulaci čtecí prodleva je 0 / 1700 / 3400 ms a fronta se vyprázdní v 5400 ms. Není to naměřená latence při hraní.
+Tři přijaté a dokončené repliky, žádné přeskočení nebo předčasné přerušení. V této simulaci čtecí prodleva je 0 / 1400 / 2800 ms a fronta se vyprázdní v 4500 ms. Není to naměřená latence při hraní.
 
 Další test dokončí překlady v pořadí C → B → A. Fronta čeká na platné A a zachová původní pořadí. Jiný test pustí 1000 postupně čtených replik při kapacitě jediné položky; dokončené položky se odstraňují a jejich pozdní výsledky se odmítají.
 
@@ -81,9 +83,9 @@ Testy používají skutečný produkční adaptér `PribehovaRelace` a překlado
 
 ## Zapnutí a návrat
 
-Na Android tabletu otevři **PlayCaption Test**, připoj PS5/Xbox a vyber LG. Na obrazovce překladu je nový přepínač „Standardní režim · přepnout na Příběhový“. Po zapnutí se ukazuje velikost fronty nebo důvod čekání/chyby. Nastavení se ukládá, výchozí je Standardní.
+Na Android tabletu otevři **PlayCaption Test**, připoj PS5/Xbox a vyber LG. Na obrazovce překladu jsou dvě tlačítka **Standardní** a **Příběhový**; vybrané je zelené. V Příběhovém režimu se pod nimi ukáže posuvník **Délka zobrazení: 100 %**. Po zapnutí se ukazuje velikost fronty nebo důvod čekání/chyby. Nastavení se ukládá, výchozí je Standardní.
 
-Na LG spusť přijímač 0.0.8 a HDMI vyber přímo v něm. Starší LG přijímač zůstává kompatibilní se Standardním režimem; pro Story chybí potvrzení a Android to zobrazí jako čekání na novější přijímač. Při potížích přepni tlačítkem zpět na Standardní.
+Na LG spusť přijímač 0.0.9 a HDMI vyber přímo v něm. Starší LG přijímač zůstává kompatibilní se Standardním režimem. Pro Story s procenty aktualizuj obě aplikace; LG 0.0.8 nepodporuje nový paket s procenty. Při potížích přepni tlačítkem zpět na Standardní.
 
 Přepnutí režimu, jazyka, zdrojové oblasti, cílové TV nebo relace konzole resetuje Story frontu a neplatné výsledky se již nezobrazí. Zmizení samotného anglického titulku frontu nemaže. Při aktivních dialogových volbách se pozastaví čtení aktuálního příběhového titulku. Syntetické rámečky a Text používají nadále svoje původní kanály.
 
@@ -93,7 +95,7 @@ V režimu jen telefonu Android časuje celé repliky; stávající TextView je p
 
 - PCT1/PCV1/PCO1 a Standardní režim zůstávají stejné.
 - PCQ1 obsahuje ID relace a ověří podporu Story přijímače.
-- PCS1 obsahuje ID relace/repliky/revize, pauzu, celý text jediné aktuální repliky, layout a barvy jmen. Wire limit je 8192 bajtů; příliš velký paket je hlášená chyba výstupu, nikoliv úspěšné dočtení.
+- PCS1 obsahuje ID relace/repliky/revize, pauzu, celý text jediné aktuální repliky, layout, barvy jmen a volitelné desáté pole `D:100` pro délku zobrazení v procentech. LG 0.0.9 přijímá také staré devítipolové pakety a ponechává jim původní časování 14 znaků/s a minimum 1800 ms. Wire limit je 8192 bajtů; příliš velký paket je hlášená chyba výstupu, nikoliv úspěšné dočtení.
 - PCA1 vrací pouze `ready`, `reading` nebo `done` se stejným ID. Socket je připojený na zvolenou TV a odpověď pro jiné aktuální ID ignoruje. Potvrzení dočtení starého tokenu neukončí novou repliku.
 - LG služba vrací odpověď jen na adresu/port odesílatele právě přijatého Story paketu. Webové UI nemůže určit libovolný cíl odpovědi.
 - Každý heartbeat opakuje aktuální stav; LG uchovává aktuální repliku, stránku a výsledek dočtení. Ztracené potvrzení se zopakuje bez návratu na první stránku.
@@ -118,3 +120,9 @@ První herní pokus odhalil `NetworkOnMainThreadException`: konstrukce/otevřen�
 Uživatel následně při opětovném připojení PS5 a zapnutí Příběhového režimu potvrdil: chyba zmizela a titulky běží. Tím je potvrzený základní herní provoz opravené verze, nikoliv ještě úplnost všech replik, dlouhodobá stabilita nebo návrat do Standardního režimu při hraní.
 
 Testy lze spustit v odděleném diagnostickém APK podle existujícího postupu; pro druhý test dodat argument `lgHost` s adresou vlastní TV. Pokud je cílem právě používaná PlayCaption Test, zachovat její ID/podpis a data, použít pouze `adb install -r`; samotný instrumentační běh neodinstalovává aplikaci. Bez `lgHost` se pouze volitelný test skutečné TV přeskočí.
+
+## Kratší časování a ovládání story-test03
+
+15. 11. 2026: na Redmi nainstalovaná `PlayCaption Test 0.20.1-story-test03`, na C5 LG 0.0.9. Nastavení po testech je 100 %. Prošlo **101 JVM testů**, všech **5 LG sad** a **3 instrumentační testy na tabletu** (síť se StrictMode, odpověď skutečné C5, skutečná tlačítka a ovládání procent včetně uložení a přepnutí režimu).
+
+Přímý UDP → LG UI → ACK test stejného textu naměřil **2252 ms při 100 %** a **1932 ms při 80 %**. Rozdíl zahrnuje obnovování UI a UDP heartbeat, nejde o přesný časovač v prohlížeči. Po zrušení Story se zobrazil Standardní titulek. SHA256 nainstalovaného UI a služby se porovnal s lokálními zdroji. Herní komfort nového časování a delší provoz zbývají k přejímce.

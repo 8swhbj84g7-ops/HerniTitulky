@@ -24,9 +24,9 @@ class CteciFrontaTest {
         val prvni = s.v(500)!!
         assertEquals(token, prvni.token)
         assertEquals(500L, prvni.odMs)
-        assertEquals(2300L, prvni.doMs)
-        assertEquals(prvni, s.v(2299))
-        assertNull(s.v(2300))
+        assertEquals(2000L, prvni.doMs)
+        assertEquals(prvni, s.v(1999))
+        assertNull(s.v(2000))
         assertEquals(1, s.fronta.dokoncenych)
         assertEquals(0, s.fronta.pocet)
     }
@@ -36,7 +36,7 @@ class CteciFrontaTest {
         val text = "Trevor: Musíme se vrátit k domu, protože tam na nás pořád čekají ostatní. ".repeat(12).trim()
         s.nova(text)
         val p = s.v(0)!!
-        val doba = (text.codePointCount(0, text.length) * 1000L + 13) / 14
+        val doba = (text.codePointCount(0, text.length) * 1000L + 17) / 18
         assertTrue(doba > 15_000)
         assertEquals(doba, p.doMs)
         assertEquals(text, s.v(doba - 1)!!.text)
@@ -46,9 +46,9 @@ class CteciFrontaTest {
     @Test fun unicodeEmojiSeNepocitaJakoDvaZnakyARychlostSeZaokrouhliNahoru() {
         val s = Simulace()
         s.nova("😀".repeat(29))
-        assertEquals(2072L, s.v(0)!!.doMs)
-        assertNotNull(s.v(2071))
-        assertNull(s.v(2072))
+        assertEquals(1612L, s.v(0)!!.doMs)
+        assertNotNull(s.v(1611))
+        assertNull(s.v(1612))
     }
 
     @Test fun slozenaCeskaDiakritikaMaStejnouCteciDobuJakoNfc() {
@@ -57,7 +57,7 @@ class CteciFrontaTest {
         s.nova(text)
         val p = s.v(0)!!
         assertEquals(text, p.text)
-        assertEquals(2000L, p.doMs)
+        assertEquals(1556L, p.doMs)
     }
 
     @Test fun triRychleReplikySeZobraziJednouVPoradiADoctouVPauze() {
@@ -67,13 +67,13 @@ class CteciFrontaTest {
         val b = s.nova("Michael: Pojď.", 100)
         val c = s.nova("Franklin: Jdu.", 200)
         assertEquals(a, s.v(200)!!.token)
-        assertEquals(a, s.v(1799)!!.token)
-        assertEquals(b, s.v(1800)!!.token)
-        assertEquals(c, s.v(3600)!!.token)
-        assertNull(s.v(5400))
+        assertEquals(a, s.v(1499)!!.token)
+        assertEquals(b, s.v(1500)!!.token)
+        assertEquals(c, s.v(3000)!!.token)
+        assertNull(s.v(4500))
         assertEquals(listOf(a, b, c), s.zmeny.mapNotNull { it.second?.token })
-        assertEquals(listOf(0L, 1800L, 3600L, 5400L), s.zmeny.map { it.first })
-        assertEquals(listOf(0L, 1700L, 3400L), s.zmeny.mapNotNull { it.second }.map { it.odMs - it.puvodniCasMs })
+        assertEquals(listOf(0L, 1500L, 3000L, 4500L), s.zmeny.map { it.first })
+        assertEquals(listOf(0L, 1400L, 2800L), s.zmeny.mapNotNull { it.second }.map { it.odMs - it.puvodniCasMs })
         assertEquals(3, s.fronta.dokoncenych)
         assertEquals(0, s.fronta.pocet)
     }
@@ -88,9 +88,9 @@ class CteciFrontaTest {
         assertNull(s.v(500))
         s.fronta.priprav(a, listOf("Trevor: Ahoj."))
         assertEquals(a, s.v(5000)!!.token)
-        assertEquals(b, s.v(6800)!!.token)
-        assertEquals(c, s.v(8600)!!.token)
-        assertNull(s.v(10400))
+        assertEquals(b, s.v(6500)!!.token)
+        assertEquals(c, s.v(8000)!!.token)
+        assertNull(s.v(9500))
         assertEquals(3, s.fronta.dokoncenych)
     }
 
@@ -106,12 +106,12 @@ class CteciFrontaTest {
         assertTrue(oprava.revize > b.revize)
         assertEquals(CteciFronta.Prijeti.NEPLATNY_TOKEN, s.fronta.priprav(b, listOf("Pozdní stará revize.")))
         assertFalse(s.fronta.chyba(b))
-        assertEquals(a, s.v(1799)!!.token)
-        assertNull(s.v(1800))
+        assertEquals(a, s.v(1499)!!.token)
+        assertNull(s.v(1500))
         s.fronta.priprav(oprava, listOf("Správné čtení."))
         assertEquals(oprava, s.v(2000)!!.token)
-        assertEquals(c, s.v(3800)!!.token)
-        assertNull(s.v(5600))
+        assertEquals(c, s.v(3500)!!.token)
+        assertNull(s.v(5000))
         assertFalse(s.zmeny.any { it.second?.text == "Chybné čtení." })
     }
 
@@ -119,12 +119,12 @@ class CteciFrontaTest {
         val s = Simulace()
         val token = s.nova("Počkej.")
         val p = s.v(0)
-        for (cas in listOf(100L, 500L, 1000L, 1799L)) {
+        for (cas in listOf(100L, 500L, 1000L, 1499L)) {
             assertEquals(CteciFronta.Prijeti.OPAKOVANI, s.fronta.priprav(token, listOf("Počkej.")))
             assertEquals(p, s.v(cas))
             assertEquals(1, s.fronta.pocet)
         }
-        assertNull(s.v(1800))
+        assertNull(s.v(1500))
         assertEquals(CteciFronta.Prijeti.NEPLATNY_TOKEN, s.fronta.priprav(token, listOf("Počkej.")))
         assertNull(s.v(3000))
         assertEquals(2, s.zmeny.size)
@@ -137,8 +137,8 @@ class CteciFrontaTest {
         val b = s.nova("Ano.", 100)
         assertNotEquals(a, b)
         assertEquals(a, s.v(0)!!.token)
-        assertEquals(b, s.v(1800)!!.token)
-        assertNull(s.v(3600))
+        assertEquals(b, s.v(1500)!!.token)
+        assertNull(s.v(3000))
         assertEquals(2, s.fronta.dokoncenych)
     }
 
@@ -149,8 +149,8 @@ class CteciFrontaTest {
         assertNull(s.fronta.oprav(token))
         assertEquals(CteciFronta.Prijeti.UZ_PRIPRAVENO, s.fronta.priprav(token, listOf("Jiný překlad.")))
         assertFalse(s.fronta.chyba(token))
-        assertEquals(p, s.v(1799))
-        assertNull(s.v(1800))
+        assertEquals(p, s.v(1499))
+        assertNull(s.v(1500))
     }
 
     @Test fun vsechnyStrankyVcetnePosledniDostanouCelyCasPredDalsiReplikou() {
@@ -160,11 +160,11 @@ class CteciFrontaTest {
         s.fronta.priprav(a, stranky)
         val b = s.nova("Michael: Ano.", 50)
         assertEquals(stranky[0], s.v(0)!!.text)
-        assertEquals(stranky[1], s.v(1800)!!.text)
-        assertEquals(stranky[2], s.v(3600)!!.text)
-        assertEquals(a, s.v(5399)!!.token)
-        assertEquals(b, s.v(5400)!!.token)
-        assertNull(s.v(7200))
+        assertEquals(stranky[1], s.v(1500)!!.text)
+        assertEquals(stranky[2], s.v(3000)!!.text)
+        assertEquals(a, s.v(4499)!!.token)
+        assertEquals(b, s.v(4500)!!.token)
+        assertNull(s.v(6000))
         assertEquals(stranky, s.zmeny.mapNotNull { it.second }.filter { it.token == a }.map { it.text })
         assertEquals(listOf(0, 1, 2), s.zmeny.mapNotNull { it.second }.filter { it.token == a }.map { it.index })
         assertEquals(2, s.fronta.dokoncenych)
@@ -174,10 +174,10 @@ class CteciFrontaTest {
         val s = Simulace()
         val a = s.fronta.zarad(0)!!
         s.fronta.priprav(a, listOf("č".repeat(140), "Ano."))
-        assertEquals(10000L, s.v(0)!!.doMs)
-        assertEquals(11800L, s.v(10000)!!.doMs)
-        assertNotNull(s.v(11799))
-        assertNull(s.v(11800))
+        assertEquals(7778L, s.v(0)!!.doMs)
+        assertEquals(9278L, s.v(7778)!!.doMs)
+        assertNotNull(s.v(9277))
+        assertNull(s.v(9278))
     }
 
     @Test fun pozdniTickNesmiPreskocitDosudNezobrazeneStranky() {
@@ -187,10 +187,10 @@ class CteciFrontaTest {
         assertEquals(0, s.v(0)!!.index)
         val druha = s.v(100_000)!!
         assertEquals(1, druha.index)
-        assertEquals(101800L, druha.doMs)
-        assertEquals(1, s.v(101799)!!.index)
-        assertEquals(2, s.v(101800)!!.index)
-        assertNull(s.v(103600))
+        assertEquals(101500L, druha.doMs)
+        assertEquals(1, s.v(101499)!!.index)
+        assertEquals(2, s.v(101500)!!.index)
+        assertNull(s.v(103000))
     }
 
     @Test fun interaktivniVolbaPozastaviCteniANovePrekladyMezitimDalePrichazeji() {
@@ -204,10 +204,10 @@ class CteciFrontaTest {
         s.fronta.pozastav(false, 50_000)
         val obnovena = s.v(50_000)!!
         assertEquals(a, obnovena.token)
-        assertEquals(51300L, obnovena.doMs)
-        assertEquals(a, s.v(51299)!!.token)
-        assertEquals(b, s.v(51300)!!.token)
-        assertNull(s.v(53100))
+        assertEquals(51000L, obnovena.doMs)
+        assertEquals(a, s.v(50999)!!.token)
+        assertEquals(b, s.v(51000)!!.token)
+        assertNull(s.v(52500))
         assertEquals(2, s.fronta.dokoncenych)
     }
 
@@ -219,8 +219,8 @@ class CteciFrontaTest {
         s.fronta.pozastav(true, 3000)
         s.fronta.pozastav(false, 5000)
         s.fronta.pozastav(false, 5100)
-        assertEquals(6300L, s.v(5100)!!.doMs)
-        assertNull(s.v(6300))
+        assertEquals(6000L, s.v(5100)!!.doMs)
+        assertNull(s.v(6000))
     }
 
     @Test fun pozastaveniPredPrvniStrankouNespotrebujeJejiCas() {
@@ -230,7 +230,7 @@ class CteciFrontaTest {
         assertNull(s.v(20_000))
         s.fronta.pozastav(false, 20_000)
         assertEquals(a, s.v(20_000)!!.token)
-        assertEquals(21800L, s.v(20_000)!!.doMs)
+        assertEquals(21500L, s.v(20_000)!!.doMs)
     }
 
     @Test fun odpojeniAObnovaNaPosledniStranceNeztratiZbytekCteni() {
@@ -239,14 +239,14 @@ class CteciFrontaTest {
         val stranky = listOf("První.", "Poslední.")
         s.fronta.priprav(a, stranky)
         s.v(0)
-        s.v(1800)
+        s.v(1500)
         s.fronta.pozastav(true, 2000)
         assertNull(s.v(20_000))
         assertEquals(CteciFronta.Prijeti.OPAKOVANI, s.fronta.priprav(a, stranky))
         s.fronta.pozastav(false, 20_000)
         assertEquals(1, s.v(20_000)!!.index)
-        assertNotNull(s.v(21599))
-        assertNull(s.v(21600))
+        assertNotNull(s.v(20999))
+        assertNull(s.v(21000))
         assertEquals(1, s.fronta.dokoncenych)
     }
 
@@ -264,7 +264,7 @@ class CteciFrontaTest {
         val c = s.nova("Nová replika.", 500)
         assertNotEquals(a.relace, c.relace)
         assertEquals(c, s.v(500)!!.token)
-        assertNull(s.v(2300))
+        assertNull(s.v(2000))
     }
 
     @Test fun explicitniChybaPrekladuUvolniNasledujiciReplikuAleNezahodiPripravenyText() {
@@ -278,7 +278,7 @@ class CteciFrontaTest {
         assertEquals(b, s.v(100)!!.token)
         assertEquals(1, s.fronta.selhanych)
         assertEquals(CteciFronta.Prijeti.NEPLATNY_TOKEN, s.fronta.priprav(a, listOf("Pozdní výsledek.")))
-        assertNull(s.v(1900))
+        assertNull(s.v(1600))
         assertEquals(1, s.fronta.dokoncenych)
     }
 
@@ -289,10 +289,10 @@ class CteciFrontaTest {
         assertNull(s.fronta.zarad(100))
         assertEquals(2, s.fronta.pocet)
         assertEquals(a, s.v(0)!!.token)
-        assertEquals(b, s.v(1800)!!.token)
-        val c = s.nova("Třetí.", 1800)
-        assertEquals(c, s.v(3600)!!.token)
-        assertNull(s.v(5400))
+        assertEquals(b, s.v(1500)!!.token)
+        val c = s.nova("Třetí.", 1500)
+        assertEquals(c, s.v(3000)!!.token)
+        assertNull(s.v(4500))
         assertEquals(3, s.fronta.dokoncenych)
     }
 
@@ -302,7 +302,7 @@ class CteciFrontaTest {
         val b = s.fronta.zarad(100)!!
         assertEquals(CteciFronta.Prijeti.LIMIT_TEXTU, s.fronta.priprav(b, listOf("Dlouhý text.")))
         assertEquals(a, s.v(0)!!.token)
-        assertNull(s.v(1800))
+        assertNull(s.v(1500))
         assertEquals(1, s.fronta.pocet)
         assertEquals(1, s.fronta.dokoncenych)
         assertEquals(0, s.fronta.selhanych)
@@ -324,8 +324,8 @@ class CteciFrontaTest {
         assertNull(s.v(1000))
         assertEquals(CteciFronta.Prijeti.PRIJATO, s.fronta.priprav(a, listOf("Jdu.")))
         assertEquals(a, s.v(1000)!!.token)
-        assertEquals(b, s.v(2800)!!.token)
-        assertNull(s.v(4600))
+        assertEquals(b, s.v(2500)!!.token)
+        assertNull(s.v(4000))
         assertEquals(2, s.fronta.dokoncenych)
     }
 
@@ -336,8 +336,8 @@ class CteciFrontaTest {
         assertEquals(CteciFronta.Prijeti.PRIJATO, f.priprav(a, listOf("Ano.", "Ano.")))
         assertEquals(CteciFronta.Prijeti.LIMIT_TEXTU, f.priprav(b, listOf("Jdeme.", "Ano.")))
         assertEquals("Ano.", f.zobraz(0)!!.text)
-        assertEquals(1, f.zobraz(1800)!!.index)
-        assertNull(f.zobraz(3600))
+        assertEquals(1, f.zobraz(1500)!!.index)
+        assertNull(f.zobraz(3000))
         assertEquals(1, f.dokoncenych)
         assertEquals(1, f.pocet)
     }
@@ -369,13 +369,13 @@ class CteciFrontaTest {
         val a = f.zarad(0)!!
         f.priprav(a, listOf("První.", "Druhá."))
         f.zobraz(0)
-        f.pozastav(true, 1800)
+        f.pozastav(true, 1500)
         assertNull(f.zobraz(5000))
         f.pozastav(false, 5000)
         val p = f.zobraz(5000)!!
         assertEquals(1, p.index)
-        assertEquals(6800L, p.doMs)
-        assertNull(f.zobraz(6800))
+        assertEquals(6500L, p.doMs)
+        assertNull(f.zobraz(6500))
     }
 
     @Test fun viceRychlychReplikMuzeCekatZaDelsiStrankouBezPreruseni() {
@@ -384,10 +384,10 @@ class CteciFrontaTest {
         s.v(0)
         val b = s.nova("Ano.", 100)
         val c = s.nova("Jdu.", 200)
-        assertEquals(a, s.v(9999)!!.token)
-        assertEquals(b, s.v(10000)!!.token)
-        assertEquals(c, s.v(11800)!!.token)
-        assertNull(s.v(13600))
+        assertEquals(a, s.v(7777)!!.token)
+        assertEquals(b, s.v(7778)!!.token)
+        assertEquals(c, s.v(9278)!!.token)
+        assertNull(s.v(10778))
         assertEquals(listOf(a, b, c), s.zmeny.mapNotNull { it.second?.token })
         assertEquals(3, s.fronta.dokoncenych)
     }
@@ -400,8 +400,8 @@ class CteciFrontaTest {
         stranky[0] = "Jiný text."
         stranky.clear()
         assertEquals("První.", f.zobraz(0)!!.text)
-        assertEquals("Druhá.", f.zobraz(1800)!!.text)
-        assertNull(f.zobraz(3600))
+        assertEquals("Druhá.", f.zobraz(1500)!!.text)
+        assertNull(f.zobraz(3000))
     }
 
     @Test fun cekajiciFinalniTextSeNemeniBezNoveRevize() {
@@ -415,11 +415,11 @@ class CteciFrontaTest {
     @Test fun dlouhyProudPostupneUvolnujeDokoncenePolozkyAVylucujeJejichPozdniDuplikaty() {
         val f = CteciFronta(maxReplik = 1, maxZnakuRepliky = 4)
         repeat(1000) { i ->
-            val ted = i * 1800L
+            val ted = i * 1500L
             val token = f.zarad(ted)!!
             assertEquals(CteciFronta.Prijeti.PRIJATO, f.priprav(token, listOf("Ano.")))
             assertEquals(token, f.zobraz(ted)!!.token)
-            assertNull(f.zobraz(ted + 1800))
+            assertNull(f.zobraz(ted + 1500))
             assertEquals(CteciFronta.Prijeti.NEPLATNY_TOKEN, f.priprav(token, listOf("Ano.")))
             assertEquals(0, f.pocet)
         }

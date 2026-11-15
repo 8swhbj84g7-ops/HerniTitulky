@@ -10,6 +10,7 @@ internal class PribehovaRelace(
     private val barvy = linkedMapOf<CteciFronta.Token, IntArray>()
     val generace get() = fronta.generace
     val pocet get() = fronta.pocet
+    fun nastavCasovani(procenta: Int) = fronta.nastavCasovani(procenta)
 
     fun prijmi(text: List<String>, jmena: IntArray, oprava: Boolean, ted: Long) {
         val token = if (oprava && posledni != null) {

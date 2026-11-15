@@ -48,8 +48,11 @@
             if (start && captionPacket.text[start - 1] !== "\n") colors[0] = 0;
             paintCaption(rest.slice(0, end), colors);
             captionOffset += end;
-            captionNext = now + (captionPacket.kind === "story" ?
-                Math.max(1800, Math.ceil(Array.from(rest.slice(0, end).normalize("NFC")).length * 1000 / 14)) : Math.max(2000, 1000 + end * 50));
+            var letters = Array.from(rest.slice(0, end).normalize("NFC")).length;
+            var storyDuration = captionPacket.adjustableTiming ?
+                Math.ceil(Math.max(1500, Math.ceil(letters * 1000 / 18)) * captionPacket.durationPercent / 100) :
+                Math.max(1800, Math.ceil(letters * 1000 / 14));
+            captionNext = now + (captionPacket.kind === "story" ? storyDuration : Math.max(2000, 1000 + end * 50));
         }
 
         function positionFrame(node, area) {
@@ -151,6 +154,10 @@
                 captionPacket = null; storyId = packet.id; storyDone = !packet.text; storyMode = Boolean(packet.text); storyPaused = false;
                 if (storyDone) { subtitle.hidden = true; return "done"; }
                 this.caption(packet, now); captionUntil = Infinity;
+            }
+            if (captionPacket) {
+                captionPacket.durationPercent = packet.durationPercent;
+                captionPacket.adjustableTiming = packet.adjustableTiming;
             }
             if (captionPacket && JSON.stringify(captionPacket.layout) !== JSON.stringify(packet.layout)) {
                 captionPacket.layout = packet.layout; captionOffset = captionStart;

@@ -35,11 +35,13 @@
 - Skutečné herní odpovědi a úplnost jejich OCR/překladu zbývají k přejímce;
   syntetické UDP pakety je nenahrazují. Viz `SHODA-ANDROID.md`.
 
-## Story MVP 0.0.8
+## Story MVP 0.0.8 a časování 0.0.9
 
 - Přidán `test-story.cjs`: časování skutečných českých stránek, dočtení, pauza/obnova, opakovaná potvrzení a generační reset.
 - Skutečný C5 test přes UDP a DOM: 3 stránky, celý obsah, nulové přetečení, potvrzení až po čtecím minimu; po zrušení fungoval Standardní titulek. Viz `docs/PRIBEHOVY-REZIM.md`.
 - Nová herní přejímka a dlouhý běh ještě zbývají.
+
+- LG 0.0.9: parser 9/10 polí, procenta 50–200, kratší výchozí základ a změna až od následující stránky prošly v `test-story.cjs`. Skutečná C5: stejný text 2252 ms při 100 % a 1932 ms při 80 %, následně funkční Standardní titulek. Podrobnosti v `docs/PRIBEHOVY-REZIM.md`.
 
 ## Automatické kontroly
 

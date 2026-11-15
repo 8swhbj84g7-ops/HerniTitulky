@@ -6,6 +6,8 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
 
 ## Unreleased
 
+- Příběhový režim: kratší základní zobrazení při výchozích 100 %, posuvník délky 50–200 % po 5 % a výrazná tlačítka Standardní/Příběhový. Vyžaduje LG přijímač 0.0.9; rozčtená stránka se při změně času nerestartuje.
+
 - Volitelný Příběhový režim pro Android tablet + LG 0.0.8: čtecí fronta a potvrzené dočtení všech stránek; Standardní režim zůstává výchozí. Herní přejímka zatím probíhá.
 
 - Opakované OCR čtení stejné repliky se nespojí jako pokračování věty; regrese zachycená při telefonátu v GTA V.

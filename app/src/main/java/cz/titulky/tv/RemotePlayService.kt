@@ -114,6 +114,7 @@ class RemotePlayService : Service() {
             kontextPribehu()
             if (chcePribeh() && bezi) {
                 val ted = android.os.SystemClock.elapsedRealtime()
+                pribeh.nastavCasovani(nast.casPribehuProcenta)
                 val ip = Propojeni.Vysilac.cilIp
                 pribehSpojeni?.chyba?.let { pribehChyba = "LG není dostupné: $it"; pribehSpojeni?.close(); pribehSpojeni = null; pribehPristiPokus = ted + 5000 }
                 if (ip != null && pribehSpojeni == null && ted >= pribehPristiPokus) {
@@ -135,12 +136,12 @@ class RemotePlayService : Service() {
                     val obsah = pribehAktualni
                     sit?.zprava = if (obsah == null) PribehProtokol.dotaz("$pribehSession.${pribeh.generace}.0.0")
                     else runCatching { PribehProtokol.titulek(pribehId(obsah.token), obsah.text, pauza,
-                        Propojeni.Vysilac.rozvrhPribehu(), pribeh.barvy(obsah.token)) }.getOrElse {
+                        Propojeni.Vysilac.rozvrhPribehu(), pribeh.barvy(obsah.token), nast.casPribehuProcenta) }.getOrElse {
                         pribeh.chybaVystupu(obsah.token); pribehAktualni = null
                         PribehProtokol.dotaz("$pribehSession.${pribeh.generace}.0.0")
                     }
                     pribehStav = when { pribehChyba.isNotEmpty() -> pribehChyba
-                        ack == null -> "Příběh: čekám na LG přijímač 0.0.8 nebo novější…"
+                        ack == null -> "Příběh: čekám na LG přijímač 0.0.9 nebo novější…"
                         pauza -> "Příběh: pozastaveno kvůli volbám · čeká ${pribeh.pocet}"
                         else -> "Příběh: čtecí fronta ${pribeh.pocet}" }
                 } else {

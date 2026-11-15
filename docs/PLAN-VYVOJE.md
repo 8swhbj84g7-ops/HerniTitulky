@@ -110,10 +110,10 @@ Stavy: čeká / probíhá / dokončeno / blokováno. Dokončení úkolu není d�
 ### Integrační stav P2
 
 - Implementované napojení překladů přes `PribehovaRelace` a `PrekladPribehu`: jeden finální výsledek, rozpočet 8 s, online práce bez další fronty, offline záloha a odmítnutí starých revizí.
-- `TelefonActivity` má uložený přepínač, Standardní výchozí. Reset nastavení/relace a pauza pro volby jsou zapojené. PCQ1/PCS1/PCA1 je samostatná potvrzovaná cesta; Standardní PCT1/PCV1/PCO1 zůstaly.
-- 94 JVM testů bez selhání; 5 LG sad. Přímý C5 test: celé tři stránky, žádné přetečení, ACK po dočtení, následně Standardní titulek a ignorování starého Story paketu.
+- `TelefonActivity` má skutečná tlačítka Standardní/Příběhový, Standardní výchozí; délka zobrazení 50–200 % po 5 %, výchozí 100 % kratšího základu. Reset nastavení/relace a pauza pro volby jsou zapojené. PCQ1/PCS1/PCA1 je samostatná potvrzovaná cesta; Standardní PCT1/PCV1/PCO1 zůstaly.
+- 101 JVM testů bez selhání; 5 LG sad a 3 instrumentační testy na tabletu. Přímý C5 test: celé tři stránky, žádné přetečení, ACK po dočtení, následně Standardní titulek a ignorování starého Story paketu.
 - Opravené první Android runtime selhání `NetworkOnMainThreadException`: otevření, obsluha i zrušení UDP běží na pracovním vlákně. Dva instrumentační testy na Redmi prošly se StrictMode a skutečným potvrzením od C5.
-- Na tabletu `PlayCaption Test 0.20.1-story-test02`, LG 0.0.8. Uživatel potvrdil, že po opětovném připojení PS5 chyba zmizela a titulky běží. Zbývá podrobná herní přejímka úplnosti rychlých replik, návratu do Standardního režimu, skutečných dialogových voleb a dlouhodobých výpadků; přepínač v přímém Android TV režimu ani telefonní dvouřádkový stránkovač nejsou součást tohoto MVP.
+- Na tabletu `PlayCaption Test 0.20.1-story-test03`, LG 0.0.9. Uživatel u předchozího story-test02 potvrdil, že po opětovném připojení PS5 chyba zmizela a titulky běží; komfort nového časování story-test03 ještě nepotvrdil. Zbývá podrobná herní přejímka úplnosti rychlých replik, návratu do Standardního režimu, skutečných dialogových voleb a dlouhodobých výpadků; přepínač v přímém Android TV režimu ani telefonní dvouřádkový stránkovač nejsou součást tohoto MVP.
 
 ## P3 — pokročilé OCR pouze podle výsledků P1
 
@@ -151,10 +151,10 @@ Stavy: čeká / probíhá / dokončeno / blokováno. Dokončení úkolu není d�
 - **Závislosti:** P2 MVP. **Řešení:** dlouhá cutscéna, rychlý telefonát, pauza, mise/akce a odpovědi; nejprve měřit skutečné zpoždění.
 - **Testy/hotovo:** ztráty/duplicity/přerušení, čtení poslední stránky, návrat po výpadku, backlog a dočtení po pauze; známé regresní scény. **Riziko:** neoptimalizovat hypotetickou nekonečnou frontu proti běžnému hráči.
 
-### P5-02 · Historie, přeskočení a rychlost čtení — čeká
+### P5-02 · Historie, přeskočení a rychlost čtení — částečně hotovo
 
 - **Problém/části:** hráč může chtít dočíst minulý text nebo dohnat děj. Omezená historie a nastavení/UI.
-- **Závislosti:** P5-01 a zvolený vlastník čtení. **Řešení:** jednoduchá historie se jmény/pořadím, případný návrat k aktuálnímu a rychlost čtení až podle dat.
+- **Závislosti:** P5-01 a zvolený vlastník čtení. **Řešení:** jednoduchá historie se jmény/pořadím, případný návrat k aktuálnímu a procentní délka zobrazení už implementovaná podle herní zpětné vazby; historie a přeskočení zůstávají odložené.
 - **Testy/hotovo:** srozumitelné ovládání, limit paměti, žádné duplikování při návratu. **Riziko:** historie není podmínka prvního P2 MVP.
 
 ## P6 — odložený výzkum
