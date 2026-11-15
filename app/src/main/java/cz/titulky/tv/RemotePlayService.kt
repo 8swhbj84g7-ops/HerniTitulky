@@ -114,7 +114,6 @@ class RemotePlayService : Service() {
             kontextPribehu()
             if (chcePribeh() && bezi) {
                 val ted = android.os.SystemClock.elapsedRealtime()
-                pribeh.nastavCasovani(nast.casPribehuProcenta)
                 val ip = Propojeni.Vysilac.cilIp
                 pribehSpojeni?.chyba?.let { pribehChyba = "LG není dostupné: $it"; pribehSpojeni?.close(); pribehSpojeni = null; pribehPristiPokus = ted + 5000 }
                 if (ip != null && pribehSpojeni == null && ted >= pribehPristiPokus) {
@@ -128,6 +127,10 @@ class RemotePlayService : Service() {
                 if (aktualni != null && ack?.stav == "done" && ack.id == pribehId(aktualni.token)) {
                     pribeh.potvrzeno(aktualni.token); pribehAktualni = null
                 }
+                val cekajici = (pribeh.pocet - if (pribehAktualni != null || pribehLokalni != null) 1 else 0).coerceAtLeast(0)
+                val casProcenta = CasovaniPribehu.priZpozdeni(nast.casPribehuProcenta, cekajici)
+                pribeh.nastavCasovani(casProcenta)
+                val dohanel = if (casProcenta < nast.casPribehuProcenta) " · doháním: $casProcenta %" else ""
                 val pauza = ip != null && Propojeni.Vysilac.aktivniVolby()
                 val p = pribeh.krok(ted, ip != null, pauza)
                 if (!pauza) pribehAktualni = p
@@ -136,20 +139,20 @@ class RemotePlayService : Service() {
                     val obsah = pribehAktualni
                     sit?.zprava = if (obsah == null) PribehProtokol.dotaz("$pribehSession.${pribeh.generace}.0.0")
                     else runCatching { PribehProtokol.titulek(pribehId(obsah.token), obsah.text, pauza,
-                        Propojeni.Vysilac.rozvrhPribehu(), pribeh.barvy(obsah.token), nast.casPribehuProcenta) }.getOrElse {
+                        Propojeni.Vysilac.rozvrhPribehu(), pribeh.barvy(obsah.token), casProcenta) }.getOrElse {
                         pribeh.chybaVystupu(obsah.token); pribehAktualni = null
                         PribehProtokol.dotaz("$pribehSession.${pribeh.generace}.0.0")
                     }
                     pribehStav = when { pribehChyba.isNotEmpty() -> pribehChyba
                         ack == null -> "Příběh: čekám na LG přijímač s podporou Příběhového režimu…"
                         pauza -> "Příběh: pozastaveno kvůli volbám · čeká ${pribeh.pocet}"
-                        else -> "Příběh: čtecí fronta ${pribeh.pocet}" }
+                        else -> "Příběh: čtecí fronta ${pribeh.pocet}$dohanel" }
                 } else {
                     if (p?.token != pribehLokalni) {
                         pribehLokalni = p?.token
                         TelefonTitulky.nastav(p?.text ?: "", p?.let { it.doMs - ted } ?: 0, p?.let { pribeh.barvy(it.token) })
                     }
-                    pribehStav = if (pribehChyba.isNotEmpty()) pribehChyba else "Příběh: čtecí fronta ${pribeh.pocet}"
+                    pribehStav = if (pribehChyba.isNotEmpty()) pribehChyba else "Příběh: čtecí fronta ${pribeh.pocet}$dohanel"
                 }
             }
             ui.postDelayed(this, 100)

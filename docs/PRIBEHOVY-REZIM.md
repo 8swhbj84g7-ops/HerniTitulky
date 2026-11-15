@@ -195,3 +195,31 @@ duplicit a předčasného přerušení. Maximum fronty je 15 včetně čtené re
 čekání P50/P95 je 7700/16500 ms, poslední replika skončí 17700 ms po
 posledním příchodu. Tyto hodnoty ukazují chování při přetížení, ne naměřenou
 herní latenci. Základní MVP je připravené ke kontrole a sloučení.
+
+## Automatické dohánění rostoucí fronty
+
+Následný delší provoz odhalil frontu 89 replik i při střídajících se titulcích.
+Krátký osmivteřinový DOM záznam C5 potvrdil postup mezi replikami, bez
+skrytého výstupu, otevřené nabídky nebo voleb. Tablet nebyl přes ADB dostupný;
+přesný poměr přijatých OCR replik k dočteným tedy není změřený.
+
+Android od tří čekajících replik (bez aktuálně čtené) násobí uživatelskou
+délku faktorem `max(0.5, 0.85^(čekající − 2))`. Při nastavených 100 % jsou
+efektivní procenta pro 3/4/5/6/7+ čekajících 85/72/61/52/50 %. Nejnižší
+podporovaná hodnota zůstává 50 %, uložený posuvník se nemění. Pro lokální
+výstup i LG se používá stejný výpočet. Rozčtená stránka ani pauza se
+nerestartují; nové procento se použije až od další stránky. Stav uvádí
+„doháním: … %“. Při méně než třech čekajících se vrací uživatelská hodnota.
+
+Regrese kontrolují práh, exponenciální průběh, limit a návrat, pořadí všech
+20 replik a nezkrácení rozečtené stránky; minutový simulovaný dialog
+přijímá 60 replik po sekundě a fronta zůstává nejvýše šest položek.
+Je to omezená adaptace, nikoliv garance bez zpoždění pro libovolný tok textu:
+při trvalém přetížení nebo čekání na LG ACK může fronta dále růst.
+Nic se automaticky nemaže a Standardní režim se nemění.
+
+Oprava prošla 136 JVM testy a sestavením APK; na tablet byla nainstalovaná
+`PlayCaption Profily Test 0.20.1-story-platforms-test03`, při zachovaném
+Příběhovém režimu a 100 %. Uživatel po hraní potvrdil, že je chování
+v pořádku a výrazně lepší. LG zůstává 0.2.1; používá dosavadní pole procent
+v Story paketu a aktualizace přijímače není pro tuto opravu potřeba.

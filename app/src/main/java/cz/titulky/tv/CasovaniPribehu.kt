@@ -5,6 +5,13 @@ internal object CasovaniPribehu {
     const val MAX_PROCENT = 200
     const val VYCHOZI_PROCENTA = 100
 
+    fun priZpozdeni(procenta: Int, cekajici: Int): Int {
+        require(procenta in MIN_PROCENT..MAX_PROCENT && cekajici >= 0)
+        if (cekajici < 3) return procenta
+        val nasobek = maxOf(0.5, Math.pow(0.85, (cekajici - 2).coerceAtMost(5).toDouble()))
+        return maxOf(MIN_PROCENT, Math.round(procenta * nasobek).toInt())
+    }
+
     fun dobaMs(text: String, procenta: Int): Long {
         require(procenta in MIN_PROCENT..MAX_PROCENT)
         val nfc = java.text.Normalizer.normalize(text, java.text.Normalizer.Form.NFC)
