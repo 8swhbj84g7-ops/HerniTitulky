@@ -2,9 +2,11 @@
 
 © 2026 Adam Růžička. Licence GNU AGPLv3 (viz níže).
 
-**České (a slovenské) titulky ke hrám na PS5 přímo na televizi s Androidem.**
+**České (a slovenské) titulky ke hrám na PS5 a Xboxu přímo na televizi.**
 
-PlayCaption čte anglické titulky ze hry, překládá je a zobrazuje česky přes obraz z HDMI. Hra běží normálně z PS5 přes HDMI (plné rozlišení, HDR, zvuk). PlayCaption se k PS5 připojuje přes Remote Play jen na pozadí, aby z obrazu mohl přečíst titulky. Na obrazovce z Remote Play nic není.
+> Spojení s PS5 zajišťuje otevřená knihovna **[Chiaki](https://git.sr.ht/~thestr4ng3r/chiaki)** (Florian Märkl a přispěvatelé, AGPLv3). Čtení titulků, překlad a zobrazení na televizi jsou vlastní práce PlayCaption, vyvíjená s pomocí AI. Podrobně v části [Poděkování](#poděkování-a-použitý-software).
+
+PlayCaption čte anglické titulky ze hry, překládá je a zobrazuje česky přes obraz z HDMI. Hra běží normálně z konzole přes HDMI (plné rozlišení, HDR, zvuk). PlayCaption se ke konzoli připojuje přes Remote Play jen na pozadí, aby z obrazu mohl přečíst titulky. Na obrazovce z Remote Play nic není.
 
 - Android aplikace funguje na **Android TV / Google TV** a na Android telefonech/tabletech.
 - Pro **LG webOS** je dostupný experimentální přijímač titulků z Android telefonu/tabletu: [návod pro LG](webos/NAVOD-LG.md). Vyžaduje Developer Mode; ověřený model je LG C5. Samostatný překlad přímo v LG bez Android zařízení tato verze neumí.
@@ -20,11 +22,16 @@ Nejnovější verze: [Releases](https://github.com/AdamRuzick4/PlayCaption-app/r
 PlayCaption stojí na práci jiných open-source projektů:
 
 - **[Chiaki](https://git.sr.ht/~thestr4ng3r/chiaki)** (Florian Märkl a přispěvatelé) a **[chiaki-ng](https://github.com/streetpea/chiaki-ng)**. Jejich knihovna (`libchiaki-jni.so`) zajišťuje veškerou komunikaci s PS5: přihlášení, párování, Remote Play a přenos obrazu. Licence **AGPLv3**. Velké díky autorům, bez nich by PlayCaption nevznikl.
+- **[xbox-xcloud-player](https://github.com/unknownskl/xbox-xcloud-player)** (unknownskl, MIT) a **[XStreaming](https://github.com/Geocld/XStreaming)** (Geocld, AGPLv3): podle jejich postupu je napsané přihlášení k Xboxu a spojení s ním (`XboxUcet.kt`, `XboxSpojeni.kt`).
+- **[WebRTC](https://webrtc.org/)** (Android sestavení [stream-webrtc-android](https://github.com/GetStream/webrtc-android), BSD/Apache 2.0): přenos obrazu z Xboxu.
+- **[ZXing](https://github.com/zxing/zxing)** (Apache 2.0): QR kódy.
 - **[JSch](https://github.com/mwiede/jsch)** (BSD): SSH/SFTP pro místní instalaci LG přijímače z Android průvodce. Licenční texty jsou přibalené v APK v `assets/licenses/`.
-- **Google ML Kit**: rozpoznání textu z obrazu.
+- **Google ML Kit**: rozpoznání textu z obrazu, offline překlad a rozpoznání jazyka.
 - Překlad: online překladová služba.
 
 Část PlayCaption (čtení titulků z obrazu, překlad, zobrazení přes HDMI, rozhraní pro TV a telefon) vzniká s pomocí AI a hodně testování na skutečných televizích a hrách.
+
+Podporu LG webOS a Příběhový režim napsal **Rudolf Nohal**.
 
 ## Zdrojový kód a převzaté části
 
@@ -40,13 +47,17 @@ PlayCaption stojí na práci jiných open-source projektů:
 - [Výchozí audit větví, testů a měření](docs/P0-VYCHOZI-STAV.md)
 - [Reprodukovatelný OCR benchmark](tools/ocr/README.md)
 
-[Příběhový režim](docs/PRIBEHOVY-REZIM.md) je experimentálně napojený na Android překladač a LG přijímač 0.0.9. Zapíná se na obrazovce překladu v telefonu/tabletu; výchozí Standardní režim zůstává zachovaný. Herní přejímka MVP probíhá.
+[Příběhový režim](docs/PRIBEHOVY-REZIM.md) je volitelný režim pro telefon/tablet (s LG přijímačem 0.2.1 nebo přímo na telefonu). Zapíná se na obrazovce překladu v telefonu/tabletu; výchozí Standardní režim zůstává zachovaný. Skládání rozdělených vět je zatím experimentální.
 
 ## Licence
 
 PlayCaption je šířen pod licencí **GNU AGPLv3** (viz soubor [LICENSE](LICENSE)), stejně jako Chiaki. Kdo kód použije a šíří, musí zveřejnit i svůj zdrojový kód pod stejnou licencí.
 
-PlayCaption je neoficiální projekt a nemá nic společného se společností Sony Interactive Entertainment. PlayStation a PS5 jsou ochranné známky jejich vlastníků.
+PlayCaption je neoficiální projekt a nemá nic společného se společnostmi Sony Interactive Entertainment ani Microsoft. PlayStation, PS5 a Xbox jsou ochranné známky jejich vlastníků.
+
+### Název a logo
+
+Licence AGPLv3 se vztahuje na zdrojový kód, ne na název a logo. Název **PlayCaption** a logo jsou vyhrazeny autorovi (Adam Růžička). Upravené verze musí mít jiný název a nesmí působit jako oficiální PlayCaption (viz čl. 7 písm. e licence AGPLv3).
 
 ## LG v Android aplikaci
 

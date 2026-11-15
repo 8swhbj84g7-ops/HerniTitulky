@@ -4,8 +4,15 @@
 Od verze 0.10 se vyvíjí jen jedna aplikace (dřívější NextGen, větev `master`) – umí „Jen televize“ i „S telefonem“.
 Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCode + versionName) a sem se dopíše, co je nového.
 
-## Unreleased
+## 0.21 (versionCode 33)
 
+Co je nového pro hráče:
+- **LG televize (webOS):** titulky z Android telefonu nebo tabletu se zobrazí i na LG. Telefon do LG sám nainstaluje přijímač titulků (TV musí mít zapnutý Developer Mode). Ověřeno na LG C5. Autor: Rudolf Nohal.
+- **Příběhový režim (telefon/tablet, volitelný):** repliky se ukazují postupně za sebou, žádná se nepřeskočí a každá svítí tak dlouho, aby se dala přečíst. Rychlost čtení 50–200 %, při volbách ve hře se čtení zastaví. Když se fronta nahromadí, aplikace sama zrychlí a pak se vrátí k nastavené rychlosti. Výchozí je dál Standardní režim. Autor: Rudolf Nohal.
+- **Více televizí v telefonu:** profily televizí s vlastním nastavením polohy a oblastí titulků.
+- **Méně blikání a chyb ve Standardním režimu:** zkracující se nebo dopisovaný titulek se ukáže až po potvrzení dalším čtením, starý pomalý překlad už nepřepíše nový titulek.
+
+Technické podrobnosti:
 - Story experiment: konzervativní skládání nedokončených anglických vět před překladem, ID/revize zdrojů, omezené čekání a oddělení následující věty. Volby a přetížená fronta čekání ukončí; Standardní režim a LG protokol zůstávají. Bez oprav jednotlivých slov a bez AI služby. Herní přejímka ještě probíhá.
 
 - Story: od tří čekajících replik se časování automaticky exponenciálně zkracuje, nejvýše na polovinu uživatelské doby a ne pod podporovaných 50 %. Platí od další stránky, bez zahazování replik; po odbavení se vrací nastavená rychlost. Stav ukazuje aktivní dohánění. LG aktualizace není potřeba.
