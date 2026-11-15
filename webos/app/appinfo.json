@@ -1,0 +1,18 @@
+{
+  "id": "cz.playcaption.overlaytest",
+  "version": "0.0.7",
+  "vendor": "PlayCaption",
+  "type": "web",
+  "main": "index.html",
+  "title": "PlayCaption LG",
+  "icon": "icon.png",
+  "appDescription": "České titulky z Android tabletu nebo telefonu přes HDMI.",
+  "resolution": "1920x1080",
+  "transparent": true,
+  "defaultWindowType": "overlay",
+  "handlesRelaunch": true,
+  "noSplashOnLaunch": true,
+  "spinnerOnLaunch": false,
+  "disableBackHistoryAPI": true,
+  "requiredACG": []
+}

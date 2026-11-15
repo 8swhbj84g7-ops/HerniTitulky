@@ -6,7 +6,9 @@
 
 PlayCaption čte anglické titulky ze hry, překládá je a zobrazuje česky přes obraz z HDMI. Hra běží normálně z PS5 přes HDMI (plné rozlišení, HDR, zvuk). PlayCaption se k PS5 připojuje přes Remote Play jen na pozadí, aby z obrazu mohl přečíst titulky. Na obrazovce z Remote Play nic není.
 
-- Funguje jen na televizích s **Androidem** (Android TV / Google TV), ne Samsung ani LG.
+- Android aplikace funguje na **Android TV / Google TV** a na Android telefonech/tabletech.
+- Pro **LG webOS** je dostupný experimentální přijímač titulků z Android telefonu/tabletu: [návod pro LG](webos/NAVOD-LG.md). Vyžaduje Developer Mode; ověřený model je LG C5. Samostatný překlad přímo v LG bez Android zařízení tato verze neumí.
+- Samsung tato verze nepodporuje.
 - Projekt je ve stavu **beta**, sledujte [Releases](https://github.com/AdamRuzick4/PlayCaption-app/releases).
 
 ## Stažení
