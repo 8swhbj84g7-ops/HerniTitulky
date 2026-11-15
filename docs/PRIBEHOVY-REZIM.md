@@ -223,3 +223,105 @@ Oprava prošla 136 JVM testy a sestavením APK; na tablet byla nainstalovaná
 Příběhovém režimu a 100 %. Uživatel po hraní potvrdil, že je chování
 v pořádku a výrazně lepší. LG zůstává 0.2.1; používá dosavadní pole procent
 v Story paketu a aktualizace přijímače není pro tuto opravu potřeba.
+
+## Experiment: skládání vět před překladem (PC-007)
+
+Nová větev `codex/story-sentence-buffer` vychází z masteru `1de9372` a obsahuje
+přijatou opravu dohánění fronty z PR #5. Bez dalšího přepínače je skládání
+aktivní pouze ve Story. Standardní cesta, překladové služby, čtecí fronta,
+časování procent a LG protokol zůstávají zachované.
+
+### Co je implementované
+
+`SkladaniVet` je čistá Kotlin komponenta bez Androidu, sítě a vlastního
+časovače. Hodiny dodává volající. Přijímá stabilizovaný zdroj s ID/revizí,
+odlišuje jméno a barvu, drží jen neodeslaný konec věty a vydává výsledky
+s přesnými rozsahy znaků původních zdrojů. V jednom zdroji může oddělit
+konec předchozí věty od následující samostatné věty. Vlastní kapitolu
+nevytváří ani žádné dříve přeložené části automaticky nepřidává.
+
+Konzervativní signály jsou konstrukce končící slovesem + „such“, členem
+nebo (při známém shodném mluvčím) vybranou konstrukcí s „to“. Další část
+musí mít odpovídající začátek; známá změna jména/barvy, samostatný zájmenný
+podmět nebo rozpoznaná pomocná slovesa spojení blokují. Neznámý mluvčí
+neumožňuje obecné spojování vět končících „to“. Nejde o obecný syntaktický
+parser a stejné jméno/barva není samo důkaz významové návaznosti.
+
+„Get out of here“, „What are you doing“, „I don't know“ a „Come with me“
+se pouštějí rovnou. Interpunkce respektuje běžné tituly/iniciály a čísla;
+nejednoznačné zkratky se raději nerozdělí. Výpustka sama nezpůsobí čekání.
+
+Výchozí experimentální limity:
+
+- 2500 ms od prvního stabilního přijetí čekajícího konce. Revize ani stejné
+  OCR čtení konec čekání neodsouvají; produkční kontrola běží po 100 ms.
+- Po potvrzeném zmizení nejvýše dalších 600 ms, stále uvnitř celkových 2500 ms.
+- Nejvýše tři vstupní repliky a 800 znaků čekajícího anglického textu.
+  Dosažení limitu obsah uvolní, neořízne jej.
+- Aktivní dialogová volba nebo alespoň tři položky existující čtecí fronty
+  čekání vypnou a čekající text uvolní. Čtení během voleb zůstává pozastavené,
+  OCR i překlad mohou pokračovat.
+
+`PribehovaRelace.prijmiOcr` vytváří stabilní zdrojové ID jen pro událost nové
+repliky a revizi pro opravu. Pořadí OCR práce brání pozdnímu starému callbacku
+vložit další položku; metadata bloků ML Kit nejsou používána jako ID dialogu.
+`krok` obsluhuje termín bez blokování, `zmizelo` přijímá pouze nestaré OCR
+události a reset režimu/jazyka/oblasti/TV/konzole ruší i zásobník. Stav při
+čekání uvádí „dokončuji větu“. Nemáme detektor dialogové změny scény:
+`prerus` je hranice pro známou událost, test neprokazuje rozpoznání střihu.
+
+Oprava celého dosud neodeslaného zdroje nahradí jeho čekající části.
+Jednoduchá nesložená replika nadále využije původní revizi fronty, dokud se
+nezačne číst; pozdní překlad staré revize se neuplatní. U složeného či již
+částečně vydaného zdroje se nové přepisování nepřipouští, aby nevzniklo
+zdvojení. Pokračování po timeoutu/předání zůstává oddělené. Již čtený text
+se tímto experimentem nepřeklápí.
+
+### Test-first a vyhodnocení
+
+Nejdříve vzniklo 20 testů kontraktu; proti neimplementované komponentě všech
+20 selhalo (`/private/tmp/playcaption-sentences-red.log`). Po implementaci
+prochází 25 testů zásobníku a 17 testů skutečného Story adaptéru. Celkem
+168 JVM testů, včetně původních OCR/Standardních/časovacích/síťových regresí.
+
+Povinné scénáře 1–16 pokrývají: úplné věty s/bez tečky, dvě/tři části,
+smíšený blok, rychlé samostatné věty, mluvčího, explicitní hranici scény,
+OCR revizi/dopisování, nesouvisející další blok, timeout, volby, překlad
+v běhu, pozdní pokračování po publikaci a starý OCR výsledek. Záporný
+korpus navíc obsahuje devět dvojic, u kterých nesmí dojít ke spojení.
+
+Na označeném syntetickém korpusu: tři správná spojení ze tří pozitivních
+párů, nula chybných spojení v devíti záporných párech. Test zdrojových
+rozsahů kontroluje úplnost a žádné dvojí spotřebování. Tři pozitivní páry
+mají dodatečnou prodlevu 700 ms (zadaný odstup pokračování), uvedené běžné
+samostatné repliky 0 ms a chybějící pokračování 2500 ms při přesném ticku.
+Nejde o naměřenou přesnost nebo latenci při hraní.
+
+Jednorázový skutečný dotaz na stejný Google endpoint jako aplikace:
+„a downer. I'm going home.“ → „snižovač. Jdu domů.“;
+„I'm drunk and you are such a downer.“ → „Já jsem opilý a ty jsi takový
+hnusák.“; samostatné „I'm going home.“ → „Jdu domů.“. Celá věta v tomto
+vzorku změnila význam slova na označení člověka, nezaručuje ale požadované
+„kazisvět“. Samostatný začátek jednou vypršel na timeoutu. To je malý online
+vzorek, nikoliv statistické hodnocení nebo test skutečného ML Kit fallbacku.
+Výstup je lokálně v `/private/tmp/playcaption-sentences-translation-probe.json`.
+
+### Co zbývá ověřit při hraní
+
+Spolehlivost vstupního rozlišení nové repliky/opravy, skutečné odstupy částí,
+špatná spojení při neznámém mluvčím a přínos českého překladu. Při pochybnosti
+raději rozšířit záporné testy a snížit rozsah spojování než obecně prodlužovat
+čekání. Žádná záruka, že libovolné tři části budou spojené; pomalé pokračování,
+neznámé jméno, limit či přetížená fronta mohou zůstat oddělené.
+
+### Nainstalovaný testovací build
+
+Na Redmi je `PlayCaption Profily Test 0.20.1-sentences-test01` (stejný oddělený
+applicationId jako profily/Story testy), LG zůstává 0.2.1. Instalace skončila
+`Success` a Package Manager potvrdil verzi. Na tomto APK prošly tři existující
+instrumentační testy: tlačítka/procenta, StrictMode síťové operace mimo hlavní
+vlákno a skutečné LG `PCQ1`/`PCA1 ready`. Tyto tři testy nenahrazují nové
+skládání vět při živém OCR; to je pokryté JVM simulacemi a čeká na hraní.
+Sestavení APK a instrumentačního APK prošlo; přibalený LG IPK má verzi 0.2.1
+se shodným SHA256. Výsledek je v `/private/tmp/playcaption-sentences-test-final.log`
+a `/private/tmp/playcaption-sentences-device-tests.log`.
