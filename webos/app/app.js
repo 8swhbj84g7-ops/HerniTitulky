@@ -12,6 +12,7 @@
     var bridge = null;
     var activityBridge = null;
     var activityWarning = "";
+    var protocolWarning = "";
     var statusText = "";
     var lastActivity = 0;
     var timer = null;
@@ -36,7 +37,7 @@
 
     function updateInfo(now) {
         if (!controls || controls.hidden) return;
-        var state = activityWarning || (!receiverReady ? statusText : lastDataAt ?
+        var state = activityWarning || protocolWarning || (!receiverReady ? statusText : lastDataAt ?
             (now - lastDataAt <= 5000 ? "Zařízení posílá platná data." : "Komunikace byla přerušena.") : "Přijímač je připraven, čeká na zařízení.");
         var saved = "nezvolen";
         try { saved = localStorage.getItem("playcaption-input") || saved; } catch (error) {}
@@ -159,7 +160,7 @@
 
     function showStatus(text) {
         statusText = text;
-        status.textContent = activityWarning || text;
+        status.textContent = activityWarning || protocolWarning || text;
         status.hidden = false;
     }
 
@@ -200,6 +201,7 @@
         }
         clearText();
         activityWarning = "";
+        protocolWarning = "";
     }
 
     function keepOverlayOpen() {
@@ -216,8 +218,8 @@
             try { result = JSON.parse(raw); } catch (error) { result = {}; }
             activityWarning = result && result.returnValue === true ? "" :
                 "PlayCaption · LG odmítá prodloužení překryvu, může se po 2 minutách zavřít.";
-            status.textContent = activityWarning || statusText;
-            status.hidden = !activityWarning && Boolean(lastSeen);
+            status.textContent = activityWarning || protocolWarning || statusText;
+            status.hidden = !activityWarning && !protocolWarning && Boolean(lastSeen);
             activityBridge = null;
         };
         // LG zavírá nečinný overlay po 120 s, i když se jeho text průběžně mění.
@@ -231,15 +233,21 @@
             if (!result || typeof result !== "object") throw new Error("Neplatná odpověď");
         } catch (error) {
             receiverReady = false;
+            protocolWarning = "";
             clearText();
             showStatus("PlayCaption: neplatná odpověď přijímače. Zkus aplikaci spustit znovu.");
             return;
         }
         if (!result.returnValue) {
             receiverReady = false;
+            protocolWarning = "";
             clearText();
             showStatus("PlayCaption: " + (result.errorText || "přijímač není dostupný"));
             return;
+        }
+        if (result.unsupportedStory) {
+            protocolWarning = "PlayCaption LG · Tento přijímač nepodporuje Story. Na zařízení přepni na Standardní režim.";
+            showStatus(statusText); updateInfo(Date.now()); return;
         }
         if (result.otherSender) { otherSender = true; updateInfo(Date.now()); return; }
         var packet = result.packet;
@@ -250,6 +258,7 @@
             return;
         }
         var now = Date.now();
+        if (packet.kind === "subtitle") protocolWarning = "";
         receiverReady = true;
         lastDataAt = now;
         statusText = "Zařízení posílá platná data. OK / Zpět = nabídka";
@@ -258,13 +267,13 @@
         if (receiverUI && receiverUI.handle(packet, now)) {
             lastSeen = now;
             source = result.source;
-            status.hidden = !activityWarning;
+            status.hidden = !activityWarning && !protocolWarning;
             return;
         }
         // Opakované pakety jsou heartbeat; nesmějí znovu zobrazit již prošlý titulek.
         var changed = packet.id !== lastId || connectionChanged;
         lastSeen = now;
-        status.hidden = !activityWarning;
+        status.hidden = !activityWarning && !protocolWarning;
         if (!changed) return;
         lastId = packet.id;
         if (packet.text) lastCaptionAt = now;
