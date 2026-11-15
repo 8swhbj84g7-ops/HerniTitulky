@@ -12,6 +12,9 @@ var socket = null;
 var announceTimer = null;
 var ready = false;
 var receiverName = "LG PlayCaption";
+var sender = null;
+var senderSeen = 0;
+var rejectedAt = 0;
 
 function notify(payload) {
     Object.keys(subscriptions).forEach(function (key) { subscriptions[key].respond(payload); });
@@ -21,6 +24,9 @@ function stop() {
     clearInterval(announceTimer);
     announceTimer = null;
     ready = false;
+    sender = null;
+    senderSeen = 0;
+    rejectedAt = 0;
     if (socket) socket.close();
     socket = null;
 }
@@ -57,7 +63,19 @@ function start() {
     });
     receiver.on("message", function (buffer, remote) {
         var packet = parse(buffer);
-        if (packet) notify({ returnValue: true, packet: packet, source: remote.address });
+        if (!packet) return;
+        var now = Date.now();
+        // Starý Android mění UDP porty: do budoucího párování držíme zdroj podle IP.
+        if (sender && sender !== remote.address && now - senderSeen < 5000) {
+            if (!rejectedAt || now - rejectedAt >= 5000) {
+                rejectedAt = now;
+                notify({ returnValue: true, otherSender: true });
+            }
+            return;
+        }
+        sender = remote.address;
+        senderSeen = now;
+        notify({ returnValue: true, packet: packet, source: remote.address });
     });
     receiver.bind(41989, "0.0.0.0", function () {
         receiver.setBroadcast(true);

@@ -126,7 +126,7 @@ vm.runInNewContext(fs.readFileSync(__dirname + '/service/service.js', 'utf8'), {
         if (name === 'dgram') return dgram;
         if (name === 'os') return { hostname: () => 'LG', networkInterfaces: () => network };
         return require(name.startsWith('./') ? './service/' + name.slice(2) : name);
-    }, Buffer, console,
+    }, Buffer, console, Date: { now: () => now },
     setInterval: fn => { serviceTimers.set(++nextId, fn); return nextId; }, clearInterval: id => serviceTimers.delete(id)
 });
 const request = { isSubscription: true, uniqueToken: 'a', respond: p => replies.push(p) };
@@ -139,6 +139,27 @@ assert.equal(sent[0].port, 41988);
 assert.equal(sent[0].address, '192.168.0.255');
 sockets[0].emit('message', Buffer.from('PCT1\t1\t6000\tČeský text\t'), { address: '192.168.0.2' });
 assert.equal(replies.at(-1).packet.text, 'Český text');
+now += 1000;
+sockets[0].emit('message', Buffer.from('PCT1\t2\t6000\tJiný zdroj\t'), { address: '192.168.0.3' });
+assert.equal(replies.at(-1).otherSender, true);
+now += 1000;
+sockets[0].emit('message', Buffer.from('PCT1\t2\t6000\tPůvodní zdroj\t'), { address: '192.168.0.2' });
+assert.equal(replies.at(-1).packet.text, 'Původní zdroj');
+now += 4999;
+sockets[0].emit('message', Buffer.from('PCT1\t3\t6000\tCizí heartbeat\t'), { address: '192.168.0.3' });
+assert.notEqual(replies.at(-1).packet?.text, 'Cizí heartbeat');
+now += 1;
+sockets[0].emit('message', Buffer.from('PCT1\t4\t6000\tPřevzetí po výpadku\t'), { address: '192.168.0.3' });
+assert.equal(replies.at(-1).packet.text, 'Převzetí po výpadku');
+const unsupported = replies.length;
+now += 10000;
+for (const text of ['PCS1\tZADOST', 'PCQ1\t'+'a'.repeat(32)+'.0.0.0',
+    'PCS1\t'+'a'.repeat(32)+'.0.1.0\t0\tStory\t0.5\t0.9\t0.8\t1\t']) {
+    sockets[0].emit('message', Buffer.from(text), { address: '192.168.0.4' });
+}
+assert.equal(replies.length, unsupported, 'Nepodporovaný protokol nesmí získat nebo potvrdit příjem.');
+sockets[0].emit('message', Buffer.from('PCT1\t5\t6000\tStandardní fallback\t'), { address: '192.168.0.2' });
+assert.equal(replies.at(-1).packet.text, 'Standardní fallback');
 const count = replies.length;
 sockets[0].emit('message', Buffer.from('PCS1\tZADOST'), {});
 assert.equal(replies.length, count, 'Přijímač nesmí předávat přihlašovací údaje.');
