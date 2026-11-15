@@ -180,4 +180,4 @@ libovolně rychlý dialog.
 Ověření úpravy základu: 132 JVM testů, šest LG sad a sestavení APK/IPK prošly.
 Na Redmi je `story-platforms-test02`, na C5 LG 0.2.1. V tomto testovacím
 profilu se uložených 80 % změnilo na 100 %; ostatní uložené údaje zůstaly
-beze změny. Nové hraní s touto výchozí hodnotou ještě nebylo potvrzené.
+beze změny. Uživatel následně potvrdil, že nové časování vyzkoušel při hraní a je v pořádku. Toto potvrzení se týká vyzkoušené hry a nastavení, nikoliv všech titulů nebo dlouhodobého výpadkového testu.

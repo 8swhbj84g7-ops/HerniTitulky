@@ -179,3 +179,13 @@ spárováním je na Redmi, LG 0.2.0 na C5. Tři Android instrumentační testy
 a řízené zobrazení čtyř skutečných LG stránek včetně skrytí a následného
 Standardu prošly. Podrobnosti a limity: `PRIBEHOVY-REZIM.md`.
 Nová herní přejímka zůstává otevřená; dokončování vět/OCR se zde neměnilo.
+
+### Stav před uzavřením Story etapy
+
+Uživatel potvrdil hraní s `story-platforms-test02` a LG 0.2.1 jako vyhovující.
+Základní Story funkce a nové časování jsou tím uživatelsky přijaté v testované
+konfiguraci. Zbývá závěrečný simulační přehled metrik P2-07, kontrola změn
+a předání větve. Aktuální `origin/master` již obsahuje PR #3 a opravu
+Windows cest v LG distribučním ZIPu (`aba0735`); tu je potřeba přibrat do Story.
+Dokončování vět, další OCR optimalizace a veřejný release zůstávají mimo toto
+uzavření.
