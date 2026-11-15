@@ -325,3 +325,16 @@ skládání vět při živém OCR; to je pokryté JVM simulacemi a čeká na hra
 Sestavení APK a instrumentačního APK prošlo; přibalený LG IPK má verzi 0.2.1
 se shodným SHA256. Výsledek je v `/private/tmp/playcaption-sentences-test-final.log`
 a `/private/tmp/playcaption-sentences-device-tests.log`.
+
+### Předání experimentu ke kontrole
+
+Finální kontrola proti aktuálnímu masteru `1de9372` prošla znovu: 168 JVM testů,
+sestavení APK a instrumentačního APK a `git diff --check`. PR #5 dosud není
+sloučený; větev obsahuje jeho opravu fronty, kterou je vhodné sloučit první.
+
+Uživatel při hraní zatím nepoznal, zda se části skutečně spojily. Bylo upřesněno,
+že spojení probíhá v anglickém vstupu před překladem, zatímco LG výsledek stále
+stránkuje. Jde o nejednoznačnou zpětnou vazbu, nikoliv potvrzení kvality spojování
+v dané scéně. Tablet už při pokusu o získání záznamu nebyl dostupný přes ADB.
+Herní účinek PC-007 tak zůstává neověřený; testovací verze není obecný jazykový
+model a její úzká pravidla nepokrývají všechny rozdělené věty.
