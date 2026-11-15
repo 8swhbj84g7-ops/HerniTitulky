@@ -102,7 +102,7 @@ class RemotePlayService : Service() {
         ui.removeCallbacks(schovatCesky)
     }
     private fun kontextPribehu() {
-        val klic = "${chcePribeh()}:${bezi}:${relaceCteni.get()}:${nast.jazykNeboCs}:${rucniOblast()?.joinToString()}:${Propojeni.Vysilac.cilIp}"
+        val klic = "${chcePribeh()}:${bezi}:${relaceCteni.get()}:${nast.jazykNeboCs}:${rucniOblast()?.joinToString()}:${Propojeni.Vysilac.cilIp}:${TvProfily.aktivniId}"
         if (klic != pribehKontext) {
             val bylPribeh = pribehKontext.startsWith("true:")
             if (bylPribeh || chcePribeh()) { zrusPribeh(); platnostPrekladu.zrus() }
@@ -141,7 +141,7 @@ class RemotePlayService : Service() {
                         PribehProtokol.dotaz("$pribehSession.${pribeh.generace}.0.0")
                     }
                     pribehStav = when { pribehChyba.isNotEmpty() -> pribehChyba
-                        ack == null -> "Příběh: čekám na LG přijímač 0.0.9 nebo novější…"
+                        ack == null -> "Příběh: čekám na LG přijímač s podporou Příběhového režimu…"
                         pauza -> "Příběh: pozastaveno kvůli volbám · čeká ${pribeh.pocet}"
                         else -> "Příběh: čtecí fronta ${pribeh.pocet}" }
                 } else {

@@ -42,6 +42,73 @@
 - Nová herní přejímka a dlouhý běh ještě zbývají.
 
 - LG 0.0.9: parser 9/10 polí, procenta 50–200, kratší výchozí základ a změna až od následující stránky prošly v `test-story.cjs`. Skutečná C5: stejný text 2252 ms při 100 % a 1932 ms při 80 %, následně funkční Standardní titulek. Podrobnosti v `docs/PRIBEHOVY-REZIM.md`.
+## Samostatná LG větev 0.0.10
+
+`feature/lg-webos-receiver` obsahuje původní LG přijímač, opravy HDMI/voleb/stránek
+a přenesené úpravy vzhledu, discovery a instalace. Neobsahuje Android OCR opravy,
+čtecí frontu ani Story protokol. Ty patří na `feature/story-mode`; později se do ní
+může tato LG větev sloučit.
+
+- Automatické kontroly: 4 LG sady, syntaxe JS, obsah IPK a build distribučních zdrojů.
+- Testy pokrývají ikony 80×80/130×130, obecné hlášení zařízení, více TV/názvů,
+  zachování identity při změně IP, jiné podsítě/masky a HDMI 1/3/4 bez pevného portu.
+- Před oddělením větví byly společné LG úpravy ověřené na C5 v integrovaném buildu
+  z commitu `fbd966e`: discovery odpovídalo názvu na TV, proběhlo přepnutí HDMI,
+  zobrazení titulků/voleb/rámečků, výpadek/obnova a běh přes 150 s.
+- Toto je důkaz integrovaného buildu, nikoliv nové hardwarové přejímky samostatné
+  LG větve. Při opravě větví se instalace v TV/tabletu nemění. Pro vydání této
+  samostatné varianty zopakovat přejímku přímo s jejím IPK.
+- Mobilní instalace přes komunitního správce zůstává ručně neotestovaná; vlastní
+  Android instalátor je pouze návrh. Další fyzické LG modely nejsou ověřené.
+
+## Kandidát P0 0.1.0
+
+15. 11. 2026, samostatná `feature/lg-webos-receiver`, bez Android/native změn:
+
+- Původní 4 sady a nová `test-controls.cjs` prošly. Menu test pokrývá OK/šipky/
+  Zpět, lokální test bez falešného připojení, oddělený příjem dat a titulku,
+  skrytí bez oživení prošlého textu, chyby, HDMI, ukončení a nový start.
+- Test služby pokrývá živého/odmítnutého/dalšího odesílatele a hranici 5 s.
+  Nepodporované Story/účtové pakety neobsadí příjem, nevrací podporu a nebrání
+  následnému standardnímu PCT1. Nový handshake se nepřidává.
+- Build 0.1.0 má vlastní manifest ID/verze/schopností/velikosti/SHA256. Story je
+  výslovně `false`; bundlovaný manifest nepředstírá verzi skutečně instalované TV.
+- CLI metadata časů a místních UID/GID v IPK jsou normalizovaná. Dvě sestavení
+  stejného zdroje vytvořila bitově totožný IPK; obsah se také porovnává se zdroji.
+- Normalizovaný IPK se nainstaloval i znovu aktualizoval na C5 bez odinstalace.
+  SHA256 všech 12 souborů na TV odpovídal finálním zdrojům.
+- Skutečný lokální test na C5 nenastavil falešný síťový stav. Menu četlo verzi
+  z místního appinfo, přepnutí HDMI obnovilo překryv. Skrytí/obnovení fungovalo.
+- Dva reálné zdroje: UDP z Macu a z připojeného Androidu. Živý Mac nepustil druhý
+  zdroj; po jeho výpadku Android převzal příjem; Mac se vrátil až po uvolnění
+  Androidu. Není to autentizace ani rozlišení dvou procesů na jedné IP.
+- Uživatel potvrdil fyzické OK → menu, šipky/OK → lokální test, Zpět → menu → hra.
+  Následně potvrdil ukončení přes Ukončit PlayCaption. Přerušený první monitorovací
+  běh byl ručním ukončením, nikoliv důkazem automatického pádu.
+
+Kontrolovaný běh po opětovném spuštění: 0/30/60/90/120/150/180 s, překryv zůstal
+aktivní bez hlášení odmítnutého keepalive.
+
+Přejímka původního Android APK 0.20 (versionCode 31): uživatel neviděl překlad.
+Na LG bylo během 6 s zachyceno 6 platných paketů titulku a 6 paketů voleb, všechny
+s prázdným textem; maskování bylo vypnuté a blokace dalšího zdroje nebyla hlášená.
+To potvrzuje přenos těchto starých formátů, nikoliv správnost OCR/překladu původního
+APK. Uživatel následně potvrdil, že existující PlayCaption Test ve Standardním
+režimu titulky zobrazuje; předchozí neúspěšný pokus v Test APK byl v režimu Story.
+Android Test obsahuje samostatné opravy OCR/textu a ty se do LG větve nepřenášejí.
+
+Tato záměna odhalila chybějící vysvětlení nepodporovaného režimu. Přijímač nyní
+při platném Story dotazu lokálně upozorní na přepnutí do Standardního režimu;
+nevrací žádné ready/ACK a nepřebírá zdroj. Rámečky ani keepalive hlášku neschovají;
+podporovaný PCT1 ji zruší. Cizí dotaz nesmí přerušit živého vlastníka.
+Na C5 byl z Androidu odeslán kontrolovaný PCQ1: hláška se skutečně zobrazila
+a následný heartbeat běžícího Standardního režimu ji odstranil. SHA256 všech
+12 instalovaných souborů po této úpravě opět odpovídal místním zdrojům.
+
+Několikahodinové hraní, uspání/probuzení a změna DHCP adresy skutečné TV nebyly
+v této etapě provedeny. Změna adresy/broadcastu a identity je pokrytá simulacemi;
+nezaměňovat ji za zásah do domácí sítě. Samsung ani Android instalátor se netestují.
+Vydání na GitHubu a merge do master nejsou automatickou součástí sestavení.
 
 ## Automatické kontroly
 
@@ -51,6 +118,7 @@ node webos/test-udp.cjs
 node webos/test-input.cjs
 node webos/test-receiver.cjs
 node webos/test-story.cjs
+node webos/test-controls.cjs
 python3 webos/build.py
 git diff --check
 ```
@@ -124,3 +192,105 @@ Bez skutečné TV lze potvrdit balení a logiku, nikoli chování nedokumentovan
 - Stejné C5 odmítla webové aplikaci metodu `getForegroundAppInfo`.
 - Delší provoz nové verze, jiná TV/firmware a všechny HDR/VRR kombinace zůstávají
   k ruční přejímce. Doklady běhu do 150 s výše se vztahují ke starším verzím.
+
+
+## Android instalátor LG – 15. 11. 2026
+
+Větev `feature/tv-platform-management`, Android `PlayCaption Profily Test`
+`0.20.1-platforms-test06`, Redmi Pad Pro; přijímač 0.1.0 na LG C5.
+
+- `:app:testDebugUnitTest :app:assembleDebug`: 20 JVM testů bez selhání.
+  Nové testy zahrnují skutečný formát C5 subscription událostí bez `returnValue`
+  a kompatibilitu `ssh-rsa` omezenou na konkrétní SSH relaci.
+- Gradle vytváří a kontroluje LG IPK; sestavení přijímače spouští všech pět Node
+  sad. IPK v APK má 31 060 bajtů a odpovídá SHA256 manifestu.
+- Uživatel na C5 potvrdil úspěšnou instalaci/aktualizaci z tabletu v test06,
+  správné potvrzení nainstalované verze a automatické spuštění přijímače.
+  Passphrase zadával pouze na tabletu. Původní PlayCaption ani Story Test se neměnily.
+- Při diagnostice byla zachycena skutečná posloupnost LG od `ipk verifying`
+  přes `installing` do `installed`. Předchozí obecná chyba SSH odpovídala tomu,
+  že Developer Mode na této C5 nabízí pouze `ssh-rsa`.
+- Záložní ruční postup zůstává v instalačním kroku i uživatelském návodu.
+
+Neověřeno: první instalace na čisté/jiné LG, všechny fyzické výpadky sítě
+uprostřed instalace a chování všech podporovaných verzí Androidu.
+Kontrola UI po uživatelském dokončení již instalační obrazovku nenašla;
+není evidována jako úspěšný automatický test tlačítka záložního postupu.
+
+
+### Záložní instalace a platnost – Android test07
+
+- Na Redmi Pad Pro UIAutomator prošel přepnutí Android → počítač → Android.
+  Sousední tlačítka mají fyzickou mezeru 24 px (12 dp); kontrolováno i screenshotem.
+- „Uložit LG instalační soubor“ otevřelo systémový výběr dokumentu. Po potvrzení
+  uložení do Stažených se průvodce obnovil. Exportovaný IPK měl 31 060 bajtů
+  a SHA256 shodný s přibaleným manifestem.
+- Další UI kontrola potvrdila, že export sám neoznačí TV za nainstalovanou;
+  v přímé instalační cestě zůstává Další bez potvrzené instalace zakázané.
+- Platnost Developer Mode je vysvětlená u kroků přípravy, instalace i spuštění.
+  Nejde o odpočet skutečné TV ani automatické prodlužování. Text vychází
+  z oficiální dokumentace LG, bez testování vypršení na C5.
+- Android Aphanes 1.0.2 a Windows Desktop 1.0.0 jsou odkazy na oficiální vydání;
+  samotná instalace přes externí aplikaci nebyla při této změně provedena.
+
+
+### Zbývající čas Developer Mode – Android test09
+
+- C5 vrátila přes kontrolní službu LG úspěch a čas `999:32:04`.
+  Kontrolní nástroj držel session token pouze v paměti a nevypisoval jej.
+- V Androidu uživatel provedl prvotní načtení z TV. Karta i detail zobrazily
+  přibližně 41 dní a 15 hodin, datum ověření a ruční kontrolu.
+- `:app:testDebugUnitTest :app:assembleDebug`: 26 JVM testů bez selhání.
+  Nové případy: dlouhé hodiny, chybná odpověď není nula, stáří a posun hodin,
+  hranice 72 hodin, AES-GCM vazba na konkrétní TV, změněný ciphertext a zrušené čtení.
+- Po aktualizaci/restartu testovací APK zůstal čas zachovaný. UIAutomator pak
+  provedl Zkontrolovat bez opakované Passphrase; datum v uloženém ověření se posunulo.
+  První pokus UI kontroly nenašel kartu při přechodu obrazovky; opakovaný průchod
+  na zobrazené hlavní kartě prošel. Karta i detail byly vizuálně zkontrolované.
+- Kontrola app dat potvrdila jednu šifrovanou relaci a jeden veřejný časový záznam;
+  citlivý obsah se nevypisoval. LG přijímač zůstal 0.1.0 bez změny zdrojů či instalace.
+
+První nastavení času je samostatný jednorázový krok pro konkrétní TV, není ještě
+navázané automaticky na instalátor. Bez automatického prodlužování, notifikací
+na pozadí či simulování expirování skutečné TV. Další fyzická LG není ověřená.
+
+
+### Společné spárování a ochrana verzí – Android test10
+
+- První ověření s Passphrase na C5 vrátilo skutečnou verzi 0.1.0 a stav aktuálního
+  přijímače. Uživatel výsledek potvrdil. Šifrovaný SSH záznam vznikl pro stejné
+  stabilní ID jako discovery; v diagnostice se kontroloval jen počet a velikost obálky.
+- UIAutomator provedl další ověření a spuštění bez Passphrase. Výsledek výslovně
+  uváděl zachovanou verzi bez přeinstalování. `stat` instalačního `appinfo.json`
+  před/po operaci potvrdil nezměněný čas modifikace.
+- Po aktualizaci/restartu APK další ověření znovu vrátilo aktuální 0.1.0 bez
+  opisování Passphrase. Obrazovka byla vizuálně zkontrolovaná; uložené spojení
+  má vlastní vysvětlení a tlačítka jsou oddělená.
+- `:app:testDebugUnitTest :app:assembleDebug`: 30 JVM testů bez selhání.
+  Nové případy: číselné porovnání verzí (včetně 0.10 proti 0.9), stejná/novější
+  verze, neznámé formáty, nezávislost identity TV na IP, odemknutý RSA klíč bez
+  další Passphrase a oddělení šifrovaného SSH materiálu od session tokenu/jiné TV.
+- Instalace i samostatné čtení relace sdílejí autentizované připojení. První
+  spárování připravuje i kontrolu času; do LG přijímače se kvůli tomu nic nepřidává.
+
+Nové větve chybějící/starší/novější verze jsou pokryté rozhodovacími testy;
+na C5 se v této poslední změně záměrně neměnila verze ani neodinstalovával přijímač.
+Dřívější skutečná instalace/aktualizace z Androidu je popsaná výše u test06.
+Další fyzická LG, všechny výpadky sítě a původní Android TV hardware touto etapou
+nebyly znovu přetestované. Žádné automatické prodlužování Developer Mode.
+
+## Integrace Story se správou LG (0.2.0)
+
+Větev `feature/story-mode` slučuje `feature/tv-platform-management` (`484ed6e`).
+Historické záznamy 0.1.0 výše popisují samostatný přijímač bez Story; integrovaná
+0.2.0 podporuje oba režimy. Android nadále vlastní jedinou čtecí frontu, LG jen
+stránkuje aktuální repliku a potvrzuje její dočtení.
+
+- Šest Node sad přes `python3 webos/build.py`: parser/UI, UDP, HDMI, stránky,
+  ovládání i Story včetně procent. Nové regrese pokrývají zachování zdrojové
+  relace pro Story, zneplatnění ACK po změně odesílatele a pozastavení při
+  skrytí/menu/lokálním testu.
+- Android `VysilacTest` zachovává generační ochranu při změně TV a ověřuje,
+  že Story potlačí pouze standardní titulky; kanál voleb dál funguje a po
+  vypnutí Story se obnoví PCT1 heartbeat.
+- Tento záznam neprohlašuje nové hraní s integrovanou verzí za dokončené.

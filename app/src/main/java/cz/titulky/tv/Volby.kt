@@ -30,7 +30,7 @@ object Volby {
 
     val VYCHOZI get() = floatArrayOf(0.55f, 0.45f, 0.95f, 0.80f)
 
-    private fun prefs(c: Context) = c.getSharedPreferences("gamelingo", Context.MODE_PRIVATE)
+    private fun prefs(c: Context) = TvProfily.nastaveni(c)
 
     fun nacti(c: Context) {
         zmeny.incrementAndGet()
@@ -75,7 +75,7 @@ object OblastTitulku {
     val VYCHOZI get() = floatArrayOf(0.10f, 0.72f, 0.90f, 0.97f)
     val MODRA = 0xFF4FB3FF.toInt()
 
-    private fun prefs(c: Context) = c.getSharedPreferences("gamelingo", Context.MODE_PRIVATE)
+    private fun prefs(c: Context) = TvProfily.nastaveni(c)
 
     fun nacti(c: Context) {
         val p = prefs(c)

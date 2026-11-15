@@ -2,12 +2,26 @@
 
 ## Unreleased
 
+- Integrační větev Story spojuje správu TV profilů, instalátor a Developer Mode s Android čtecí frontou. LG 0.2.0 podporuje Standardní i Příběhový režim; jeho nabídka, skrytí a lokální test pozastaví Story bez falešného dočtení. Master ani veřejné vydání se tím nemění.
+
 ### Změněno
 
-- Příběhový režim má kratší výchozí časování při 100 %, nastavitelnou délku zobrazení 50–200 % a skutečná tlačítka Standardní/Příběhový. Procenta se ukládají na Androidu a řídí i LG přijímač 0.0.9; změna se použije od další stránky. Standardní režim zachovává dosavadní časování.
+- Příběhový režim má kratší výchozí časování při 100 %, nastavitelnou délku zobrazení 50–200 % a skutečná tlačítka Standardní/Příběhový. Procenta se ukládají na Androidu a řídí i LG přijímač 0.2.0; změna se použije od další stránky. Standardní režim zachovává dosavadní časování.
 
 ### Přidáno
 
 - Samostatné jádro čtecí fronty Příběhového režimu s pořadím/revizemi replik, časováním českých stránek, pauzou a simulovanými regresními testy.
 
 - Experimentální napojení Příběhového režimu na Android překladač a LG 0.0.8: volitelný přepínač, jeden finální překlad, pořadí replik, potvrzení dočtení poslední stránky, pauza pro volby a návrat do Standardního režimu.
+- Android LG: společné šifrované spárování pro správu přijímače a platnost Developer Mode. Skutečná verze se kontroluje před instalací; stejný přijímač se nepřeinstaluje a novější se nevrací na starší.
+
+- Android LG: skutečný zbývající čas Developer Mode pro konkrétní TV, datum ověření, ruční kontrola a upozornění pod tři dny. Šifrované uložení relace, označení staršího/chybového údaje; bez prodlužování Developer Mode a bez změny TV přijímače.
+
+- Android LG průvodce: oddělená tlačítka, upozornění na platnost Developer Mode u přípravy i instalace, záložní správce Aphanes pro Android před počítačem a uložení přibaleného IPK do zvolené složky.
+
+- Android: průvodce připojením LG po jednotlivých krocích, odkazy na LG Developer a instalační nástroje, návrat k rozpracovanému kroku a vyhledání přijímače na konci. Přímý instalátor přibaleného IPK přes Developer Mode/Key Server ověřuje přenos i nainstalovanou verzi; ruční postup zůstává zálohou.
+- Android telefon/tablet: oddělená volba TV platformy a konkrétního přijímače, vlastní nastavení polohy a oblastí pro každou TV, zachování původního profilu při změně IP. Přepnutí výstupu vyčistí starý přijímač; jazyk a účet konzole zůstávají společné.
+- LG dokumentace: odstraněn interní pracovní plán z repozitáře i distribučního ZIPu, upřesněno předávání instalačního IPK přes Releases.
+- LG 0.1.0 (kandidát P0): nabídka přes OK/Zpět, lokální test vykreslení, dočasné skrytí a diagnostika známých stavů včetně upozornění na nepodporovaný Story režim. Jeden aktivní zdroj do 5 s bez jeho dat. Reprodukovatelný IPK a manifest verze, schopností, velikosti a SHA256; bez změny Android kódu nebo Story protokolu.
+
+- LG přijímač: jednotný název PlayCaption LG, Android ikona v obou velikostech launcheru a hlášení pro obecné odesílající zařízení. HDMI a discovery ověřené i s jinými vstupy/podsítěmi; aktualizovaný návod včetně možnosti instalace IPK z Android správce bez PC.

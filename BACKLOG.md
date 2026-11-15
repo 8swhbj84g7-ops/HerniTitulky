@@ -65,3 +65,60 @@ Stav: návrh pro pozdější fázi, ne důvod k přepisu aplikace nyní.
 - U budoucí verze protokolu vyhodnotit session ID a pořadí zpráv, aby se daly
   odlišit opožděné UDP pakety od restartu aplikace na stejném zařízení.
 - Návrhy posoudit až po PC-001; mohou již částečně existovat v Android kódu.
+
+## PC-003 – Instalace LG přijímače přímo z Android PlayCaption
+
+Implementováno v `feature/tv-platform-management`: místní instalace přibaleného
+IPK, společné šifrované spárování, kontrola skutečné verze před přenosem, aktualizace
+bez odinstalování a odmítnutí downgradu. Stejná verze se jen spustí. Prvotní
+spárování připraví také ověřování času Developer Mode. Záloha je externí Android
+správce, export IPK a volitelně počítač. Detaily a limity v `webos/TESTOVANI.md`.
+Internetové stahování novějšího IPK a vlastní backend nejsou součástí MVP.
+
+## PC-004 – Profily přijímačů v Android odesílači
+
+Implementováno: platforma oddělená od konkrétní TV a od aktivního výstupu.
+Každá TV má stabilní ID, poslední adresu a vlastní polohu/velikost titulků,
+zámky a oblasti čtení. Staré společné nastavení přebírá pouze původní TV;
+jazyk a účty konzole se nekopírují. Neznámou platformu potvrzuje uživatel,
+verze a schopnosti starého přijímače se neodhadují. Nalezená adresa má přednost
+před uloženou; vypnutá poslední TV se automaticky nenahradí jinou.
+
+Kontroly: `bash gradlew :app:testDebugUnitTest :app:assembleDebug` – pět testů
+profilů a test skutečného UDP přenosu na loopbacku. Ruční přejímka: dvě fyzické
+TV s odlišným nastavením, návrat na telefon a zpět, restart aplikace, původní
+Android TV režim. Uživatel na Redmi Pad Pro potvrdil nalezení a výběr C5.
+Karta výstupu byla po opravě výšky/odsazení vizuálně zkontrolovaná na tabletu:
+rozlišuje vybranou TV od aktivního odesílání. Nepředstírá potvrzení příjmu UDP.
+Původní Android TV hardware dosud touto etapou nepřetestován.
+Vlastní LG instalátor a přibalený IPK jsou implementované; aktuální přejímka je v `webos/TESTOVANI.md`.
+
+## PC-005 – Průvodce přípravou LG
+
+Implementováno: pět kroků v Android aplikaci, odkazy na oficiální LG Developer,
+veřejná vydání a komunitní instalační správce. Přístup přes zvolenou platformu
+LG nebo nabídku Jak připojit televizi. Návrat k rozpracovanému kroku, přeskočení
+přípravy u již nainstalovaného přijímače a skutečné vyhledání na konci.
+Průvodce neukládá hesla, neprodlužuje Developer Mode a nepovažuje proklikání
+instrukcí za dokončenou instalaci či spojení. Přímý instalátor IPK je také implementovaný.
+
+Kontroly: čtyři testy navigace průvodce a šest dosavadních testů profilů/přenosu;
+`bash gradlew :app:testDebugUnitTest :app:assembleDebug`. Postup LG ověřen podle
+oficiální dokumentace Developer Mode 15. 11. 2026. Ruční přejímka první instalace
+novým uživatelem a mobilní externí správce zůstávají otevřené.
+
+Přejímka na Redmi Pad Pro (test03): automatizované UI prošlo všech pět obrazovek,
+systémové Zpět, zavření/obnovení uloženého kroku, přeskočení přípravy, návrat
+z externího odkazu a navazující discovery se skutečným seznamem LG přijímačů.
+Screenshot posledního kroku potvrdil viditelnost celého textu i navigace.
+Tento test nemění Developer Mode na TV a nenahrazuje první instalaci na čisté LG.
+
+
+## PC-006 – Informace o platnosti Developer Mode
+
+Implementováno v Androidu: čas z kontrolní služby LG na kartě konkrétní TV,
+datum ověření, ruční kontrola a zvýraznění pod tři dny. První propojení vyžaduje
+jednorázově Key Server a Passphrase; pak je relace uložená šifrovaně pro stabilní
+ID TV. Kontrola nejvýše hodinově při viditelné kartě, starší/chybný údaj označený.
+Žádné automatické prodlužování ani změna přijímače LG. Testy a důkazy v `webos/TESTOVANI.md`.
+Prvotní propojení času je součástí ověření TV v instalačním průvodci; stejný šifrovaně uložený klíč slouží k dalším aktualizacím.

@@ -1,6 +1,6 @@
 # Příběhový režim: čtecí fronta
 
-Větev `feature/story-mode`. Integrační MVP je napojené na Android překladač a LG přijímač 0.0.9. Standardní režim zůstává výchozí a zachovává dosavadní překladovou i zobrazovací cestu. Nový režim se zapíná v PlayCaption Test na obrazovce TelefonActivity.
+Větev `feature/story-mode`. Integrační MVP je napojené na Android překladač a LG přijímač 0.2.0. Standardní režim zůstává výchozí a zachovává dosavadní překladovou i zobrazovací cestu. Nový režim se zapíná v PlayCaption Test na obrazovce TelefonActivity.
 
 `CteciFronta.kt` je čistý Kotlin bez Android závislostí, vláken, sítě a vlastních hodin. Volání serializuje jediný vlastník, Android. LG zde nemá vlastní příběhovou frontu.
 
@@ -85,7 +85,7 @@ Testy používají skutečný produkční adaptér `PribehovaRelace` a překlado
 
 Na Android tabletu otevři **PlayCaption Test**, připoj PS5/Xbox a vyber LG. Na obrazovce překladu jsou dvě tlačítka **Standardní** a **Příběhový**; vybrané je zelené. V Příběhovém režimu se pod nimi ukáže posuvník **Délka zobrazení: 100 %**. Po zapnutí se ukazuje velikost fronty nebo důvod čekání/chyby. Nastavení se ukládá, výchozí je Standardní.
 
-Na LG spusť přijímač 0.0.9 a HDMI vyber přímo v něm. Starší LG přijímač zůstává kompatibilní se Standardním režimem. Pro Story s procenty aktualizuj obě aplikace; LG 0.0.8 nepodporuje nový paket s procenty. Při potížích přepni tlačítkem zpět na Standardní.
+Na LG spusť přijímač 0.2.0 a HDMI vyber přímo v něm. Starší LG přijímač zůstává kompatibilní se Standardním režimem. Pro Story s procenty aktualizuj obě aplikace; LG 0.0.8 nepodporuje nový paket s procenty. Při potížích přepni tlačítkem zpět na Standardní.
 
 Přepnutí režimu, jazyka, zdrojové oblasti, cílové TV nebo relace konzole resetuje Story frontu a neplatné výsledky se již nezobrazí. Zmizení samotného anglického titulku frontu nemaže. Při aktivních dialogových volbách se pozastaví čtení aktuálního příběhového titulku. Syntetické rámečky a Text používají nadále svoje původní kanály.
 
@@ -126,3 +126,17 @@ Testy lze spustit v odděleném diagnostickém APK podle existujícího postupu;
 15. 11. 2026: na Redmi nainstalovaná `PlayCaption Test 0.20.1-story-test03`, na C5 LG 0.0.9. Nastavení po testech je 100 %. Prošlo **101 JVM testů**, všech **5 LG sad** a **3 instrumentační testy na tabletu** (síť se StrictMode, odpověď skutečné C5, skutečná tlačítka a ovládání procent včetně uložení a přepnutí režimu).
 
 Přímý UDP → LG UI → ACK test stejného textu naměřil **2252 ms při 100 %** a **1932 ms při 80 %**. Rozdíl zahrnuje obnovování UI a UDP heartbeat, nejde o přesný časovač v prohlížeči. Po zrušení Story se zobrazil Standardní titulek. SHA256 nainstalovaného UI a služby se porovnal s lokálními zdroji. Herní komfort nového časování a delší provoz zbývají k přejímce.
+
+## Integrace novější správy televizí
+
+Sloučení `feature/tv-platform-management` (`484ed6e`) zachovává profily TV,
+průvodce, přímou instalaci IPK, šifrované spárování i zbývající čas Developer Mode.
+LG 0.2.0 spojuje místní ovládání 0.1.0 se Story protokolem a procenty 0.0.9;
+instalátor proto nabídne aktualizaci 0.1.0. Čtecí fronta zůstává na Androidu.
+Změna profilu TV zneplatní rozpracovanou Story relaci.
+
+Kontrola integrovaného kódu: 132 JVM testů bez chyb, šest LG Node sad, build
+Android APK, instrumentačního APK a LG IPK. Nové regrese pokrývají potlačení
+PCT1 pouze při Story, pokračující PCV1, obnovu Standardu, zdrojovou relaci/ACK
+a pozastavení skrytého Story při nabídce či lokálním testu. Toto není nová
+herní přejímka na C5. Master, PR #3 ani veřejné vydání se tímto mergem nemění.

@@ -26,6 +26,8 @@ class TelefonActivity : Activity() {
     private val ui = Handler(Looper.getMainLooper())
     private val nast by lazy { Nastaveni(this) }
     private fun t(klic: String) = Texty.t(nast.jazykNeboCs, klic)
+    private val televize by lazy { TvProfily(this) }
+    private val tvPrefs get() = TvProfily.nastaveni(this)
     private val prefs by lazy { getSharedPreferences("gamelingo", MODE_PRIVATE) }
 
     private lateinit var titulek: TextView
@@ -61,6 +63,8 @@ class TelefonActivity : Activity() {
         nastavOtaceni(Propojeni.Vysilac.cilIp != null)
         Pady.hlidej(this)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        if (savedInstanceState == null) TvProfily.lokalne()
+        rucneJenTelefon = televize.pouzeTelefon
         Volby.nacti(this)
         OblastTitulku.nacti(this)
         // televize musí znát polohu rámečku voleb (český seznam ukazuje vedle něj)
@@ -118,8 +122,7 @@ class TelefonActivity : Activity() {
                     ui.post {
                         hledam = false
                         if (isFinishing || rucneJenTelefon || Propojeni.Vysilac.cilIp != null) return@post
-                        val posledni = prefs.getString("tvId", null)
-                        val tv = seznam.firstOrNull { it.id == posledni } ?: seznam.singleOrNull()
+                        val tv = televize.automaticky(seznam)
                         when {
                             tv != null -> pripojTv(tv)
                             seznam.size > 1 && nabidnutVyber -> { nabidnutVyber = false; vyberTelevizi() }
@@ -131,9 +134,19 @@ class TelefonActivity : Activity() {
         }
     }
 
-    private fun pripojTv(tv: Propojeni.Televize) {
+    private fun pripojTv(tv: Propojeni.Televize, platforma: TvPlatforma? = null) {
+        ui.removeCallbacks(konecUprav)
+        Propojeni.Vysilac.nastavCil(null, "")
+        televize.zapamatuj(tv.id, tv.jmeno, tv.ip, platforma)
+        televize.vyber(tv.id)
+        Volby.nacti(this)
+        OblastTitulku.nacti(this)
+        nactiRozvrh()
+        Propojeni.Vysilac.nastavRozvrh(rozvrh.copyOf())
+        Propojeni.Vysilac.trvaleOblast = Volby.zapnuto && Volby.ukazatNaTv
+        Propojeni.Vysilac.upravujiOblast(Volby.oblast, ukazat = false)
         Propojeni.Vysilac.nastavCil(tv.ip, tv.jmeno)
-        prefs.edit().putString("tvId", tv.id).apply()
+        obnovUpravy()
         android.widget.Toast.makeText(this, t("tvPosilam").replace("{tv}", tv.jmeno), android.widget.Toast.LENGTH_LONG).show()
         obnovTvTlacitko()
     }
@@ -206,6 +219,7 @@ class TelefonActivity : Activity() {
         // televizi říct, ať titulek schová, a přestat jí posílat
         Propojeni.Vysilac.zmena("", 0, "")
         Propojeni.Vysilac.nastavCil(null, "")
+        TvProfily.lokalne()
         runCatching {
             startService(Intent(this, RemotePlayService::class.java).setAction(RemotePlayService.ACTION_STOP))
         }
@@ -224,17 +238,16 @@ class TelefonActivity : Activity() {
     /** Přepínač: titulky do televize. Poslední televize (nebo jediná v síti) se připojí hned. */
     private fun prepniNaTv() {
         rucneJenTelefon = false
-        if (Propojeni.Vysilac.cilIp != null) return
+        televize.pouzeTelefon = false
+        if (Propojeni.Vysilac.cilIp != null) { spravaTelevize(); return }
         segTv.alpha = 0.85f
         Propojeni.hledej(this, 2500) { seznam ->
             ui.post {
                 if (isFinishing || rucneJenTelefon || Propojeni.Vysilac.cilIp != null) return@post
-                val posledni = prefs.getString("tvId", null)
-                val tv = seznam.firstOrNull { it.id == posledni } ?: seznam.singleOrNull()
+                val tv = televize.automaticky(seznam)
                 when {
                     tv != null -> pripojTv(tv)
-                    seznam.size > 1 -> vyberTelevizi()
-                    else -> android.widget.Toast.makeText(this, t("tvNenalezenaToast"), android.widget.Toast.LENGTH_LONG).show()
+                    else -> spravaTelevize()
                 }
                 obnovTvTlacitko()
             }
@@ -244,40 +257,25 @@ class TelefonActivity : Activity() {
     /** Přepínač: titulky jen v telefonu (televizi titulek schovat a přestat jí posílat). */
     private fun prepniNaTelefon() {
         rucneJenTelefon = true
-        Propojeni.Vysilac.zmena("", 0, "")
+        televize.pouzeTelefon = true
         Propojeni.Vysilac.nastavCil(null, "")
+        TvProfily.lokalne()
+        Volby.nacti(this)
+        OblastTitulku.nacti(this)
+        nactiRozvrh()
+        obnovUpravy()
         obnovTvTlacitko()
     }
 
-    /** Najít televize s PlayCaption v síti a vybrat, kam posílat titulky. */
-    private fun vyberTelevizi() {
-        val hledam = android.app.AlertDialog.Builder(this)
-            .setTitle(t("tvVyber"))
-            .setMessage(t("tvHledam"))
-            .show()
-        Propojeni.hledej(this) { seznam ->
-            ui.post {
-                if (isFinishing) return@post
-                runCatching { hledam.dismiss() }
-                val polozky = seznam.map { "📺  " + it.jmeno } + ("📱  " + t("tvJenTelefon"))
-                android.app.AlertDialog.Builder(this)
-                    .setTitle(t(if (seznam.isEmpty()) "tvNenalezena" else "tvVyber"))
-                    .setItems(polozky.toTypedArray()) { _, i ->
-                        val tv = seznam.getOrNull(i)
-                        if (tv != null) {
-                            rucneJenTelefon = false
-                            pripojTv(tv)
-                        } else {
-                            rucneJenTelefon = true
-                            Propojeni.Vysilac.zmena("", 0, "")
-                            Propojeni.Vysilac.nastavCil(null, "")
-                        }
-                        obnovTvTlacitko()
-                    }
-                    .show()
-            }
-        }
+    private fun spravaTelevize() {
+        rucneJenTelefon = true
+        TvVyber(this, { tv, platforma ->
+            rucneJenTelefon = false
+            pripojTv(tv, platforma)
+        }, { prepniNaTelefon() }).ukaz()
     }
+
+    private fun vyberTelevizi() = spravaTelevize()
 
     private fun dp(x: Int) = (x * resources.displayMetrics.density).toInt()
 
@@ -293,8 +291,8 @@ class TelefonActivity : Activity() {
     private lateinit var upravy: LinearLayout
     /** Zámeček zeleného boxu (poloha českých titulků na televizi). */
     private var zelenaZamcena: Boolean
-        get() = prefs.getBoolean("rozvrhZamek", false)
-        set(v) = prefs.edit().putBoolean("rozvrhZamek", v).apply()
+        get() = tvPrefs.getBoolean("rozvrhZamek", false)
+        set(v) = tvPrefs.edit().putBoolean("rozvrhZamek", v).apply()
 
     /** Kulaté tlačítko se zámečkem: zamčeno = plné barvou, odemčeno = jen obrys. */
     private fun zamek(barva: Int, zamceno: Boolean, prepni: () -> Unit) = TextView(this).apply {
@@ -311,12 +309,12 @@ class TelefonActivity : Activity() {
 
     private fun nactiRozvrh() {
         rozvrh = floatArrayOf(
-            prefs.getFloat("tvX", 0.5f), prefs.getFloat("tvY", 0.93f),
-            prefs.getFloat("tvSirka", 0.62f), prefs.getFloat("tvPismo", 1f))
+            tvPrefs.getFloat("tvX", 0.5f), tvPrefs.getFloat("tvY", 0.93f),
+            tvPrefs.getFloat("tvSirka", 0.62f), tvPrefs.getFloat("tvPismo", 1f))
     }
 
     private fun ulozAPosliRozvrh(ukazat: Boolean = true) {
-        prefs.edit().putFloat("tvX", rozvrh[0]).putFloat("tvY", rozvrh[1])
+        tvPrefs.edit().putFloat("tvX", rozvrh[0]).putFloat("tvY", rozvrh[1])
             .putFloat("tvSirka", rozvrh[2]).putFloat("tvPismo", rozvrh[3]).apply()
         Propojeni.Vysilac.nastavRozvrh(rozvrh.copyOf())
         // na televizi ukázat ukázkový titulek, ať je vidět, kam se posunul
@@ -335,6 +333,17 @@ class TelefonActivity : Activity() {
             setPadding(dp(20), dp(6), dp(20), dp(10))
             visibility = View.GONE
         }
+        obal.addView(TextView(this).apply {
+            text = "⚙ " + t("tvNastaveni") + " · " + Propojeni.Vysilac.cilJmeno
+            textSize = 16f
+            setTextColor(Color.WHITE)
+            background = zaobleni(Color.parseColor("#333338"))
+            setPadding(dp(12), dp(10), dp(12), dp(10))
+            setOnClickListener { spravaTelevize() }
+        })
+        obal.addView(LgDevModeView(this) {
+            TvProfily.aktivniId?.let { TvProfily(this).najdi(it) }
+        })
         obal.addView(TextView(this).apply {
             text = t("tvUpravit")
             textSize = 14f
@@ -753,8 +762,8 @@ class TelefonActivity : Activity() {
             addView(segTv)
             addView(segTel)
             // podržet → seznam televizí (když jich je v síti víc)
-            setOnLongClickListener { vyberTelevizi(); true }
-            segTv.setOnLongClickListener { vyberTelevizi(); true }
+            setOnLongClickListener { spravaTelevize(); true }
+            segTv.setOnLongClickListener { spravaTelevize(); true }
         }
         val lista = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL

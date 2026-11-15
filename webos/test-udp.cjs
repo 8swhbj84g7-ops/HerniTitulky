@@ -57,7 +57,7 @@ const { once } = require('node:events');
         const announced = once(discovery, 'message');
         await ready;
         const [announcement] = await announced;
-        assert.match(announcement.toString(), /^PLAYCAPTION_TV\tlg-[0-9a-f]{12}\tLG PlayCaption\t0$/);
+        assert.match(announcement.toString(), /^PLAYCAPTION_TV\tlg-[0-9a-f]{12}\tLG PlayCaption · [0-9A-F]{12}\t0$/);
         const delivered = new Promise(resolve => { pending = resolve; });
         sender.send(Buffer.from('PCT1\t42\t6000\tPrvní řádek\\nDruhý řádek\tNápověda'), sockets[0].address().port, '127.0.0.1');
         const result = await delivered;
