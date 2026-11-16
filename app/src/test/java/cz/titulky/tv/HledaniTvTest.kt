@@ -52,6 +52,15 @@ class HledaniTvTest {
         }
     }
 
+    @Test fun samsungBroadcastWithVersionFieldStillWorks() {
+        // Samsung 1.3.0 posílá v broadcastu 5. pole s verzí; to není nonce a nesmí se zahodit.
+        odpovidac({ "PLAYCAPTION_TV\tsamsung-001122334455\tSamsung TV\t0\t1.3.0" }, broadcast = true) {
+            val found = Propojeni.hledejVSiti(300, listOf(lg))
+            assertEquals(listOf(Propojeni.Televize("samsung-001122334455", "Samsung TV", "127.0.0.1", false, "1.3.0")),
+                found.filter { it.ip == lg.ip })
+        }
+    }
+
     @Test fun silentStoredTvIsNotReportedAsOnline() {
         odpovidac({ null }) { assertTrue(Propojeni.hledejVSiti(300, listOf(lg)).none { it.ip == lg.ip }) }
     }

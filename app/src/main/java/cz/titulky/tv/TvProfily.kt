@@ -4,7 +4,12 @@ import android.content.Context
 import android.content.SharedPreferences
 import java.security.MessageDigest
 
-enum class TvPlatforma { NEZNAMA, ANDROID_TV, WEBOS }
+enum class TvPlatforma {
+    NEZNAMA, ANDROID_TV, WEBOS, SAMSUNG;
+
+    /** LG a Samsung jen zobrazují titulky; přihlášení ke konzoli telefonu předat neumějí. */
+    val jenZobrazovac get() = this == WEBOS || this == SAMSUNG
+}
 
 data class TvProfil(val id: String, val jmeno: String, val ip: String, val platforma: TvPlatforma)
 
@@ -39,12 +44,16 @@ class TvProfily internal constructor(
         return TvProfil(id, prefs.getString("$k.jmeno", id)!!, prefs.getString("$k.ip", "")!!, p)
     }
 
-    fun platformaPrijimace(id: String): TvPlatforma =
-        if (id.matches(Regex("lg-[a-f0-9]{12}"))) TvPlatforma.WEBOS else najdi(id)?.platforma ?: TvPlatforma.NEZNAMA
+    fun platformaPrijimace(id: String): TvPlatforma = when {
+        id.matches(Regex("lg-[a-f0-9]{12}")) -> TvPlatforma.WEBOS
+        SamsungPrijimac.jeSamsung(id) -> TvPlatforma.SAMSUNG
+        else -> najdi(id)?.platforma ?: TvPlatforma.NEZNAMA
+    }
 
+    /** LG ani Samsung přihlášení ke konzoli nepředávají; handshake zůstává jen pro Android TV. */
     fun muzePrevzitSparovani(tv: Propojeni.Televize): Boolean =
-        platformaPrijimace(tv.id) != TvPlatforma.WEBOS &&
-            (tv.id != "rucne" || seznam().none { it.ip == tv.ip && platformaPrijimace(it.id) == TvPlatforma.WEBOS })
+        !platformaPrijimace(tv.id).jenZobrazovac &&
+            (tv.id != "rucne" || seznam().none { it.ip == tv.ip && platformaPrijimace(it.id).jenZobrazovac })
 
     fun zapamatuj(id: String, jmeno: String, ip: String, zvolena: TvPlatforma? = null): TvProfil {
         val stary = najdi(id)

@@ -19,6 +19,15 @@ class TvProfilyTest {
         assertTrue(p.muzePrevzitSparovani(tv("legacy-android"))) // DHCP mohl starou LG IP přidělit Android TV.
         assertFalse(p.muzePrevzitSparovani(Propojeni.Televize("rucne", "TV", lg.ip)))
     }
+    @Test fun samsungCannotEnterAndroidCredentialHandoff() {
+        val p = store()
+        val samsung = tv("samsung-001122334455")
+        assertEquals(TvPlatforma.SAMSUNG, p.platformaPrijimace(samsung.id))
+        assertFalse(p.muzePrevzitSparovani(samsung))
+        p.zapamatuj(samsung.id, samsung.jmeno, samsung.ip)
+        assertEquals(TvPlatforma.SAMSUNG, p.najdi(samsung.id)!!.platforma)
+        assertFalse(p.muzePrevzitSparovani(Propojeni.Televize("rucne", "TV", samsung.ip)))
+    }
     private val files = mutableMapOf<String, SharedPreferences>()
     private val legacy = memory()
     private val metadata = memory()
