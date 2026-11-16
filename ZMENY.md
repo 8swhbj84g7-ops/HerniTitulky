@@ -6,14 +6,16 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
 
 ## Nevydané změny
 
-- Oprava ztracených titulků při zapnutém Story a výstupu do Android TV: tento
-  přijímač používá Standardní PCT1, protože jeho PCS1 slouží předávání spárování.
-  Příběhový režim na Android TV přijímači tím není implementován. Telefon ukazuje
-  omezení a uloženou předvolbu Story zachovává pro jiné výstupy.
-- U LG/Samsungu a neznámých přijímačů se Story aktivuje až po platném PCA1 od
+- Android TV v režimu „S telefonem“ nově umí Story: měří stránky podle boxu,
+  zachovává čtecí čas při pauze, skrývá text mimo vstup a při volbách a potvrzuje
+  dočtení poslední stránky. Opakované pakety čtení nerestartují; staré generace
+  neobnoví zrušený text. PCS1 Story je oddělené od stávajícího předání spárování.
+- U všech TV včetně Androidu se Story aktivuje až po platném PCA1 od
   zvoleného cíle. Do té doby pokračuje Standardní výstup; přenos se přepne až
   s první Story stránkou. Staré titulky se po návratu na Standardní neopakují,
-  volby zůstávají funkční. Místní Story v telefonu se nemění.
+  volby zůstávají funkční. Starší Android TV bez podpory zůstane na Standardním
+  výstupu; je nutné aktualizovat telefon i TV. Místní Story, LG/Samsung protokol
+  a režim „Jen televize“ se nemění. Přejímka na TCL zatím neproběhla.
 - Stav konzole už nezelená pouhým spuštěním služby: rozlišuje čekání na spojení,
   čekání na první snímek, příjem a výpadek obrazu. V běžném UI jsou krátké hlášky;
   úplné důvody a technické podrobnosti zůstávají v Záznamu.

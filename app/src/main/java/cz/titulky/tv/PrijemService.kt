@@ -30,6 +30,7 @@ class PrijemService : Service() {
     private var volbyOd = 0L
     private var textVidet = false
     private var skrytyMimoVstup = false
+    private var kodSparovaniDo = 0L
 
     /**
      * Hlídač "zamrznutí": každé 2 s zkontroluje, jestli něco nevisí na televizi zbytečně.
@@ -57,6 +58,7 @@ class PrijemService : Service() {
         posli(Intent(this, OverlayService::class.java)
             .setAction(OverlayService.ACTION_SET_TEXT)
             .putExtra(OverlayService.EXTRA_TEXT, "")
+            .putExtra(OverlayService.EXTRA_STANDARD_Z_TELEFONU, true)
             .putExtra(OverlayService.EXTRA_DOBA, 0L))
     }
 
@@ -102,11 +104,19 @@ class PrijemService : Service() {
                         .putExtra(OverlayService.EXTRA_RAMECEK, ukazat))
                 } },
                 priKoduSparovani = { kod -> ui.post {
+                    kodSparovaniDo = if (kod.isEmpty()) 0L else android.os.SystemClock.elapsedRealtime() + 180_000
                     // kód pro telefon velkým písmem přes obraz (3 min); "" = schovat
                     posli(Intent(this, OverlayService::class.java)
                         .setAction(OverlayService.ACTION_SET_TEXT)
                         .putExtra(OverlayService.EXTRA_TEXT, if (kod.isEmpty()) "" else Texty.t(this, "prevzitKodTv").replace("{kod}", kod))
                         .putExtra(OverlayService.EXTRA_DOBA, if (kod.isEmpty()) 0L else 180_000L))
+                } },
+                priPribehu = { titulek, ack -> ui.post {
+                    if (bezi && android.os.SystemClock.elapsedRealtime() >= kodSparovaniDo) {
+                        val vstup = runCatching { popredi.jeVstupTv() }.getOrDefault(true)
+                        skrytyMimoVstup = !vstup
+                        OverlayService.posliPribeh(this, titulek, !vstup) { stav -> if (bezi) ack(stav) }
+                    }
                 } })
             ui.removeCallbacks(hlidacZamrznuti)
             ui.postDelayed(hlidacZamrznuti, 2000)
@@ -123,6 +133,7 @@ class PrijemService : Service() {
         posli(Intent(this, OverlayService::class.java)
             .setAction(OverlayService.ACTION_SET_TEXT)
             .putExtra(OverlayService.EXTRA_TEXT, if (vstup) text else "")
+            .putExtra(OverlayService.EXTRA_STANDARD_Z_TELEFONU, true)
             .putExtra(OverlayService.EXTRA_DOBA, if (doba > 0) doba else 6000L)
             .apply { if (rozvrh != null) putExtra(OverlayService.EXTRA_VLASTNI, rozvrh) }
             // jméno postavy v barvě jako ve hře
@@ -166,6 +177,8 @@ class PrijemService : Service() {
     private fun zastav() {
         bezi = false
         ui.removeCallbacks(hlidacZamrznuti)
+        kodSparovaniDo = 0L
+        posli(Intent(this, OverlayService::class.java).setAction(OverlayService.ACTION_ZRUS_PRIBEH))
         napovedaTed = ""; volbyVidet = false; textVidet = false
         prijimac?.zavri()
         prijimac = null

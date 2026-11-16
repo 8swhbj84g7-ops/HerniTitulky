@@ -1,12 +1,73 @@
 # Příběhový režim: čtecí fronta
 
-## Podpora výstupu a oprava Android TV – 16. 11. 2026
+## Story pro Android TV přijímač – nevydané, čeká na TCL
+
+Větev `codex/android-tv-story` navazuje na integraci #16/#17. Přidává plný
+Story příjem pro režim **S telefonem**; OCR, překlad, skládání vět a jediná
+čtecí fronta zůstávají v telefonu. Přímý režim **Jen televize** se nemění.
+
+- Telefon zjišťuje podporu pomocí PCQ1 i u Android TV. Story zapne až po
+  platném PCA1 z očekávané IP/portu pro aktuální token. Starší Android TV
+  neodpoví a dál dostává PCT1. Je třeba aktualizovat telefon i TV.
+- Přijímač rozliší PCS1 s platným Story tokenem od PCS1 ZADOST/KOD pro
+  předání spárování. QR přihlášení, předání účtu a formáty LG/Samsung se nemění.
+- Překryv pomocí Android StaticLayout změří nejvýše tři řádky podle skutečné
+  šířky boxu a velikosti písma. Zachová pořadí, barvy jmen a zbytek textu;
+  dlouhé slovo rozdělí bez roztržení Unicode code pointu. Nevytváří druhou frontu.
+  Čtecí čas začíná až po předání stránky překryvu, nikoli před pomalým měřením.
+- Opakovaný paket nerestartuje čtení. Změna procent platí od další stránky;
+  změna boxu znovu zalomí aktuální stránku. Pauza, volby, skrytí mimo TV vstup,
+  nedostupný překryv a pět sekund bez dat zastaví čtení se zbývajícím časem.
+  Rozpoznání TV vstupu používá stávající oprávnění přístupu k využití.
+- Překryv vrací reading/done; done vznikne až po čtecím čase poslední stránky.
+  Síťové vlákno odešle ACK ze stejného soketu, kterým přijalo Story. UI nedělá
+  UDP IO. Ztracené ACK se zopakuje při dalším paketu bez přehrání dočtené repliky.
+- Prázdný Story paket zruší režim a dovolí znovu PCT1. Starší pořadí/generace
+  a opožděné pakety nedávno ukončené relace text neobnoví. Zastavení přijímače
+  odstraní časovač i vazbu ACK; po restartu se nedočtená replika čte znovu.
+
+### Přejímka na TCL 65C805
+
+1. Použít APK této větve na telefonu i TCL, zachovat data a spárování. Zapnout
+   „S telefonem“, povolit překryv a ponechat HDMI konzole.
+2. Ověřit Standardní titulky, pak Story: krátké i dlouhé repliky musí dojít
+   celé ve správném pořadí, dlouhé po stránkách, bez restartů při heartbeat.
+3. Vyzkoušet 50/80/100/200 %, změnu velikosti/šířky boxu během repliky,
+   barvy jmen, volby odpovědí a návrat z Home na HDMI. Rozečtený text se nesmí
+   potvrdit jako dočtený, když je skrytý.
+4. Na chvíli odpojit síť; po návratu musí čtení pokračovat. Přepnout na
+   Standardní, opět na Story, zastavit/spustit příjem i změnit cílovou TV.
+5. Ověřit QR přihlášení a převzetí spárování stávajícím postupem. Starší
+   Android přijímač má s novým telefonem dál zobrazovat Standardní PCT1.
+6. Volitelný instrumentační `PribehAndroidPrekryvTest` spouštět mimo hraní:
+   ověřuje skutečný UDP přijímač, překryv a ready/reading/pauzu/done/zrušení
+   při zákazu sítě na hlavním vlákně. Vyžaduje
+   povolený překryv a TV vstup nebo PlayCaption v popředí, jinak se přeskočí.
+
+Automatické testy ani ACK nejsou důkazem fyzické viditelnosti na konkrétní TCL.
+V této větvi se aplikace nevydává, netaguje a nemění číslo verze.
+
+### Automatické ověření této větve
+
+`bash gradlew :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest`
+prošlo: 225 JVM testů bez selhání, z toho 12 nových pro parser, jedinou čtenou
+repliku, skutečné UDP ACK, bezpečné předání odpovědi ze zobrazovacího do síťového
+vlákna, pauzy, procenta, Unicode, pomalé měření, staré generace a původní kanály.
+Síťová přejímka podpory nyní zahrnuje také Android TV vedle LG/Samsungu.
+Instrumentační APK s novým testem bylo pouze sestavené; ADB nevidí žádné zařízení.
+
+Prošly také `node webos/test.cjs`, `node webos/test-udp.cjs`,
+`node webos/test-story.cjs`, služba `node tizen/test/test.cjs` a `git diff --check`.
+Samsung vykreslovací test se přeskočil kvůli chybějícímu Playwrightu.
+LG/Samsung zdroje, kodeky, překladače, přihlašování a čísla verzí se nemění.
+
+## Předchozí oprava fallbackem (#16) – 16. 11. 2026
 
 - Větev `codex/story-receiver-capabilities` opravuje report z TCL 65C805 na
   masteru `bc5237d`: zapnutí Story přestalo posílat PCT1, ale Android přijímač
   PCS1 interpretuje jako předání spárování. Neznámý příkaz zahodil bez PCA1.
   PCV1 zůstal funkční, proto mohly fungovat volby, zatímco dialogy chyběly.
-- Android TV nyní používá Standardní výstup PCT1. Je-li platforma známá, Story
+- Android TV v této předchozí opravě používá Standardní výstup PCT1. Je-li platforma známá, Story
   tlačítko se znepřístupní a telefon zobrazí vysvětlení. Uložená předvolba Story
   se nemaže. Toto není implementace Story protokolu na Android TV přijímači.
 - LG a Samsung se ověřují neškodným PCQ1; platná PCA1 musí přijít z připojené
