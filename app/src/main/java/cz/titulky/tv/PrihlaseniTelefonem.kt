@@ -18,23 +18,24 @@ import java.net.URLDecoder
  * proto televize spustí malou webovou stránku v domácí síti. Telefon ji otevře přes QR kód,
  * člověk se přihlásí v normálním prohlížeči a vloží adresu, kde skončil → kód přijde do televize.
  */
-class PrihlaseniTelefonem(private val cesky: Boolean, private val priKodu: (String) -> Unit) {
+internal class PrihlaseniTelefonem(private val cesky: Boolean, private val pokus: PsnPokus) {
 
     @Volatile private var bezi = true
-    private var server: ServerSocket? = null
+    @Volatile private var server: ServerSocket? = null
 
     fun spust() {
         Thread {
             runCatching {
-                val s = ServerSocket()
-                s.reuseAddress = true
-                s.bind(InetSocketAddress(PORT))
-                server = s
-                while (bezi) {
-                    val c = s.accept()
-                    Thread { obsluz(c) }.apply { isDaemon = true }.start()
+                ServerSocket().use { s ->
+                    s.reuseAddress = true
+                    s.bind(InetSocketAddress(PORT))
+                    server = s
+                    while (bezi) {
+                        val c = s.accept()
+                        Thread { obsluz(c) }.apply { isDaemon = true }.start()
+                    }
                 }
-            }
+            }.onFailure { if (bezi) pokus.chybaStranky() }
         }.apply { isDaemon = true }.start()
     }
 
@@ -55,11 +56,20 @@ class PrihlaseniTelefonem(private val cesky: Boolean, private val priKodu: (Stri
                 while (true) { val h = r.readLine() ?: break; if (h.isEmpty()) break }
 
                 val html = if (cesta.startsWith("/kod")) {
-                    val vlozeno = Regex("[?&]u=([^&]*)").find(cesta)?.groupValues?.get(1)
-                        ?.let { URLDecoder.decode(it, "UTF-8") }?.trim() ?: ""
-                    val kod = PsnPrihlaseni.kodZAdresy(vlozeno)
-                        ?: Regex("code=([^&\\s]+)").find(vlozeno)?.groupValues?.get(1)?.let { URLDecoder.decode(it, "UTF-8") }
-                    if (kod != null) { priKodu(kod); stranka(mistni, hotovo = true) } else stranka(mistni, chyba = true)
+                    val kod = runCatching {
+                        val vlozeno = Regex("[?&]u=([^&]*)").find(cesta)?.groupValues?.get(1)
+                            ?.let { URLDecoder.decode(it, "UTF-8") }?.trim() ?: ""
+                        PsnPrihlaseni.kodZAdresy(vlozeno)
+                            ?: Regex("code=([^&\\s]+)").find(vlozeno)?.groupValues?.get(1)?.let { URLDecoder.decode(it, "UTF-8") }
+                    }.getOrNull()
+                    if (!kod.isNullOrBlank()) {
+                        pokus.prihlas(kod)
+                        c.getOutputStream().apply {
+                            write("HTTP/1.1 303 See Other\r\nLocation: /stav\r\nCache-Control: no-store\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".toByteArray())
+                            flush()
+                        }
+                        return
+                    } else stranka(mistni, chyba = true)
                 } else stranka(mistni)
 
                 val telo = html.toByteArray()
@@ -72,16 +82,21 @@ class PrihlaseniTelefonem(private val cesky: Boolean, private val priKodu: (Stri
         }
     }
 
-    private fun stranka(mistni: Boolean, hotovo: Boolean = false, chyba: Boolean = false): String {
+    internal fun stranka(mistni: Boolean, chyba: Boolean = false): String {
         val T = (if (cesky) CS else EN).toMutableList()
         if (mistni) {
             // na telefonu se nic neskenuje – vrátit se do aplikace a otevřít stránku znovu
             val Tt = if (cesky) CS_TELEFON else EN_TELEFON
             T[0] = Tt[0]; T[9] = Tt[1]
+            T[5] = if (cesky) "Ověřit a uložit účet" else "Verify and save account"
         }
-        val obsah = when {
-            hotovo -> "<div class=ok>${T[0]}</div>"
-            else -> (if (chyba) "<div class=err>${T[1]}</div>" else "") + """
+        val vysledek = pokus.vysledek
+        val stav = vysledek.stav
+        val obsah = when (stav) {
+            PsnPokus.Stav.HOTOVO -> "<div class=ok>${T[0]}</div>"
+            PsnPokus.Stav.OVERUJE -> "<div class=pending>${if (cesky) "Ověřuji přihlášení u PlayStation… Počkej na výsledek." else "Verifying your PlayStation sign-in… Please wait for the result."}</div>"
+            else -> (if (stav == PsnPokus.Stav.CHYBA) "<div class=err>${if (cesky) vysledek.popisChyby("cs") else EN_CHYBY[vysledek.chyba] + (vysledek.http?.let { " (HTTP $it)" } ?: "")}</div>"
+                else if (chyba) "<div class=err>${T[1]}</div>" else "") + """
                 <h2>1.</h2>
                 <p>${T[2]}</p>
                 <a class=btn href="${PsnPrihlaseni.ADRESA_PRIHLASENI}">${T[3]}</a>
@@ -114,6 +129,7 @@ class PrihlaseniTelefonem(private val cesky: Boolean, private val priKodu: (Stri
         }
         return """<!DOCTYPE html><html><head><meta charset="utf-8">
             <meta name="viewport" content="width=device-width,initial-scale=1">
+            ${if (stav == PsnPokus.Stav.OVERUJE) "<meta http-equiv=refresh content=\"1;url=/stav\">" else ""}
             <title>PlayCaption</title><style>
             body{background:#111;color:#eee;font-family:sans-serif;margin:0;padding:20px;max-width:560px}
             h1{color:#e5091a;margin:0 0 6px}h2{margin:22px 0 4px;color:#e5091a}
@@ -122,6 +138,7 @@ class PrihlaseniTelefonem(private val cesky: Boolean, private val priKodu: (Stri
                  padding:16px;font-size:18px;font-weight:bold;text-align:center;text-decoration:none;margin-top:8px}
             textarea{width:100%;box-sizing:border-box;font-size:15px;border-radius:10px;padding:10px;background:#222;color:#fff;border:1px solid #555}
             .ok{background:#14532d;padding:20px;border-radius:14px;font-size:20px;margin-top:20px}
+            .pending{background:#25304d;padding:20px;border-radius:14px;font-size:20px;margin-top:20px}
             .err{background:#5b1111;padding:14px;border-radius:12px;margin-top:12px}
             .dva{display:flex;gap:12px;margin:10px 0}
             .tel{flex:1;border:3px solid #555;border-radius:22px;overflow:hidden;background:#fff}
@@ -135,13 +152,23 @@ class PrihlaseniTelefonem(private val cesky: Boolean, private val priKodu: (Stri
 
     companion object {
         const val PORT = 8765
+        private val EN_CHYBY = mapOf(
+            "psnKod" to "Sony rejected the sign-in code. Sign in again and paste the new address.",
+            "psnSony" to "Sony rejected account verification. Try signing in again later.",
+            "psnLimit" to "Sony received too many requests. Wait a while before signing in again.",
+            "psnCas" to "Sony did not respond in time. Check your internet connection and sign in again.",
+            "psnSit" to "Could not connect to Sony. Check the internet connection on the device running PlayCaption.",
+            "psnOdpoved" to "Sony returned an invalid account response. The account was not saved; sign in again.",
+            "psnUlozeni" to "Could not save the account on the device running PlayCaption. Try again.",
+            "psnStranka" to "Could not open the local sign-in page. Close other PlayCaption instances and open sign-in again."
+        )
 
         private val CS = listOf(
             "✔ Hotovo! Účet je v televizi. Můžeš tuhle stránku zavřít a pokračovat na televizi.",
             "✘ V adrese jsem nenašel kód. Zkopíruj prosím celou adresu z řádku s adresou (musí obsahovat „code=“).",
             "Přihlas se k PlayStation <b>DRUHÝM účtem z PS5 – ne tím hlavním, na kterém hraješ</b>.",
             "Přihlásit se k PlayStation",
-            "Po přihlášení se ukáže <b>BÍLÁ (prázdná) stránka</b> nebo chyba. <b>To je správně</b> – přihlášení proběhlo. Vypadá nějak takhle:",
+            "Po přihlášení se může ukázat <b>BÍLÁ stránka</b> nebo chyba. Pokud adresa obsahuje <b>code=</b>, pokračuj níže. Účet ještě není uložený. Stránka může vypadat takhle:",
             "Vložit do televize",
             "1. klepni sem",
             "bílá stránka",
@@ -164,7 +191,7 @@ class PrihlaseniTelefonem(private val cesky: Boolean, private val priKodu: (Stri
             "✘ No code found in the address. Please copy the whole address from the bar at the top (it must contain “code=”).",
             "Sign in with your <b>SECOND PS5 account – not the main one you play on</b>.",
             "Sign in to PlayStation",
-            "After signing in you'll see a <b>WHITE (blank) page</b> or an error. <b>That's correct</b> – you're signed in. It looks like this:",
+            "After signing in you may see a <b>WHITE page</b> or an error. If the address contains <b>code=</b>, continue below. The account has not been saved yet. The page may look like this:",
             "Send to TV",
             "1. tap here",
             "white page",

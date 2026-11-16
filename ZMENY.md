@@ -4,6 +4,17 @@
 Od verze 0.10 se vyvíjí jen jedna aplikace (dřívější NextGen, větev `master`) – umí „Jen televize“ i „S telefonem“.
 Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCode + versionName) a sem se dopíše, co je nového.
 
+## Nevydané změny
+
+- PSN přihlášení: prohlížeč potvrzuje uložený účet až po ověření u Sony, kontrole
+  Account ID a úspěšném zápisu na zařízení. Během ověřování ukazuje průběh;
+  konkrétní chyba zůstává viditelná v aplikaci i na webové stránce.
+- Opakované odeslání stejného kódu nespouští další výměnu. Zrušený pokus nesmí
+  později přepsat účet; PIN párování čeká na dokončené přihlášení.
+- Instrukce rozlišují telefon/tablet a Android TV. Telefon u LG/Samsungu zadává
+  PIN z PS5 přímo, bez návratu přes Home na TV. Android TV zachovává přihlášení
+  telefonem přes QR a místní síť. Verze APK ani TV přijímačů se tímto krokem nemění.
+
 ## 0.21 (versionCode 33)
 
 Co je nového pro hráče:
