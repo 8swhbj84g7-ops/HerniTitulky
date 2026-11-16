@@ -151,13 +151,13 @@ class TelefonActivity : Activity() {
         obnovTvTlacitko()
     }
 
-    /**
-     * Telefon odložený (zamčený) → za 1 min spojení s PS5 ukončit.
-     * Zamčený telefon totiž nedostane zprávu "PS5 si bere televize" (Wi-Fi spí) a držel by PS5
-     * dál – televize by se pak nemohla připojit ("already in use").
-     */
+    /** Původní předávání Android TV ponechává minutový limit; LG potřebuje telefon dál. */
+    private fun pokracovatNaLg() = TelefonPozadi.pokracovatNaLg(RemotePlayService.aktivni,
+        Propojeni.Vysilac.cilIp, TvProfily.aktivniId?.let { televize.najdi(it)?.platforma })
+
     private val odlozeno = Runnable {
-        if (!isFinishing) finish()
+        // Cíl se mohl změnit i po naplánování tohoto callbacku.
+        if (!isFinishing && !pokracovatNaLg()) finish()
     }
 
     /** PlayCaption je v pozadí (foťák, jiná aplikace…). */
@@ -165,12 +165,12 @@ class TelefonActivity : Activity() {
 
     /**
      * Odpojit se jen když je telefon ZAMČENÝ (displej zhasl) – ne když je jen otevřená jiná
-     * aplikace (třeba foťák při natáčení videa). Zhasne displej → za 1 min konec.
+     * aplikace (třeba foťák při natáčení videa). Aktivní výstup do LG pokračuje.
      */
     private val displej = object : android.content.BroadcastReceiver() {
         override fun onReceive(c: android.content.Context?, i: Intent?) {
             when (i?.action) {
-                Intent.ACTION_SCREEN_OFF -> if (vPozadi) { ui.removeCallbacks(odlozeno); ui.postDelayed(odlozeno, 60_000) }
+                Intent.ACTION_SCREEN_OFF -> if (vPozadi && !pokracovatNaLg()) { ui.removeCallbacks(odlozeno); ui.postDelayed(odlozeno, 60_000) }
                 Intent.ACTION_SCREEN_ON -> ui.removeCallbacks(odlozeno)
             }
         }
@@ -194,7 +194,7 @@ class TelefonActivity : Activity() {
             vPozadi = true
             // displej už nesvítí (telefon zamčený) → za 1 min konec; svítí (jiná aplikace) → čekat na zhasnutí
             val sviti = runCatching { (getSystemService(POWER_SERVICE) as android.os.PowerManager).isInteractive }.getOrDefault(false)
-            if (!sviti) ui.postDelayed(odlozeno, 60_000)
+            if (!sviti && !pokracovatNaLg()) ui.postDelayed(odlozeno, 60_000)
         }
         super.onStop()
     }
@@ -226,6 +226,7 @@ class TelefonActivity : Activity() {
     }
 
     private fun obnovTvTlacitko() {
+        RemotePlayService.obnovNapajeni(this)
         if (!::tvTlacitko.isInitialized) return
         // přepínač "Titulky: 📺 Televize | 📱 Telefon" – zeleně to, kde se titulky právě ukazují
         val naTv = Propojeni.Vysilac.cilIp != null

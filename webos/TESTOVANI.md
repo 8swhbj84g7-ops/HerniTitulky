@@ -294,3 +294,27 @@ stránkuje aktuální repliku a potvrzuje její dočtení.
   že Story potlačí pouze standardní titulky; kanál voleb dál funguje a po
   vypnutí Story se obnoví PCT1 heartbeat.
 - Tento záznam neprohlašuje nové hraní s integrovanou verzí za dokončené.
+
+
+## Android odesílač pro LG při zhasnutém displeji
+
+Větev `codex/lg-screen-off` ruší minutové ukončení pouze pro aktivní LG výstup
+s konkrétní IP a profilem webOS. CPU zámek vlastní RemotePlayService; změna
+výstupu, zastavení spojení i zánik služby ho uvolňují. Původní Android TV,
+Samsung, místní výstup a neznámá platforma mají původní pravidla.
+
+JVM `TelefonPozadiTest` ověřuje rozhodnutí pro LG, ostatní platformy a změnu
+výstupu/stavu. Neověřuje skutečné chování Android napájení.
+
+Fyzická přejímka zatím neproběhla (tablet není dostupný). Při nejbližším testu:
+
+1. Připojit konzoli a vybrat LG; ověřit pohyb snímků, OCR a titulky na TV.
+2. Ručně zamknout Android zařízení na alespoň dvě minuty. Ze záznamu ověřit,
+   že snímky/OCR i odesílání pokračují; samostatně Standardní a Story.
+3. Odemknout, změnit výstup na místní/Android TV a ověřit původní předávání.
+4. Po Zastavit ověřit v `adb shell dumpsys power`, že nezůstává zámek
+   `playcaption:lg-stream`. Prověřit i ukončení služby a opětovné připojení.
+
+CPU zámek a foreground služba nejsou důkaz funkčnosti při všech úsporách energie,
+Doze a zásazích výrobce telefonu. Bez fyzického testu netvrdit podporu zamčeného
+telefonu za potvrzenou; nepřidávat kvůli tomu automaticky další oprávnění.

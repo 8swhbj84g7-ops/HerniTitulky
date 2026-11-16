@@ -163,6 +163,11 @@ class RemotePlayService : Service() {
     @Volatile private var snimkuCelkem = 0
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_NAPAJENI) {
+            if (aktivni) { drzWifi(napajeniZapnuto); return START_STICKY }
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
         startAsForeground()
         when (intent?.action) {
             ACTION_PREPNOUT -> {
@@ -242,8 +247,23 @@ class RemotePlayService : Service() {
      * zpoždění, jako to dělají aplikace na streamování her.
      */
     private var wifiZamek: android.net.wifi.WifiManager.WifiLock? = null
+    private var cpuZamek: android.os.PowerManager.WakeLock? = null
+    private var napajeniZapnuto = false
 
+    @android.annotation.SuppressLint("WakelockTimeout")
     private fun drzWifi(ano: Boolean) {
+        napajeniZapnuto = ano
+        runCatching {
+            val lg = TelefonPozadi.pokracovatNaLg(ano && aktivni, Propojeni.Vysilac.cilIp,
+                TvProfily.aktivniId?.let { TvProfily(this).najdi(it)?.platforma })
+            if (lg) {
+                if (cpuZamek == null) cpuZamek = (getSystemService(POWER_SERVICE) as android.os.PowerManager)
+                    .newWakeLock(android.os.PowerManager.PARTIAL_WAKE_LOCK, "playcaption:lg-stream")
+                    .apply { setReferenceCounted(false) }
+                // Jen aktivní LG stream; uvolní se při změně výstupu, zastavení i zániku služby.
+                if (cpuZamek?.isHeld != true) cpuZamek?.acquire()
+            } else if (cpuZamek?.isHeld == true) cpuZamek?.release()
+        }.onFailure { zapis("[napájení LG: ${it.javaClass.simpleName}]") }
         runCatching {
             if (ano) {
                 if (wifiZamek == null) {
@@ -2190,7 +2210,15 @@ class RemotePlayService : Service() {
     companion object {
         @Volatile var pribehStav = "Příběh: čekám na Remote Play…"
         const val ACTION_STOP = "cz.titulky.tv.REMOTE_STOP"
+        private const val ACTION_NAPAJENI = "cz.titulky.tv.REMOTE_NAPAJENI"
         const val ACTION_PREPNOUT = "cz.titulky.tv.REMOTE_PREPNOUT"
+
+        /** Aktualizace již běžící služby po změně cíle, bez nového připojení ke konzoli. */
+        fun obnovNapajeni(context: android.content.Context) {
+            if (aktivni) runCatching {
+                context.startService(Intent(context, RemotePlayService::class.java).setAction(ACTION_NAPAJENI))
+            }
+        }
 
         /** Volba tlačítkem ⇄: když jsou zapnuté obě konzole, hrát na Xboxu (jinak PS5). */
         fun preferXbox(context: android.content.Context) =

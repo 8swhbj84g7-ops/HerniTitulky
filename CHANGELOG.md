@@ -1,5 +1,10 @@
 # Changelog
 
+## Nevydáno
+
+- Android při aktivním výstupu do LG nepoužije minutové ukončení po zhasnutí displeje. Služba pro tento stream drží CPU zámek a uvolní jej při změně výstupu, zastavení a zániku; původní Android TV a ostatní režimy zachovávají dosavadní limit. Chování na zamčeném fyzickém zařízení ještě vyžaduje přejímku.
+- README upřesňuje společný překladač a proměnlivé zpoždění Story i rozdíl HDMI signálu a interního vykreslování hry.
+
 ## 0.21
 
 - Story experiment: konzervativní skládání nedokončených anglických vět před překladem, ID/revize zdrojů, omezené čekání a oddělení následující věty. Volby a přetížená fronta čekání ukončí; Standardní režim a LG protokol zůstávají. Bez oprav jednotlivých slov a bez AI služby. Herní přejímka ještě probíhá.

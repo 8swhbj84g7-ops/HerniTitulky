@@ -13,6 +13,16 @@ PlayCaption čte anglické titulky ze hry, překládá je a zobrazuje česky př
 - Pro **Samsung (Tizen)** je dostupný experimentální přijímač titulků z Android telefonu/tabletu: [návod pro Samsung](tizen/NAVOD-SAMSUNG.md). Vyžaduje Developer Mode a účet Samsung; instalaci zatím provádí externí nástroj, protože Samsung vyžaduje podpis pro konkrétní televizi.
 - Projekt je ve stavu **beta**, sledujte [Releases](https://github.com/AdamRuzick4/PlayCaption-app/releases).
 
+Příběhový režim používá stejný hlavní překladač jako Standardní režim. Přidává
+čtecí frontu a omezené skládání některých nedokončených anglických vět. Větší
+kontext může pomoci překladu, ale nejde o jiný překladový model ani o záruku
+vyšší kvality. Zpoždění závisí na OCR, síti, skládání vět a délce fronty;
+pevné zpoždění 1–2 sekundy negarantujeme.
+
+Údaj Hz/FPS nebo rozlišení v informacích televize popisuje vstupní HDMI signál,
+nikoli automaticky interní rozlišení a počet unikátních snímků vykreslených hrou.
+Samotná fotografie tohoto údaje neprokazuje vliv Remote Play na výkon hry.
+
 ## Stažení
 
 Nejnovější verze: [Releases](https://github.com/AdamRuzick4/PlayCaption-app/releases), soubor `PlayCaption_beta_*.apk`.
