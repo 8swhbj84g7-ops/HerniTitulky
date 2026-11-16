@@ -2,6 +2,32 @@
 
 ## Stav – 16. 11. 2026
 
+### Dodatečná oprava životnosti plochy
+
+Každá Session nyní vlastní svůj GlSnimac nebo ImageReader. Při vytvoření se
+výstup převede z přípravných polí služby do registru konkrétní Session; další
+spust() ani onDestroy() už její živou plochu nezavírají. Registr ji drží i při
+zablokování nebo výjimce v nativním úklidu a opakované zastavení nezačne druhý
+úklid stejné relace.
+
+Pořadí je stop → úspěšné dispose(join/free) → uvolnění jejího výstupu.
+GL zavření pak provede vlastní GL vlákno. Pokud dispose čeká nebo vyhodí chybu,
+výstup se neuvolní násilím ani pomocí GC. V logu je samostatný krok
+„uvolnění výstupu“, který nesmí předcházet konci dispose. Obslužné vlákno
+ImageReader zůstává živé do dokončení všech výstupů této instance služby;
+neplatné staré snímky pouze odčerpává a zavírá, nespouští nad nimi OCR.
+
+Při přejímce zaznamenat pořadí pro odpovídající ID při předávání, opětovném
+připojení i konci služby. Nativní pád se nemusí dostat do pad.txt; na TCL
+proto zachytit také logcat. Telefonní Záznam obsahuje kroky a Java stacky
+i bez připojení ADB, ale nenahradí celou nativní diagnostiku.
+
+Po této opravě prošlo 242 JVM testů a sestavení aplikace i instrumentačního APK.
+Šest nových regresí ověřuje pořadí zavření, čekající a chybný dispose, nezávislost
+výstupů dvou relací a oba směry dokončení služby/dekodérů včetně prázdné služby.
+Prošly i tři webOS Node sady, Samsung služba a git diff --check; Samsung vykreslení
+se přeskočilo kvůli chybějícímu Playwrightu. Přejímka na telefonu a TCL stále zbývá.
+
 Lokální rozšíření draftu zahrnuje také aktuální master s #16 a integraci #17;
 před sloučením této větve nejprve sloučit #17 a zkontrolovat výsledný diff.
 Story rozšíření #20 tato větev neobsahuje. Žádná nová fyzická přejímka neproběhla.
@@ -67,7 +93,9 @@ Do nové aplikační diagnostiky se nepřenáší obsah nativních zpráv ani ú
 
 ### Přejímka doplnění na telefonu
 
-1. Použít tento draft na telefonu i TCL, stejný podpis, aktualizace bez mazání dat.
+1. Použít tento draft na telefonu i TCL. Na každém zařízení zachovat jeho vlastní
+   dosavadní podpis (telefon může mít release, TV debug); podpisy mezi zařízeními
+   stejné být nemusí. Aktualizace bez mazání dat.
    Před měřením jednou vynuceně ukončit původní zaseklé procesy, potom už ne.
 2. Ověřit obraz na telefonu, převzetí PS5 televizí a následné převzetí telefonem.
    Nejméně třikrát; zachytit stejné časy a ID z obou zařízení.
@@ -172,8 +200,9 @@ Dodané podklady zachycují různé situace:
 
 ## Opakovaná přejímka na stejné TCL – Adam
 
-1. Použít nové APK z aktuálního headu PR #15, sestavené stejným podpisem jako
-   dosavadní instalace. Aktualizovat bez mazání dat. Zapsat commit, model,
+1. Použít nové APK z aktuálního headu PR #15, na každém zařízení sestavené jeho
+   dosavadním podpisem. Telefon a TV mohou mít odlišné podpisy. Aktualizovat bez
+   mazání dat. Zapsat commit, model,
    firmware, cestu GL/YUV a čas. Před začátkem smí být nutné jednou vynuceně
    ukončit už visící starý proces; od začátku měřeného pokusu už nikoli.
 2. „Jen televize“: připojit PS5 a potvrdit příchod snímků. Na stejné GL cestě

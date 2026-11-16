@@ -6,6 +6,10 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
 
 ## Nevydané změny
 
+- GL plocha i YUV ImageReader patří konkrétní PS5 Session a zavírají se až po
+  úspěšném dispose. Nový pokus ani konec služby výstup živého dekodéru nezavře;
+  při blokujícím či chybném úklidu zůstává držený. Obsluha YUV pokračuje do
+  dokončení posledního výstupu, aby starý dekodér mohl dokončit práci.
 - Telefon i TV ignorují události již ukončené PS5 relace. Po třech připojených
   pokusech bez jediného snímku se opakování v procesu zastaví s návodem na
   Vynutit ukončení, bez mazání dat. První skutečný snímek průběžnou řadu selhání

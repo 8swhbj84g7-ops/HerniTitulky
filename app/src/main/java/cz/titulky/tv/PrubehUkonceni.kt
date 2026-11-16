@@ -17,20 +17,23 @@ internal class PrubehUkonceni(
 
     init { zapis("[PS5 konec #$id] začátek") }
 
-    fun ukonci(stop: () -> Unit, dispose: () -> Unit) {
+    fun ukonci(stop: () -> Unit, dispose: () -> Unit, uvolniVystup: (() -> Unit)? = null) {
         // TCL blokuje v odpojení Surface; nejprve zastavit síť, dekodér uvolní dispose až po join.
         proved("stop", stop)
-        proved("dispose(join/free)", dispose)
+        if (proved("dispose(join/free)", dispose) && uvolniVystup != null)
+            proved("uvolnění výstupu", uvolniVystup)
     }
 
-    fun proved(nazev: String, akce: () -> Unit) {
+    fun proved(nazev: String, akce: () -> Unit): Boolean {
         val k = Krok(nazev, ted(), Thread.currentThread())
         krok = k
         zapis("[PS5 konec #$id] $nazev začátek")
-        try {
+        return try {
             akce()
+            true
         } catch (e: Throwable) {
             zapis("[PS5 konec #$id] $nazev chyba ${e.javaClass.simpleName}")
+            false
         } finally {
             krok = null
             zapis("[PS5 konec #$id] $nazev konec ${ted() - k.od} ms")

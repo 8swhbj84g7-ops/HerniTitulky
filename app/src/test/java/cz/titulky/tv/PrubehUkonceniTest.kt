@@ -4,6 +4,51 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class PrubehUkonceniTest {
+    @Test fun vystupSeZavreAzPoDokoncenemDispose() {
+        val calls = mutableListOf<String>()
+        val p = PrubehUkonceni("test", { 0L }, {})
+        p.ukonci(stop = { calls += "stop" }, dispose = { calls += "dispose" }, uvolniVystup = {
+            assertEquals(listOf("stop", "dispose"), calls)
+            calls += "výstup"
+        })
+        assertEquals(listOf("stop", "dispose", "výstup"), calls)
+    }
+
+    @Test fun cekajiciStaraRelaceDrziSvujVystupANezavreVystupNoveRelace() {
+        val inside = java.util.concurrent.CountDownLatch(1)
+        val resume = java.util.concurrent.CountDownLatch(1)
+        val closed = java.util.concurrent.CopyOnWriteArrayList<String>()
+        val clock = java.util.concurrent.atomic.AtomicLong(0)
+        val p = PrubehUkonceni("stará", clock::get, {})
+        val worker = Thread {
+            p.ukonci(stop = {}, dispose = {
+                inside.countDown(); check(resume.await(3, java.util.concurrent.TimeUnit.SECONDS))
+            }, uvolniVystup = { closed += "stará" })
+            p.dokonci()
+        }.apply { isDaemon = true; start() }
+        try {
+            assertTrue(inside.await(2, java.util.concurrent.TimeUnit.SECONDS))
+            clock.set(5000); p.kontrola(5000)
+            assertTrue(closed.isEmpty())
+            val next = PrubehUkonceni("nová", clock::get, {})
+            next.ukonci(stop = {}, dispose = {}, uvolniVystup = { closed += "nová" })
+            assertEquals(listOf("nová"), closed)
+        } finally { resume.countDown(); worker.join(2000) }
+        assertFalse(worker.isAlive)
+        assertEquals(listOf("nová", "stará"), closed)
+    }
+
+    @Test fun selhaniDisposeNesmíUvolnitVystupPouzivanyNativnimVlaknem() {
+        val calls = mutableListOf<String>()
+        val log = mutableListOf<String>()
+        val p = PrubehUkonceni("test", { 0L }, log::add)
+        p.ukonci(stop = { calls += "stop" }, dispose = { error("native secret") },
+            uvolniVystup = { calls += "výstup" })
+        assertEquals(listOf("stop"), calls)
+        assertTrue(log.any { "dispose(join/free) chyba IllegalStateException" in it })
+        assertFalse(log.any { "native secret" in it })
+    }
+
     @Test fun ukonceniZastaviRelaciPredDisposeBezOdpojovaniSurface() {
         var cas = 0L
         val log = mutableListOf<String>()

@@ -36,6 +36,8 @@ class RemotePlayService : Service() {
     private var reader: ImageReader? = null
     private val vlakno = HandlerThread("remote-play").apply { start() }
     private val bg = Handler(vlakno.looper)
+    private val dokonceniVystupu = DokonceniVystupu { vlakno.quitSafely() }
+    private var zanikla = false
     private val ui = Handler(Looper.getMainLooper())
 
     /** Jedna čtečka (dvě najednou televize nestíhá – každá pak čte 2–3× pomaleji). */
@@ -549,6 +551,7 @@ class RemotePlayService : Service() {
     }
 
     private fun spust() {
+        if (zanikla) return
         if (hlidaniPs5.restartNutny) { zastavProRestart(); return }
         val udaje = RemotePlayUdaje(this)
         val ip = udaje.ipKonzole
@@ -579,7 +582,9 @@ class RemotePlayService : Service() {
         // Snímky z dekodéru přistanou sem (neukazují se nikde na obrazovce).
         // Televize: surový obraz YUV přes ImageReader.
         // Telefony (Xiaomi aj.) do YUV dekódovat neumí → obraz přes grafický čip (GlSnimac).
+        // Zde mohou zůstat jen výstupy neúspěšné přípravy, které ještě žádná Session nevlastní.
         snimac?.zavri(); snimac = null
+        reader?.close(); reader = null
         val plocha: android.view.Surface
         val relaceObrazu = relaceCteni.get()
         obrazPresGl = telefon || volbaObrazu.gl
@@ -599,8 +604,8 @@ class RemotePlayService : Service() {
                 // volby odpovědí (žlutý rámeček) – vlastní čtečka, titulky nijak nebrzdí
                 if (Volby.zapnuto) runCatching { ctiVolby(gl) }.onFailure { zapis("[CHYBA volby: ${it.message}]") }
             }
-            plocha = g.start()
             snimac = g
+            plocha = g.start()
         } else {
             val r = ImageReader.newInstance(SIRKA, VYSKA, ImageFormat.YUV_420_888, 3)
             reader = r
@@ -612,7 +617,9 @@ class RemotePlayService : Service() {
                         val volna = volnaCteckaProSnimek()
                         if (volna != null) zpracuj(img, volna) else img.close()
                     }
-                } catch (e: Throwable) { chybaObrazu(e) }
+                } catch (e: Throwable) {
+                    if (bezi && relaceObrazu == relaceCteni.get()) chybaObrazu(e)
+                }
             }, bg)
             plocha = r.surface
         }
@@ -639,7 +646,16 @@ class RemotePlayService : Service() {
             val id = idRelace(s)
             zapis("[PS5 relace #$id] vytvořena, cesta=${if (obrazPresGl) "GL" else "YUV"}, telefon=$telefon")
             zapis("[PS5 log #$id] po sessionCreate: před=$logPred B, nyní=${File(logSoubor).length()} B, knihovna=${if (PametObraz.knihovnaPc) "chiaki-pc" else "chiaki-jni"}, verbose=false")
-            synchronized(vsechnaSpojeni) { vsechnaSpojeni += s }
+            val vlastniSnimac = snimac
+            val vlastniReader = reader
+            dokonceniVystupu.pridej()
+            synchronized(vsechnaSpojeni) {
+                vsechnaSpojeni[s] = VystupPs5 {
+                    try { vlastniReader?.close() } finally { vlastniSnimac?.zavri() }
+                    dokonceniVystupu.uvolni()
+                }
+            }
+            snimac = null; reader = null
             s.eventCallback = { udalost -> ui.post {
                 if (udalost is ConnectedEvent || udalost is QuitEvent)
                     zapis("[PS5 událost #$id] ${udalost.javaClass.simpleName}, aktuální #${idRelace(session)}")
@@ -2179,7 +2195,8 @@ class RemotePlayService : Service() {
     /** Ukončit všechna spojení kromě aktuálního (visící spojení drží PS5 obsazenou). */
     private fun ukonciStareSpojeni() {
         val stara = synchronized(vsechnaSpojeni) {
-            vsechnaSpojeni.filter { it !== session }.also { vsechnaSpojeni.removeAll(it) }
+            vsechnaSpojeni.filter { (s, vystup) -> s !== session && !vystup.konci }
+                .also { it.values.forEach { vystup -> vystup.konci = true } }
         }
         if (stara.isEmpty()) return
         zapis("[ukončuji ${stara.size} staré spojení s PS5]")
@@ -2212,9 +2229,7 @@ class RemotePlayService : Service() {
         val s = session
         hlidaniPs5.ukonci(s)
         session = null
-        if (s != null) synchronized(vsechnaSpojeni) { vsechnaSpojeni.remove(s) }
         ukonciStareSpojeni()
-        if (s != null) ukonciVPozadi(listOf(s))
     }
 
     /**
@@ -2222,9 +2237,9 @@ class RemotePlayService : Service() {
      * jako hledání PS5 → hledání se zaseklo a aplikace „čekala navždy“ (pomohlo jen Vynutit ukončení).
      * Teď vlastní vlákno – hledání a nové připojení na něj nečekají.
      */
-    private fun ukonciVPozadi(spojeni: List<Session>) {
+    private fun ukonciVPozadi(spojeni: Map<Session, VystupPs5>) {
         Thread {
-            for (s in spojeni) {
+            for ((s, vystup) in spojeni) {
                 val id = idRelace(s)
                 val prubeh = PrubehUkonceni(id, android.os.SystemClock::elapsedRealtime, ::zapis)
                 val kontrola = diagnostikaKonce.scheduleAtFixedRate({ prubeh.kontrola(5000) },
@@ -2235,6 +2250,10 @@ class RemotePlayService : Service() {
                         dispose = {
                             s.dispose()
                             zapis("[PS5 log #$id] po dispose: sdílený chiaki.log=${File(filesDir, "chiaki.log").length()} B")
+                        },
+                        uvolniVystup = {
+                            vystup.zavri()
+                            synchronized(vsechnaSpojeni) { vsechnaSpojeni.remove(s) }
                         }
                     )
                 } finally {
@@ -2314,6 +2333,7 @@ class RemotePlayService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        zanikla = true
         ui.removeCallbacks(pribehHlidac)
         zrusPribeh()
         relaceCteni.incrementAndGet()
@@ -2325,12 +2345,14 @@ class RemotePlayService : Service() {
         posluchac?.zavri()
         posluchac = null
         if (pripojeno()) zastav("Remote Play zastaveno.")
+        ukonciStareSpojeni()
         bg.post {
-            runCatching { reader?.close() }
-            runCatching { snimac?.zavri() }
-            ctecky.forEach { it.zavri() }
-            prekladac.zavri()
-            vlakno.quitSafely()
+            try {
+                runCatching { reader?.close() }
+                runCatching { snimac?.zavri() }
+                ctecky.forEach { it.zavri() }
+                prekladac.zavri()
+            } finally { dokonceniVystupu.uklidHotov() }
         }
         super.onDestroy()
     }
@@ -2370,7 +2392,9 @@ class RemotePlayService : Service() {
          * Všechna spojení s PS5, která služba otevřela a ještě neukončila – i z dřívějšího běhu služby
          * (zůstávají v paměti aplikace, dokud se aplikace úplně nezavře).
          */
-        private val vsechnaSpojeni = mutableListOf<Session>()
+        private class VystupPs5(val zavri: () -> Unit) { var konci = false }
+        // Při visícím/chybném dispose držíme i Java výstup; nesmí jej mezitím uvolnit GC.
+        private val vsechnaSpojeni = mutableMapOf<Session, VystupPs5>()
         private val diagnostikaKonce by lazy {
             java.util.concurrent.Executors.newSingleThreadScheduledExecutor {
                 Thread(it, "ps5-diagnostika").apply { isDaemon = true }
