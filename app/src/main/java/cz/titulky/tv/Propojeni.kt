@@ -274,33 +274,59 @@ object Propojeni {
 
     /** Telefon: po dobu [doba] ms poslouchá ohlášení televizí a vrátí, co našel. */
     fun hledej(context: Context, doba: Long = 3500, hotovo: (List<Televize>) -> Unit) {
+        val profily = TvProfily(context)
+        val ulozene = profily.seznam().filter { profily.platformaPrijimace(it.id) == TvPlatforma.WEBOS }
+            .map { Televize(it.id, it.jmeno, it.ip, false) }
         Thread {
-            val nalez = LinkedHashMap<String, Televize>()
             val zamek = zamekSite(context)
-            runCatching {
+            val nalezene = try { hledejVSiti(doba, ulozene) } finally { runCatching { zamek?.release() } }
+            hotovo(nalezene)
+        }.apply { isDaemon = true }.start()
+    }
+
+    /** Broadcast zůstává pro Android TV i starší LG; známé LG navíc ověříme přímo. */
+    internal fun hledejVSiti(doba: Long, ulozene: List<Televize>): List<Televize> {
+        val nalez = LinkedHashMap<String, Televize>()
+        fun ted() = System.nanoTime() / 1_000_000
+        val nonce = java.util.UUID.randomUUID().toString().replace("-", "")
+        val dotaz = "PLAYCAPTION_FIND\t$nonce".toByteArray(Charsets.UTF_8)
+        runCatching {
+            // Přímé odpovědi patří jen tomuto hledání, i když běží další hledání na 41988.
+            DatagramSocket().use { prime ->
+                prime.soTimeout = 1
                 DatagramSocket(null).apply {
                     reuseAddress = true
                     broadcast = true
-                    soTimeout = 500
+                    soTimeout = 250
                     bind(InetSocketAddress(PORT_HLEDANI))
                 }.use { s ->
-                    val konec = System.currentTimeMillis() + doba
+                    val konec = ted() + doba
+                    var dalsiDotaz = 0L
                     val buf = ByteArray(512)
-                    while (System.currentTimeMillis() < konec) {
-                        val p = DatagramPacket(buf, buf.size)
-                        try { s.receive(p) } catch (e: SocketTimeoutException) { continue }
-                        val casti = String(p.data, 0, p.length, Charsets.UTF_8).split("\t")
-                        if (casti.size >= 3 && casti[0] == OHLASENI && casti[1] != Predavani.mojeId) {
+                    while (ted() < konec) {
+                        if (ted() >= dalsiDotaz) {
+                            ulozene.distinctBy { it.ip }.forEach { tv -> runCatching {
+                                val kam = InetAddress.getByName(tv.ip)
+                                prime.send(DatagramPacket(dotaz, dotaz.size, kam, PORT_TITULKY))
+                            } }
+                            dalsiDotaz = ted() + 1000
+                        }
+                        for (prijem in listOf(prime, s)) {
+                            val p = DatagramPacket(buf, buf.size)
+                            try { prijem.receive(p) } catch (e: SocketTimeoutException) { continue }
+                            val casti = String(p.data, 0, p.length, Charsets.UTF_8).split("\t")
+                            if (casti.size < 3 || casti[0] != OHLASENI || casti[1] == Predavani.mojeId) continue
                             val ip = p.address.hostAddress ?: continue
+                            if (prijem === prime && casti.size != 5) continue
+                            if (casti.size >= 5 && (casti[4] != nonce || ulozene.none { it.id == casti[1] && it.ip == ip })) continue
                             nalez[casti[1]] = Televize(casti[1], casti[2], ip,
                                 when (casti.getOrNull(3)?.trim()) { "1" -> true; "0" -> false; else -> null })
                         }
                     }
                 }
             }
-            runCatching { zamek?.release() }
-            hotovo(nalez.values.toList())
-        }.apply { isDaemon = true }.start()
+        }
+        return nalez.values.toList()
     }
 
     /**

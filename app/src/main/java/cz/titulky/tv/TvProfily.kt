@@ -39,9 +39,16 @@ class TvProfily internal constructor(
         return TvProfil(id, prefs.getString("$k.jmeno", id)!!, prefs.getString("$k.ip", "")!!, p)
     }
 
+    fun platformaPrijimace(id: String): TvPlatforma =
+        if (id.matches(Regex("lg-[a-f0-9]{12}"))) TvPlatforma.WEBOS else najdi(id)?.platforma ?: TvPlatforma.NEZNAMA
+
+    fun muzePrevzitSparovani(tv: Propojeni.Televize): Boolean =
+        platformaPrijimace(tv.id) != TvPlatforma.WEBOS &&
+            (tv.id != "rucne" || seznam().none { it.ip == tv.ip && platformaPrijimace(it.id) == TvPlatforma.WEBOS })
+
     fun zapamatuj(id: String, jmeno: String, ip: String, zvolena: TvPlatforma? = null): TvProfil {
         val stary = najdi(id)
-        val p = zvolena ?: stary?.platforma ?: TvPlatforma.NEZNAMA
+        val p = zvolena ?: stary?.platforma?.takeIf { it != TvPlatforma.NEZNAMA } ?: platformaPrijimace(id)
         val k = klic(id)
         // Staré společné nastavení patří jen původní TV, ne každému novému profilu.
         val puvodniId = puvodni.getString("tvId", null)
@@ -73,7 +80,7 @@ class TvProfily internal constructor(
 
     fun automaticky(nalezene: List<Propojeni.Televize>): Propojeni.Televize? {
         if (pouzeTelefon) return null
-        val vhodne = nalezene.filter { platforma == TvPlatforma.NEZNAMA || najdi(it.id)?.platforma == platforma }
+        val vhodne = nalezene.filter { platforma == TvPlatforma.NEZNAMA || platformaPrijimace(it.id) == platforma }
         // Po výběru konkrétní TV nepřesměrovat automaticky na jinou, když je původní vypnutá.
         return posledniId?.let { id -> vhodne.firstOrNull { it.id == id } } ?: vhodne.singleOrNull().takeIf { posledniId == null }
     }

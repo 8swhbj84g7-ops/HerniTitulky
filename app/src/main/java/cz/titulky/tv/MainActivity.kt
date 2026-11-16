@@ -448,25 +448,13 @@ class MainActivity : Activity() {
 
         if (telefon) {
             vpravo.addView(sekce(t("tvVystupNadpis")))
-            fun otevriTelevizi() {
-                TvVyber(this, { tv, platforma ->
-                    val profily = TvProfily(this)
-                    profily.zapamatuj(tv.id, tv.jmeno, tv.ip, platforma)
-                    profily.zapamatujVyber(tv.id)
-                    obnovTvKartu()
-                    if (Propojeni.Vysilac.cilIp != null) android.widget.Toast.makeText(this, t("tvUlozena").replace("{tv}", tv.jmeno), android.widget.Toast.LENGTH_LONG).show()
-                }, {
-                    TvProfily(this).pouzeTelefon = true
-                    obnovTvKartu()
-                }, { ukazHlavni() }).ukaz()
-            }
             val vystup = vodorovne().apply {
                 gravity = Gravity.CENTER_VERTICAL
                 background = vyber(KARTA)
                 minimumHeight = dp(88)
                 setPadding(dp(22), dp(16), dp(22), dp(16))
                 isFocusable = true
-                setOnClickListener { otevriTelevizi() }
+                setOnClickListener { vyberVystupTv() }
             }
             val popis = svisle()
             tvNazev = text("", 21f, Color.WHITE, tucne = true).apply {
@@ -481,7 +469,7 @@ class MainActivity : Activity() {
                 else (if (Propojeni.Vysilac.cilIp != null) TvProfily.aktivniId else p.posledniId)?.let { p.najdi(it) }
             })
             vystup.addView(popis, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { rightMargin = dp(16) })
-            vystup.addView(tlacitko(t("tvZmenitKratce") + "  ›", 18f) { otevriTelevizi() }.apply {
+            vystup.addView(tlacitko(t("tvZmenitKratce") + "  ›", 18f) { vyberVystupTv() }.apply {
                 minimumHeight = dp(48)
                 gravity = Gravity.CENTER
                 setPadding(dp(18), dp(12), dp(18), dp(12))
@@ -981,7 +969,27 @@ class MainActivity : Activity() {
         novyKod()
     }
 
+    private fun vyberVystupTv() {
+        TvVyber(this, { tv, platforma ->
+            val profily = TvProfily(this)
+            profily.zapamatuj(tv.id, tv.jmeno, tv.ip, platforma)
+            profily.zapamatujVyber(tv.id)
+            obnovTvKartu()
+            if (Propojeni.Vysilac.cilIp != null) android.widget.Toast.makeText(this, t("tvUlozena").replace("{tv}", tv.jmeno), android.widget.Toast.LENGTH_LONG).show()
+        }, {
+            TvProfily(this).pouzeTelefon = true
+            obnovTvKartu()
+        }, { ukazHlavni() }).ukaz()
+    }
+
     private fun prevzitOd(tv: Propojeni.Televize) {
+        if (!TvProfily(this).muzePrevzitSparovani(tv)) {
+            android.app.AlertDialog.Builder(this).setTitle("LG webOS")
+                .setMessage(t("lgPouzeVystup"))
+                .setPositiveButton(t("tvZmenit")) { _, _ -> vyberVystupTv() }
+                .setNegativeButton(t("zpet"), null).show()
+            return
+        }
         Thread {
             val odp = Propojeni.sparovaniDotaz(tv, "ZADOST\t${Propojeni.jmenoZarizeni(this)}")
             ui.post {

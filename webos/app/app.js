@@ -32,12 +32,15 @@
     var lastCaptionAt = 0;
     var otherSender = false;
     var receiverReady = false;
+    var receiverNetworkReady = true;
+    var receiverStartedAt = 0;
+    var receiverFailure = false;
     var receiverLabel = "LG PlayCaption";
     var receiverVersion = "neznámá";
 
     function updateInfo(now) {
         if (!controls || controls.hidden) return;
-        var state = activityWarning || protocolWarning || (!receiverReady ? statusText : lastDataAt ?
+        var state = activityWarning || protocolWarning || (!receiverReady || !receiverNetworkReady || receiverFailure ? statusText : lastDataAt ?
             (now - lastDataAt <= 5000 ? "Zařízení posílá platná data." : "Komunikace byla přerušena.") : "Přijímač je připraven, čeká na zařízení.");
         var saved = "nezvolen";
         try { saved = localStorage.getItem("playcaption-input") || saved; } catch (error) {}
@@ -253,14 +256,14 @@
             result = JSON.parse(raw);
             if (!result || typeof result !== "object") throw new Error("Neplatná odpověď");
         } catch (error) {
-            receiverReady = false;
+            receiverReady = false; receiverFailure = true;
             protocolWarning = "";
             clearText();
             showStatus("PlayCaption: neplatná odpověď přijímače. Zkus aplikaci spustit znovu.");
             return;
         }
         if (!result.returnValue) {
-            receiverReady = false;
+            receiverReady = false; receiverFailure = true;
             protocolWarning = "";
             clearText();
             showStatus("PlayCaption: " + (result.errorText || "přijímač není dostupný"));
@@ -275,12 +278,14 @@
         if (!packet) {
             var name = typeof result.name === "string" ? result.name.slice(0, 64) : "LG PlayCaption";
             receiverLabel = name; receiverReady = Boolean(result.ready);
-            showStatus(result.ready ? "PlayCaption LG · Čekám na zařízení. Vyber „" + name + "“ · OK / Zpět = nabídka" : "PlayCaption LG · Spouštím příjem…");
+            receiverNetworkReady = result.networkReady !== false;
+            if (receiverReady) receiverFailure = false;
+            showStatus(result.ready && !receiverNetworkReady ? "PlayCaption LG · Čekám na síť TV. Zkontroluj Wi-Fi nebo síťový kabel · OK / Zpět = nabídka" : result.ready ? "PlayCaption LG · Čekám na zařízení. Vyber „" + name + "“ · OK / Zpět = nabídka" : receiverFailure ? statusText : "PlayCaption LG · Spouštím příjem…");
             return;
         }
         var now = Date.now();
         if (packet.kind === "subtitle" || packet.kind === "story") protocolWarning = "";
-        receiverReady = true;
+        receiverReady = true; receiverFailure = false;
         lastDataAt = now;
         statusText = "Zařízení posílá platná data. OK / Zpět = nabídka";
         var connectionChanged = source !== result.source || (lastSeen && now - lastSeen > 5000);
@@ -327,18 +332,25 @@
 
     function start() {
         stop();
+        receiverStartedAt = Date.now(); receiverFailure = false;
         hint.textContent = "";
         showStatus("PlayCaption · Spouštím příjem…");
         if (typeof PalmServiceBridge === "undefined") {
             showStatus("PlayCaption: příjem je dostupný pouze na LG webOS.");
             return;
         }
-        bridge = new PalmServiceBridge();
-        bridge.onservicecallback = receive;
-        bridge.call("luna://cz.playcaption.overlaytest.receiver/listen", JSON.stringify({ subscribe: true }));
+        var request = new PalmServiceBridge();
+        bridge = request;
+        request.onservicecallback = function (raw) { if (bridge === request) receive(raw); };
+        try { request.call("luna://cz.playcaption.overlaytest.receiver/listen", JSON.stringify({ subscribe: true })); }
+        catch (error) { receiverFailure = true; showStatus("PlayCaption LG · Volání služby přijímače selhalo. Zavři aplikaci a spusť ji znovu."); }
         keepOverlayOpen();
         timer = setInterval(function () {
             var now = Date.now();
+            if (!receiverReady && !receiverFailure && now - receiverStartedAt >= 10000) {
+                receiverFailure = true;
+                showStatus("PlayCaption LG · Služba nepotvrdila spuštění příjmu do 10 s. Zavři aplikaci a spusť ji znovu · OK / Zpět = nabídka");
+            }
             if (receiverUI) {
                 if (lastSeen && now - lastSeen > 5000) receiverUI.pauseStory(now);
                 pauseMaskedStory(now);

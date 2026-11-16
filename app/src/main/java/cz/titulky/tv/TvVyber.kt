@@ -60,7 +60,7 @@ class TvVyber(
                 runCatching { hledam.dismiss() }
                 val platforma = televize.platforma
                 val vhodne = seznam.filter { tv ->
-                    val p = televize.najdi(tv.id)?.platforma ?: TvPlatforma.NEZNAMA
+                    val p = televize.platformaPrijimace(tv.id)
                     platforma == TvPlatforma.NEZNAMA || p == platforma || p == TvPlatforma.NEZNAMA
                 }
                 val ulozene = televize.seznam().filter { profil ->

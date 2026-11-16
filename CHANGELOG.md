@@ -2,6 +2,8 @@
 
 ## Nevydáno
 
+- LG přijímač 0.2.3: discovery obnovuje síťové adresy při běhu, reaguje na přímý dotaz uložené TV a ignoruje opožděné události starého socketu. Android zachovává broadcast pro Android TV/starší LG a navíc ověřuje známé LG přes IP, ID a náhodný identifikátor dotazu. Převzetí přihlášení z Android TV nepouští LG do nepodporovaného postupu. LG UI hlásí chybějící síť a nepotvrzený start příjmu do 10 s. Fyzické ověření problémové B4 ještě čeká.
+
 - Android LG instalátor: průvodce ukazuje kód, důvod a stav chyby vrácené TV, s možností text zkopírovat. Ukončené spojení a neplatná odpověď mají vlastní hlášky. Diagnostika vybírá jen omezená chybová pole, bez úplných odpovědí a přihlašovacích údajů.
 
 - LG přijímač 0.2.2: balení IPK používá pevné datum 1. 1. 2000 místo roku 1970, které může webOS 5.x odmítat chybou `-5: ipk verified failed`. Build kontroluje data v obou TAR archivech; regresní testy hlídají obsah, oprávnění a opakovatelnost. Chování přijímače a protokoly se nemění; ověření na webOS 5.6.2 ještě čeká na uživatele.
