@@ -8,6 +8,42 @@ import java.net.InetAddress
 import java.net.SocketTimeoutException
 
 class VysilacTest {
+    @Test fun viceRadkovyTextPoVypadkuOcrDojdeDoUdpCely() {
+        val radky = listOf("The Shoebox can store your items. Alan",
+            "can access stored items from any", "Shoebox in the Dark Place.")
+        val anglicky = radky.joinToString(" ")
+        // Pevná odpověď místo síťového překladače: tento test ověřuje úplnost přenosu, ne kvalitu češtiny.
+        val cesky = "Krabice na boty uchová tvoje věci. Alan k nim má přístup z kterékoli krabice na boty v Temném místě."
+        val text = TextVRamecku()
+        val prelozeno = mutableListOf<String>()
+        DatagramSocket(Propojeni.PORT_TITULKY, InetAddress.getByName("127.0.0.1")).use { tv ->
+            tv.soTimeout = 1000
+            try {
+                Propojeni.Vysilac.nastavCil("127.0.0.1", "LG test")
+                for ((i, ocr) in listOf(radky, listOf(radky.last()), listOf(radky.last()), radky).withIndex()) {
+                    text.zpracuj(ocr, true, i * 800L, "stejny")?.let {
+                        prelozeno += it
+                        assertEquals(anglicky, it)
+                        Propojeni.Vysilac.nastavVolby(listOf(cesky), Volby.VYBRANA_TEXT)
+                    }
+                }
+                assertEquals(listOf(anglicky), prelozeno)
+                var paket: List<String>
+                val doKdy = System.nanoTime() + 2_000_000_000L
+                do {
+                    val p = DatagramPacket(ByteArray(8192), 8192)
+                    tv.receive(p)
+                    paket = String(p.data, 0, p.length, Charsets.UTF_8).split("\t")
+                } while (System.nanoTime() < doKdy && (paket[0] != "PCV1" || paket[8].isEmpty()))
+                assertEquals("PCV1", paket[0])
+                assertEquals(Volby.VYBRANA_TEXT.toString(), paket[7])
+                assertEquals(cesky, paket[8])
+            } finally {
+                Propojeni.Vysilac.nastavCil(null, "")
+            }
+        }
+    }
+
     @Test fun storySuppressesOnlyStandardSubtitlesAndRestoresThemAfterSwitch() {
         DatagramSocket(Propojeni.PORT_TITULKY, InetAddress.getByName("127.0.0.1")).use { tv ->
             tv.soTimeout = 100

@@ -1,5 +1,26 @@
 # Kontrola LG přijímače před předáním
 
+## PC-001 – stabilizace víceřádkového OCR na Androidu, 16. 11. 2026
+
+- Větev `codex/pc-001-multiline-text` z `origin/master` (`bc5237d`). Bez vydání
+  a bez změny verze/protokolu LG nebo Samsung přijímače.
+- Před opravou cílený běh `:app:testDebugUnitTest --tests cz.titulky.tv.StabilitaTextuTest
+  --tests cz.titulky.tv.TextVRameckuTest` skončil dvěma selháními z 29 testů:
+  opakovaný výpadek horních řádků nahradil celý odstavec posledním řádkem.
+- Po opravě prošlo všech 202 JVM testů příkazem
+  `bash gradlew :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest`.
+  Sestavily se aplikační i instrumentační APK; instrumentační testy na zařízení
+  spuštěny nebyly. Sestavení přijímače navíc spustilo čtyři Python testy IPK
+  a šest Node sad LG (včetně skutečných UDP socketů).
+- Nové testy pokrývají opakovaně chybějící horní/prostřední řádky, prázdné OCR,
+  skutečné kratší znění při změně obrazu, zmizení, doplňování, opravy, reset
+  oblasti a otisk všech pixelů včetně změn mimo rychlý vzorek. Test `VysilacTest`
+  ověřil celý odstavec v reálném `PCV1` UDP paketu na loopbacku; překlad nahradila
+  pevná česká odpověď, nejde o měření kvality Google překladu.
+- Tablet ani Android emulátor nebyl dostupný. Nelze tím potvrdit původní scénu
+  Alan Wake 2, výkon na Android TV ani chování na měnícím se pozadí. Při další
+  herní přejímce použít postup a nové diagnostické počty řádků z `BACKLOG.md` PC-001.
+
 ## Krátké dialogy ve verzi 0.0.7 – 15. 11. 2026
 
 - Záznam z Redmi Pad Pro zachytil dvě chybné OCR varianty téže repliky v GTA V,

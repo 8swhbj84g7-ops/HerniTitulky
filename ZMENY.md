@@ -4,6 +4,15 @@
 Od verze 0.10 se vyvíjí jen jedna aplikace (dřívější NextGen, větev `master`) – umí „Jen televize“ i „S telefonem“.
 Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCode + versionName) a sem se dopíše, co je nového.
 
+## Nevydané změny
+
+- PC-001: Android zachová kompletní víceřádkový text, když OCR na nezměněném
+  obrazu opakovaně vynechá již přečtené řádky. Při skutečné změně snímku zůstává
+  původní potvrzování kratšího textu a zmizení; opravy a doplňování jsou zachované.
+- Žlutý rámeček nepřijímá opožděné OCR po zahájení novějšího čtení. Záznam navíc
+  rozlišuje počty řádků před/po výběru a stabilizaci. Původní scénu Alan Wake 2
+  je ještě potřeba ověřit při hraní; LG protokol, přijímač ani FPS se nemění.
+
 ## 0.21 (versionCode 33)
 
 Co je nového pro hráče:

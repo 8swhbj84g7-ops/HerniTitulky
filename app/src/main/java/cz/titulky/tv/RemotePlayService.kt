@@ -758,6 +758,7 @@ class RemotePlayService : Service() {
     ) {
         val relace = relaceCteni.get()
         val oblast = rucniOblast()?.joinToString(",") ?: "auto"
+        val otiskObrazu = OtiskOcr.sedy(vyrez.jas, vyrez.w, vyrez.h)
         // kde dřív byla nápověda (ve výřezu) → přepočítat do souřadnic čteného pásu
         val pasmaNapovedy = synchronized(napovedy) { napovedy.toList() }.map { (t, b) ->
             ((t - pas.nahore) * pas.meritko).toInt()..((b - pas.nahore) * pas.meritko).toInt()
@@ -842,8 +843,9 @@ class RemotePlayService : Service() {
                         zapis("[televize čte rychle – bez úsporného režimu a upozornění]")
                     }
                 }
-                zapis(ctecka.diagnostika)
-                if (!stabilitaTitulku.prijmi(text)) {
+                zapis("[OCR #$cislo, řádků ${titulek.radku}, obraz ${otiskObrazu.take(12)}] ${ctecka.diagnostika}")
+                if (!stabilitaTitulku.prijmi(text, otiskObrazu, titulek.radku)) {
+                    zapis("  → čekám na úplné/potvrzené OCR (${text.length} znaků)")
                     posledniOtisk = null // neúplný výsledek potvrdit dalším OCR, ne až za 3 s
                     return@prectiPosledniTitulek
                 }
@@ -1591,6 +1593,7 @@ class RemotePlayService : Service() {
     // ---------------------------------------------------------------- volby odpovědí (telefon)
 
     private val cteckaVoleb by lazy { Ctecka() }
+    private val platnostOcrVoleb = PlatnostPrekladu()
     @Volatile private var volbyCtu = false
     @Volatile private var volbyOd = 0L
     private var volbyDalsi = 0L
@@ -1649,19 +1652,23 @@ class RemotePlayService : Service() {
         if (otisk == volbyOtisk && ted - volbyCtenoKdy < 800) return
         volbyOtisk = otisk
         volbyCtenoKdy = ted
+        val otiskTextu = if (rezimText) OtiskOcr.barvy(barvy, w, h) else null
         // 2× zvětšit – volby bývají drobné písmo a čtečka pak přečte i řádek na světlém podbarvení
         val bmp = Bitmap.createScaledBitmap(Bitmap.createBitmap(barvy, w, h, Bitmap.Config.ARGB_8888), w * 2, h * 2, true)
         volbyCtu = true
         volbyOd = ted
+        val token = platnostOcrVoleb.novy()
         cteckaVoleb.prectiVolby(bmp, { radky ->
+            if (!platnostOcrVoleb.plati(token)) return@prectiVolby
             volbyCtu = false
             val boxy = radky.map { val r = it.second; android.graphics.Rect(r.left / 2, r.top / 2, r.right / 2, r.bottom / 2) }
             val vybrana = runCatching { zvyraznena(boxy, barvy, w, h) }.getOrDefault(-1)
             ui.post {
-                if (!bezi || !Volby.zapnuto || Volby.revize != revize || relace != relaceCteni.get()) return@post
-                if (rezimText) zpracujText(radky.map { it.first }) else zpracujVolby(radky.map { it.first }, vybrana)
+                if (!platnostOcrVoleb.plati(token) || !bezi || !Volby.zapnuto ||
+                    Volby.revize != revize || relace != relaceCteni.get()) return@post
+                if (rezimText) zpracujText(radky.map { it.first }, otiskTextu) else zpracujVolby(radky.map { it.first }, vybrana)
             }
-        }, { volbyCtu = false })
+        }, { if (platnostOcrVoleb.plati(token)) volbyCtu = false })
     }
 
     /**
@@ -1708,13 +1715,14 @@ class RemotePlayService : Service() {
      * Režim Text: řádky ve žlutém rámečku spojit do jednoho textu, přeložit jako celek a poslat
      * na televizi jedním oknem (vedle originálu). Drobné rozdíly ve čtení se nepřekládají znovu.
      */
-    private fun zpracujText(radky: List<String>) {
+    private fun zpracujText(radky: List<String>, otiskObrazu: String?) {
         val revize = Volby.revize
         val relace = relaceCteni.get()
         if (revizeTextu != revize) { textVRamecku.reset(); revizeTextu = revize }
         val vstup = if (Ctecka.jeNesmysl(TextVRamecku.spoj(radky))) emptyList() else radky
+        zapis("[OCR Text: řádků ${radky.size}, přijatých ${vstup.size}, obraz ${otiskObrazu?.take(12)}]")
         val text = textVRamecku.zpracuj(vstup, Volby.zapnuto && Volby.rezimText,
-            System.currentTimeMillis()) ?: return
+            System.currentTimeMillis(), otiskObrazu) ?: return
         if (text.isEmpty()) {
             volbyPosledni = emptyList()
             Propojeni.Vysilac.nastavVolby(emptyList(), -1)
@@ -2072,6 +2080,8 @@ class RemotePlayService : Service() {
     private fun zastav(zprava: String, ukazat: Boolean = true) {
         relaceCteni.incrementAndGet()
         platnostPrekladu.zrus()
+        platnostOcrVoleb.zrus()
+        volbyCtu = false
         stabilitaTitulku.reset()
         textVRamecku.reset()
         prectenoPosledne = ""
