@@ -1,5 +1,40 @@
 # Příběhový režim: čtecí fronta
 
+## Podpora výstupu a oprava Android TV – 16. 11. 2026
+
+- Větev `codex/story-receiver-capabilities` opravuje report z TCL 65C805 na
+  masteru `bc5237d`: zapnutí Story přestalo posílat PCT1, ale Android přijímač
+  PCS1 interpretuje jako předání spárování. Neznámý příkaz zahodil bez PCA1.
+  PCV1 zůstal funkční, proto mohly fungovat volby, zatímco dialogy chyběly.
+- Android TV nyní používá Standardní výstup PCT1. Je-li platforma známá, Story
+  tlačítko se znepřístupní a telefon zobrazí vysvětlení. Uložená předvolba Story
+  se nemaže. Toto není implementace Story protokolu na Android TV přijímači.
+- LG a Samsung se ověřují neškodným PCQ1; platná PCA1 musí přijít z připojené
+  adresy/portu a odpovídat aktuálnímu tokenu. Samsung 1.3.0 se tím nevylučuje.
+  Přijímač bez potvrzení zůstane na Standardním výstupu. U známé Android TV
+  se dotaz vůbec neposílá; neznámá platforma může podporu takto potvrdit.
+- Přijetí PCA1 nezruší právě rozpracovaný Standardní překlad. Standardní přenos
+  se potlačí až s první platnou Story stránkou; jeho starý text se odstraní
+  z cache bez smazání nápovědy a voleb. Při přepnutí cíle/předvolby se stará
+  fronta zruší. Ztráta jednotlivého ACK neodvolává již potvrzenou podporu.
+- Původní protokol a přijímače se nemění. Pro aktuální rozšířené pakety s časováním
+  nadále platí minimální podporované verze LG 0.2.1 a Samsung 1.3.0; samotné PCA1
+  nenahrazuje aktualizaci starých experimentálních variant LG.
+- Před opravou selhalo 5 z 8 cílených testů včetně skutečného UDP testu
+  „Story + Android TV → PCT1“. Po opravě prošlo všech 199 JVM testů a sestavení
+  aplikace i instrumentačního APK příkazem
+  `bash gradlew :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest`.
+- Nové testy pokrývají Android fallback, LG/Samsung potvrzení, přijímač bez odpovědi,
+  cizí port, starý token, párovací odpověď, změnu cíle, místní telefon a návrat
+  na Standardní bez opakování starého textu. Používají skutečné UDP sockety.
+- Prošly také `node tizen/test/test.cjs`, `node webos/test.cjs`,
+  `node webos/test-udp.cjs` a `node webos/test-story.cjs`. Samsung služba skutečně
+  odpověděla PCA1 ready/reading; její vykreslovací část se přeskočila, protože
+  není instalovaný Playwright. Instrumentační APK se pouze sestavilo, fyzická
+  TCL ani Samsung nebyly pro nové ověření dostupné. Release ani tag nevzniká.
+
+## Původní integrační MVP
+
 Větev `feature/story-mode`. Integrační MVP je napojené na Android překladač a LG přijímač 0.2.1. Standardní režim zůstává výchozí a zachovává dosavadní překladovou i zobrazovací cestu. Nový režim se zapíná v PlayCaption Test na obrazovce TelefonActivity.
 
 `CteciFronta.kt` je čistý Kotlin bez Android závislostí, vláken, sítě a vlastních hodin. Volání serializuje jediný vlastník, Android. LG zde nemá vlastní příběhovou frontu.
