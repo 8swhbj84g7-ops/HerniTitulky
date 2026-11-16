@@ -21,6 +21,8 @@ internal class StavObrazu {
     private var chybaUkonceni: String? = null
 
     @Synchronized fun zacni() { pripojenoOd = null; posledniSnimek = null; chyba = null; chybaUkonceni = null }
+    /** Konec relace bez nového pokusu (např. opožděná QuitEvent po fatální chybě): konkrétní důvod zůstává. */
+    @Synchronized fun zastaveno() { pripojenoOd = null; posledniSnimek = null; chyba = null }
     @Synchronized fun ukonciChybou(duvod: String) { chybaUkonceni = duvod }
     @Synchronized fun pripojeno(ted: Long) { pripojenoOd = ted }
     @Synchronized fun snimek(ted: Long) { posledniSnimek = ted; chyba = null }

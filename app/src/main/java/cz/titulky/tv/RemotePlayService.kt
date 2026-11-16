@@ -180,6 +180,7 @@ class RemotePlayService : Service() {
                 automat = false
                 aktivni = false
                 ui.removeCallbacks(hlidac)
+                obrazStav.zacni()
                 zastav("Remote Play zastaveno.")
                 stopSelf()
             }
@@ -2079,7 +2080,8 @@ class RemotePlayService : Service() {
     }
 
     private fun zastav(zprava: String, ukazat: Boolean = true) {
-        obrazStav.zacni()
+        // Fatální důvod smaže jen nový pokus (pripoj/start) nebo ruční zastavení, ne opožděná událost staré relace.
+        obrazStav.zastaveno()
         relaceCteni.incrementAndGet()
         platnostPrekladu.zrus()
         stabilitaTitulku.reset()

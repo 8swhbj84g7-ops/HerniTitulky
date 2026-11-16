@@ -21,6 +21,21 @@ class StavSpojeniTest {
         assertEquals(UrovenSpojeni.VYPNUTO, stav.prehled(6, false, false, "Remote Play zastaveno.").uroven)
     }
 
+    @Test fun lateQuitOfOldSessionKeepsFatalReasonButManualStopClearsIt() {
+        val stav = StavObrazu()
+        val reason = "PS5 chce PIN pro přihlášení – zatím nepodporováno ✘"
+        stav.zacni(); stav.pripojeno(0)
+        stav.zastaveno(); stav.ukonciChybou(reason)
+        // QuitEvent ukončované relace dorazí až po stopSelf a vede na zastav() → zastaveno().
+        stav.zastaveno(); stav.snimek(1)
+        val po = stav.prehled(2, false, false, "Remote Play ukončeno: stopped")
+        assertEquals(UrovenSpojeni.CHYBA, po.uroven)
+        assertEquals(reason, po.detail)
+        // Ruční zastavení (ACTION_STOP) volá zacni() a chybu uklidí.
+        stav.zacni(); stav.zastaveno()
+        assertEquals(UrovenSpojeni.VYPNUTO, stav.prehled(3, false, false, "Remote Play zastaveno.").uroven)
+    }
+
     @Test fun runningServiceAndHandshakeDoNotProveVideo() {
         val stav = StavObrazu()
         stav.zacni()
