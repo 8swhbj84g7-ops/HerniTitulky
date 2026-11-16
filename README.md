@@ -65,6 +65,7 @@ Stav spojení rozlišuje běh služby, spojení s konzolí a skutečný příjem
 Zvolená TV ani úspěšné odeslání UDP dat nepotvrzují jejich přijetí nebo zobrazení;
 aplikace to u výstupu výslovně uvádí. Aktuální chybu sítě a na Android TV také
 chybu překryvu najdeš na stavové obrazovce a v nabídce **Záznam**.
+Běžná obrazovka ukazuje stručné shrnutí; technické podrobnosti patří do Záznamu.
 
 Vyber LG webOS a projdi průvodcem. Jedno spárování slouží k instalaci, kontrole
 verze, aktualizaci i zobrazení platnosti Developer Mode. Přibalený přijímač se

@@ -37,11 +37,11 @@ object Zaznam {
         val verze = runCatching { a.packageManager.getPackageInfo(a.packageName, 0).versionName }.getOrNull()
         val jazyk = Nastaveni(a).jazykNeboCs
         val prijem = PrijemService.prehled()
-        val stavy = "\nObraz: " + Texty.spojeni(jazyk, RemotePlayService.prehledSpojeni()) +
+        val stavy = "\nObraz: " + Texty.spojeni(jazyk, RemotePlayService.prehledSpojeni(), podrobne = true) +
             "\nVýstup: " + (if (Propojeni.Vysilac.cilIp == null) "toto zařízení" else
-                Propojeni.Vysilac.cilJmeno + " · " + Texty.prenos(jazyk, Propojeni.Vysilac.stavPrenosu)) +
-            (if (PrijemService.bezi || prijem.uroven == UrovenSpojeni.CHYBA) "\nTV příjem: " + Texty.spojeni(jazyk, prijem) else "") +
-            OverlayService.chyba?.let { "\nPřekryv: " + Texty.spojeni(jazyk, it) }.orEmpty()
+                Propojeni.Vysilac.cilJmeno + " · " + Texty.prenos(jazyk, Propojeni.Vysilac.stavPrenosu, podrobne = true)) +
+            (if (PrijemService.bezi || prijem.uroven == UrovenSpojeni.CHYBA) "\nTV příjem: " + Texty.spojeni(jazyk, prijem, podrobne = true) else "") +
+            OverlayService.chyba?.let { "\nPřekryv: " + Texty.spojeni(jazyk, it, podrobne = true) }.orEmpty()
         val obsah = "Verze: $verze   Stav: ${RemotePlayService.stav}" + stavy + "\n\n=== pád ===\n" + konec("pad.txt", 25) +
             "\n\n=== spojení (připojení / odpojení) ===\n" + spojeni() +
             "\n\n=== titulky.log ===\n" + konec("titulky.log", 120) +

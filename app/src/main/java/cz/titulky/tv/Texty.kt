@@ -40,6 +40,7 @@ object Texty {
             "Connessione alla console tramite Riproduzione remota e associazione con PIN."),
         "sparovano" to listOf("Spárováno", "Spárované", "Gekoppelt", "Sparowano", "Associée", "Vinculada", "Associata"),
         "stavNavazuji" to listOf("Navazuji spojení s konzolí…", "Nadväzujem spojenie s konzolou…"),
+        "stavPodrobnosti" to listOf("Podrobnosti jsou v nabídce Záznam.", "Podrobnosti sú v ponuke Záznam."),
         "stavPozastaveno" to listOf("Překlad pozastavený", "Preklad pozastavený"),
         "stavCekaObraz" to listOf("Konzole připojena – čekám na první snímek", "Konzola pripojená – čakám na prvú snímku"),
         "stavBezObrazu" to listOf("Konzole připojena, ale zatím nepřišel žádný obraz", "Konzola pripojená, ale zatiaľ neprišiel žiadny obraz"),
@@ -517,10 +518,22 @@ object Texty {
 
     fun t(context: Context, klic: String) = t(Nastaveni(context).jazykNeboCs, klic)
 
-    internal fun spojeni(jazyk: String, stav: PrehledSpojeni) =
-        t(jazyk, stav.klic) + stav.detail.takeIf { it.isNotBlank() }?.let { "\n$it" }.orEmpty() +
+    internal fun spojeni(jazyk: String, stav: PrehledSpojeni, podrobne: Boolean = false): String {
+        val detail = when {
+            podrobne || stav.detail.isBlank() -> stav.detail
+            stav.klic != "stavNavazuji" -> t(jazyk, "stavPodrobnosti")
+            else -> {
+                val radek = stav.detail.lineSequence().firstOrNull { it.isNotBlank() }?.trim().orEmpty()
+                if (radek.length > 220 || radek != stav.detail.trim())
+                    radek.take(220) + "…\n" + t(jazyk, "stavPodrobnosti") else radek
+            }
+        }
+        return t(jazyk, stav.klic) + detail.takeIf { it.isNotBlank() }?.let { "\n$it" }.orEmpty() +
             stav.stariSnimkuMs?.let { "\n" + t(jazyk, "stavStariSnimku").replace("{sekundy}", (it / 1000).toString()) }.orEmpty()
+    }
 
-    internal fun prenos(jazyk: String, stav: PrehledPrenosu) =
-        t(jazyk, stav.klic) + stav.chyba?.let { "\n${t(jazyk, stav.duvodKlic)} ($it)" }.orEmpty()
+    internal fun prenos(jazyk: String, stav: PrehledPrenosu, podrobne: Boolean = false) =
+        t(jazyk, stav.klic) + stav.chyba?.let {
+            "\n${t(jazyk, stav.duvodKlic)}" + if (podrobne) " ($it)" else "\n" + t(jazyk, "stavPodrobnosti")
+        }.orEmpty()
 }

@@ -89,10 +89,33 @@ class StavSpojeniTest {
 
     @Test fun statusKeepsWholeReasonAndDistinguishesDataFromDeliveryInBothLanguages() {
         val reason = "PS5 používá jiné zařízení. " + "Konkrétní důvod. ".repeat(10)
-        assertTrue(Texty.spojeni("cs", PrehledSpojeni("stavNavazuji", UrovenSpojeni.CEKANI, reason)).endsWith(reason))
+        assertTrue(Texty.spojeni("cs", PrehledSpojeni("stavNavazuji", UrovenSpojeni.CEKANI, reason), podrobne = true).endsWith(reason))
         for (language in listOf("cs", "sk")) {
             val text = Texty.prenos(language, PrehledPrenosu(odeslano = true))
             assertTrue(text.contains(if (language == "cs") "nejsou potvrzené" else "nie sú potvrdené"))
         }
+    }
+
+    @Test fun normalUiCannotExpandNativeErrorIntoStackTraceButRecordKeepsDetails() {
+        val trace = "Remote Play ukončeno: " + "dlouhá chyba ".repeat(100) + "\n" +
+            "at native.function(file:123)\n".repeat(1000)
+        val state = PrehledSpojeni("stavNavazuji", UrovenSpojeni.CEKANI, trace)
+        val ui = Texty.spojeni("cs", state)
+        assertTrue(ui.length < 400)
+        assertTrue(ui.lines().size <= 3)
+        assertFalse(ui.contains("native.function"))
+        assertTrue(ui.contains("Záznam"))
+        assertTrue(Texty.spojeni("cs", state, podrobne = true).endsWith(trace))
+    }
+
+    @Test fun normalUiUsesHumanMessageAndTechnicalTypeStaysInRecord() {
+        val error = PrehledPrenosu(chyba = "UnknownHostException", duvodKlic = "sitAdresa")
+        val ui = Texty.prenos("cs", error)
+        assertTrue(ui.contains("Zkontroluj vybranou TV a její IP"))
+        assertFalse(ui.contains("Exception"))
+        assertTrue(Texty.prenos("cs", error, podrobne = true).contains("UnknownHostException"))
+        val overlay = PrehledSpojeni("prekryvOkno", UrovenSpojeni.CHYBA, "titulky: BadTokenException")
+        assertFalse(Texty.spojeni("cs", overlay).contains("Exception"))
+        assertTrue(Texty.spojeni("cs", overlay, podrobne = true).contains("BadTokenException"))
     }
 }

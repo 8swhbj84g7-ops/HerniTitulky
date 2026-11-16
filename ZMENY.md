@@ -7,7 +7,8 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
 ## Připravené změny (nevydáno)
 
 - Stav konzole už nezelená pouhým spuštěním služby: rozlišuje čekání na spojení,
-  čekání na první snímek, příjem a výpadek obrazu. Důvody chyb se nezkracují.
+  čekání na první snímek, příjem a výpadek obrazu. V běžném UI jsou krátké hlášky;
+  úplné důvody a technické podrobnosti zůstávají v Záznamu.
 - Výstup do TV ukazuje chyby UDP odesílání a otevřeně uvádí, že přijetí a zobrazení
   nejsou potvrzené. Android přijímač hlásí chybu soketu, oprávnění či okna překryvu
   a skrytí mimo TV vstup. Aktuální stavy jsou i v Záznamu.
