@@ -6,6 +6,13 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
 
 ## Nevydané změny
 
+- Telefon i TV ignorují události již ukončené PS5 relace. Po třech připojených
+  pokusech bez jediného snímku se opakování v procesu zastaví s návodem na
+  Vynutit ukončení, bez mazání dat. První skutečný snímek průběžnou řadu selhání
+  vyčistí; samotný handshake nikoli. Obsazení PS5 má samostatné počítadlo a log.
+- PS5 diagnostika zaznamená první dekódovaný snímek z GL/YUV/paměti i na telefonu
+  a velikost sdíleného nativního logu před/po vytvoření, po připojení a po úklidu.
+  Prázdný chiaki.log se neinterpretuje jako důkaz chybějících video paketů.
 - Diagnostika PS5 bez obrazu: ID relací, délky jednotlivých kroků ukončování,
   upozornění se stackem při překročení pěti sekund a záznam hlídače/YUV/GL.
   Adamův report z TCL potvrdil blokování `setSurface(null)` před `stop()`.

@@ -2,11 +2,97 @@
 
 ## Stav – 16. 11. 2026
 
+Lokální rozšíření draftu zahrnuje také aktuální master s #16 a integraci #17;
+před sloučením této větve nejprve sloučit #17 a zkontrolovat výsledný diff.
+Story rozšíření #20 tato větev neobsahuje. Žádná nová fyzická přejímka neproběhla.
+
 PR #15 zůstává draft. Adam předal přejímku na TCL 65C805, která potvrdila
 zablokování `ps5-konec` v `setSurface(null)` ještě před zavoláním `stop()`.
 Níže je úzká oprava. Její nové sestavení ještě nebylo ověřené na stejné TCL;
 bez opakované přejímky PR neslučovat. Původní soubory `ZALOHA\tv_titulky.log`
 a `ZALOHA\diag_vlakna\*` jsou u Adama, na tomto Macu nejsou k dispozici.
+
+## Dodatečný report telefonu POCO F8 Pro
+
+Předané záznamy z 0.22-test3 (075b9d6, tedy bez opravy #15) ukazují obraz
+před převzetím PS5 v 22:27:09, následná odmítnutí obsazené konzole a později
+úspěšné handshaky bez snímků. V 22:38:44 a 22:43:44 po hlídači chybí
+událost Stopped; samotná její absence ale ještě neprokazuje konkrétní JNI deadlock.
+Restart PS5 22:44:22 podle logu nepomohl. Obnovení obrazu až po vynuceném
+ukončení telefonu v 22:48 je předané pozorování; přiložené textové logy končí
+před ním. Ukazuje to na stav v procesu telefonu, nerozlišuje to síťový vstup,
+dekodér, Surface ani opožděné události. Telefonní stack zatím chybí.
+Čítač 1801 v tehdejším řádku „za 30 s“ je kumulativní od začátku relace,
+nikoli počet snímků v tomto třicetisekundovém okně.
+
+Kontrola kódu našla, že callbacky starých Session bez ověření zdroje volaly
+onUdalost pro aktuální relaci. Nově se přijímají pouze callbacky aktuální Session;
+ta je registrovaná ještě před startem. Starý ConnectedEvent tak nesmaže počítadla
+a starý QuitEvent nezastaví nové spojení. Opožděný desetisekundový test je rovněž
+svázaný s původní Session; staré GL/YUV callbacky kontrolují generaci čtení.
+
+Po třech různých připojených relacích bez jediného dekódovaného snímku se automatické
+pokusy zastaví a zůstane konkrétní důvod s návodem na Vynutit ukončení PlayCaption
+na příslušném zařízení. Nevydává se to za automatickou opravu dekodéru. Pojistka
+platí pro celý proces, přežije nový Service, Stop i Hotovo – hrát. První skutečný
+snímek před aktivací pojistky řadu vynuluje; samotný handshake ji nemaže.
+Odmítnutá nepřipojená relace se do této trojice nepočítá. Xbox tato pojistka neřídí.
+
+Počítadlo po sobě jdoucích already-in-use odpovědí je oddělené od backoffu
+neuspechu a zapisuje se s ID relace. Od šesté odpovědi hláška připouští jak jiné
+zařízení, tak neukončenou vlastní relaci. Nelze z ní pravdivě určit vlastníka PS5.
+Dodaná fotografie z 22:32 již obsahuje původní zpřísněnou hlášku; tvrzení, že se
+nikdy neukázala, proto není tímto souborem důkazů potvrzené.
+
+### Proč může chiaki.log ukazovat nulu
+
+Referenční [JNI logger](https://github.com/505e06b2/Chiaki-TV/blob/f814cf69d636f149ad5a3cfffd19cb22da90beda/android/app/src/main/cpp/log.c#L68)
+otevírá soubor s w+ při každé nové Session a zapisuje přes bufferované fwrite
+bez průběžného fflush; uzavře jej až při úklidu. Není to nezávislý důkaz přesného
+chování upravené telefonní binárky. V Kotlinu se sdílený chiaki.log nově nemaže,
+nemění se verbose ani nativní knihovny. Přidává se měření délky před/po sessionCreate,
+po ConnectedEvent a dokončeném dispose, spolu s volbou chiaki-pc/chiaki-jni.
+Záznam u nulového souboru výslovně vysvětlí, že nula není důkazem absence paketů.
+
+První dekódovaný snímek se zaznamená samostatně v titulky.log pro GL, YUV i
+telefonní paměťovou cestu. Callback prvního síťového video paketu dodané Java API
+nemá. V repozitáři je native/pcobraz.c (mezivrstva MediaCodec), ale ne úplné
+zdroje upraveného libchiaki-pc.so ani reprodukovatelný postup sestavení dodaných
+binárek; na tomto Macu není Android NDK. Mezivrstva může měřit vstup do dekodéru,
+což ale není totéž jako první UDP video paket. Přímé měření prvního paketu zatím
+není implementované. Pro odlišení síťového vstupu od dekodéru musí Adam zachytit
+souběžný logcat (tag Chiaki, PlayCaptionObraz, MediaCodec/Codec2) a nový stack
+telefonu. Další nativní změna má vycházet z tohoto měření, bez výměny binárek naslepo.
+Do nové aplikační diagnostiky se nepřenáší obsah nativních zpráv ani údaje účtu.
+
+### Přejímka doplnění na telefonu
+
+1. Použít tento draft na telefonu i TCL, stejný podpis, aktualizace bez mazání dat.
+   Před měřením jednou vynuceně ukončit původní zaseklé procesy, potom už ne.
+2. Ověřit obraz na telefonu, převzetí PS5 televizí a následné převzetí telefonem.
+   Nejméně třikrát; zachytit stejné časy a ID z obou zařízení.
+3. Pro každé odpojení čekat stop začátek/konec a dispose začátek/konec. Po pěti
+   sekundách se musí při čekání objevit stack ps5-konec. Žádné ukončovací setSurface(null).
+4. První snímek musí být zaznamenaný s cestou a ID aktuální relace. Pokud stále
+   chybí, uložit logcat i aplikační log před restartem procesu. Po třetí připojené
+   relaci bez snímku už nesmí vznikat další Session; Stop/Hotovo pojistku neobejde.
+5. Po šesté souvislé odpovědi already-in-use ověřit odpovídající počítadlo a hlášku.
+   Samotné pokusy bez připojení nesmějí aktivovat třícyklovou obrazovou pojistku.
+
+Bezpečný timeout nemůže zaručit návrat libovolného visícího JNI volání. Tato větev
+nevolá sessionFree souběžně s běžícím nativním vláknem ani sama nezabíjí proces.
+PR #15 zůstává draft do přejímky nového pořadí ukončení na TCL i telefonu.
+
+### Automatické ověření telefonního doplnění
+
+Prošlo `bash gradlew :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest`:
+236 JVM testů bez selhání, z toho šest nových scénářů HlidaniPs5Test. Pokrývají
+staré události, přežití pojistky, reset až skutečným snímkem, nezapočítávání pouhého
+odmítnutí a hranici šesté obsazené odpovědi. Prošly také tři webOS Node sady,
+Samsung služba a git diff --check. Samsung vykreslení se přeskočilo kvůli chybějícímu
+Playwrightu. Instrumentační APK bylo pouze sestavené; ADB nevidí žádné zařízení.
+Soukromé předané logy nejsou součástí repozitáře. Nativní binárky a čísla verzí
+zůstávají beze změny. Tyto testy nejsou hardwarovou přejímkou nativního ukončení.
 
 ## Rozhodující důkaz předaný Adamem
 
@@ -77,7 +163,7 @@ Dodané podklady zachycují různé situace:
   a její funkčnost se potvrdí snímkem. Předchozí verze nezaznamenávala historii
   úspěšného YUV, takže tuto historii nelze zpětně odhadnout. Pokud staré GL dává
   obraz, ale je pomalé, tato větev sama neprokazuje, že má místo něj použít YUV.
-- Telefonní cesta, kodeky a stávající časy 10/15/30 sekund se nemění.
+- Způsob dekódování telefonu, kodeky a stávající časy 10/15/30 sekund se nemění.
   Spárování, účty ani další nastavení se nemažou. Pro aktualizaci zachovat podpis APK.
 - V režimu příjmu z telefonu se zaznamená start, první textový PCT1 paket,
   rozhodnutí o vstupu TV a oprávnění překryvu. Obsah textu se do nové diagnostiky
@@ -111,7 +197,7 @@ Dodané podklady zachycují různé situace:
 Limit pouze zapisuje diagnostiku. Není oprávněním k souběžnému `sessionFree`,
 dokud nativní vlákno paměť relace může používat. Bez releasu, tagu a změny verze.
 
-## Automatická kontrola
+## Původní automatická kontrola (před telefonním doplněním)
 
 `bash gradlew :app:testDebugUnitTest :app:assembleDebug` a `git diff --check`.
 Na této větvi prošlo 204 JVM testů bez selhání nebo přeskočení a sestavení APK.

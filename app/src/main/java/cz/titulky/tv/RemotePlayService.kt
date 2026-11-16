@@ -395,6 +395,10 @@ class RemotePlayService : Service() {
             val ted = System.currentTimeMillis()
             if (pripojeno() && posledniSnimekKdy > 0 && ted - posledniSnimekKdy > 30_000) {
                 zapis("[PS5 hlidacSpojeni #${idRelace(session)}] cesta=${if (obrazPresGl) "GL" else "YUV"}, telefon=$telefon, snímků=$snimkuCelkem, bez snímku ${ted - posledniSnimekKdy} ms")
+                if (hlidaniPs5.bezObrazu(session)) {
+                    zastavProRestart()
+                    return
+                }
                 zapis("[žádný obraz ${(ted - posledniSnimekKdy) / 1000} s – spojení je mrtvé, připojuji znovu]")
                 if (!telefon && snimkuCelkem == 0 && volbaObrazu.vratitNeovereneGl()) {
                     obrazPresGl = false
@@ -532,7 +536,20 @@ class RemotePlayService : Service() {
         ui.postDelayed(hlidac, cekat)
     }
 
+    private fun zastavProRestart() {
+        val kde = if (telefon) "telefonu" else "televizi"
+        val duvod = "PS5 se opakovaně připojila bez obrazu. V nastavení aplikací na $kde dej PlayCaption → Vynutit ukončení a spusť ji znovu. Spárování zachovej."
+        automat = false; aktivni = false; chciPS5 = false
+        ui.removeCallbacks(hlidac)
+        ui.removeCallbacks(hlidacSpojeni)
+        zapis("[PS5 pojistka] tři připojené relace bez snímku; další pokusy v tomto procesu zastavuji")
+        zastav(duvod)
+        obrazStav.ukonciChybou(duvod)
+        stopSelf()
+    }
+
     private fun spust() {
+        if (hlidaniPs5.restartNutny) { zastavProRestart(); return }
         val udaje = RemotePlayUdaje(this)
         val ip = udaje.ipKonzole
         val registKey = udaje.registKey
@@ -543,6 +560,7 @@ class RemotePlayService : Service() {
         }
         posledniHlaska = ""
         snimkuCelkem = 0
+        pripojenoKdy = 0L
         obrazStav.zacni()
         naXboxu = false
         bezi = true
@@ -571,7 +589,8 @@ class RemotePlayService : Service() {
             zapis(if (telefon) "[obraz: OpenGL (telefon)]" else "[obraz: OpenGL (televize)]")
             val g = GlSnimac(sirkaStreamu, vyskaStreamu, priChybe = {
                 zapis("[obraz: chyba GL před předáním snímku: ${it.javaClass.simpleName}]")
-            }) { gl ->
+            }) snimek@{ gl ->
+                if (!bezi || relaceObrazu != relaceCteni.get()) return@snimek
                 try {
                     potvrdObraz(true, relaceObrazu)
                     val volna = volnaCteckaProSnimek()
@@ -588,6 +607,7 @@ class RemotePlayService : Service() {
             r.setOnImageAvailableListener({ ir ->
                 try {
                     ir.acquireLatestImage()?.let { img ->
+                        if (!bezi || relaceObrazu != relaceCteni.get()) { img.close(); return@let }
                         potvrdObraz(false, relaceObrazu)
                         val volna = volnaCteckaProSnimek()
                         if (volna != null) zpracuj(img, volna) else img.close()
@@ -610,6 +630,7 @@ class RemotePlayService : Service() {
         val info = ConnectInfo(ps5 = true, host = ip, registKey = registKey, morning = rpKey, videoProfile = profil)
         try {
             val logSoubor = File(filesDir, "chiaki.log").absolutePath
+            val logPred = File(logSoubor).length()
             // staré spojení, které se neukončilo (zhasnutí, výpadek Wi-Fi…), by drželo PS5 obsazenou
             // ("already in use") → před novým připojením všechna stará ukončit
             session = null
@@ -617,22 +638,36 @@ class RemotePlayService : Service() {
             val s = Session(info, logSoubor, false)
             val id = idRelace(s)
             zapis("[PS5 relace #$id] vytvořena, cesta=${if (obrazPresGl) "GL" else "YUV"}, telefon=$telefon")
+            zapis("[PS5 log #$id] po sessionCreate: před=$logPred B, nyní=${File(logSoubor).length()} B, knihovna=${if (PametObraz.knihovnaPc) "chiaki-pc" else "chiaki-jni"}, verbose=false")
             synchronized(vsechnaSpojeni) { vsechnaSpojeni += s }
             s.eventCallback = { udalost -> ui.post {
                 if (udalost is ConnectedEvent || udalost is QuitEvent)
                     zapis("[PS5 událost #$id] ${udalost.javaClass.simpleName}, aktuální #${idRelace(session)}")
+                if (!hlidaniPs5.aktualni(s)) {
+                    if (udalost is ConnectedEvent || udalost is QuitEvent || udalost is LoginPinRequestEvent)
+                        zapis("[PS5 událost #$id] ignoruji událost neaktuální relace")
+                    return@post
+                }
                 onUdalost(udalost)
             } }
             // telefon: obraz přímo z dekodéru do paměti (jako u Xboxu) – musí se zapnout před setSurface;
             // když to dekodér neumí, jde obraz sám dál přes OpenGL (GlSnimac)
             pametZapsano = false
             if (telefon && !prefsObraz.getBoolean("bezPameti", false)) {
-                PametObraz.priSnimku = { f -> snimekPamet(f) }
+                PametObraz.priSnimku = { f ->
+                    if (bezi && relaceObrazu == relaceCteni.get()) {
+                        potvrdObraz(true, relaceObrazu, "paměť")
+                        snimekPamet(f)
+                    }
+                }
                 if (!PametObraz.nastav(true, sirkaStreamu, vyskaStreamu)) PametObraz.priSnimku = null
             }
-            s.start()
-            s.setSurface(plocha)
             session = s
+            hlidaniPs5.nova(s)
+            zapis("[PS5 start #$id] start výsledek ${s.start()}")
+            zapis("[PS5 start #$id] setSurface(nenulové) začátek")
+            s.setSurface(plocha)
+            zapis("[PS5 start #$id] setSurface(nenulové) konec")
         } catch (e: CreateError) {
             zapis("[CHYBA spuštění: ${e.errorCode}]")
             zastav("Remote Play nešlo spustit ✘ (${e.errorCode})")
@@ -2078,8 +2113,10 @@ class RemotePlayService : Service() {
     private fun onUdalost(udalost: Event) {
         when (udalost) {
             is ConnectedEvent -> {
+                hlidaniPs5.pripojeno(session)
                 obrazStav.pripojeno(android.os.SystemClock.elapsedRealtime())
                 zapis("[PŘIPOJENO k PS5]")
+                zapis("[PS5 log #${idRelace(session)}] ConnectedEvent: chiaki.log=${File(filesDir, "chiaki.log").length()} B; první videopaket není vystaven Java API")
                 posledniSnimekKdy = System.currentTimeMillis()
                 pripojenoKdy = posledniSnimekKdy
                 // 60 s stabilního spojení = televize to zvládá → automatické spouštění povolit
@@ -2097,8 +2134,9 @@ class RemotePlayService : Service() {
                 ui.postDelayed({ zahrejCtecku() }, 1500)
                 // hláška "překlad aktivní" se neukazuje – stav je vidět v aplikaci (zelený řádek)
                 // za 10 s zkontrolujeme, jestli opravdu chodí obraz
+                val pripojena = session
                 ui.postDelayed({
-                    if (session != null && snimkuCelkem == 0) {
+                    if (session === pripojena && pripojena != null && snimkuCelkem == 0) {
                         zapis("[PS5 bez obrazu #${idRelace(session)}] 10 s po ConnectedEvent, cesta=${if (obrazPresGl) "GL" else "YUV"}, telefon=$telefon")
                         stav = "Připojeno, ale nechodí žádný obraz ✘"
                         ukaz(stav, 10000)
@@ -2118,10 +2156,11 @@ class RemotePlayService : Service() {
                 // srozumitelně česky a s tím, že se aplikace připojí znovu SAMA (lidé jinak hned
                 // vynucují ukončení / restartují PS5 a nepočkají)
                 val duvod = "${udalost.reasonString ?: ""} ${udalost.reason}".lowercase()
+                if ("already in use" in duvod) hlidaniPs5.obsazeno(session)
+                zapis("[PS5 odmítnutí #${idRelace(session)}] obsazeno za sebou=${hlidaniPs5.obsazenych}, opakování=$neuspechu")
                 val zprava = when {
-                    // déle než ~45 s obsazeno → nejde o staré spojení, PS5 opravdu používá jiné zařízení
-                    "already in use" in duvod && neuspechu >= 6 ->
-                        "PS5 používá jiné zařízení: televize s PlayCaption v režimu „Jen televize“, aplikace PS Remote Play nebo PS Portal. Zavři ho (v televizi přepni na „Titulky z telefonu“) – pak se připojím sám."
+                    "already in use" in duvod && hlidaniPs5.obsazenych >= 6 ->
+                        "PS5 je stále obsazená. Na TV přepni na „S telefonem“ a zavři ostatní Remote Play aplikace. Může ji držet i neukončená relace; podrobnosti jsou v Záznamu."
                     "already in use" in duvod ->
                         "PS5 ještě drží předchozí spojení – za chvíli se připojím znovu sám, nic nedělej."
                     "session request" in duvod || "ctrl" in duvod ->
@@ -2171,6 +2210,7 @@ class RemotePlayService : Service() {
         xbox = null
         xb?.zastav()
         val s = session
+        hlidaniPs5.ukonci(s)
         session = null
         if (s != null) synchronized(vsechnaSpojeni) { vsechnaSpojeni.remove(s) }
         ukonciStareSpojeni()
@@ -2192,7 +2232,10 @@ class RemotePlayService : Service() {
                 try {
                     prubeh.ukonci(
                         stop = { zapis("[PS5 konec #$id] stop výsledek ${s.stop()}") },
-                        dispose = { s.dispose() }
+                        dispose = {
+                            s.dispose()
+                            zapis("[PS5 log #$id] po dispose: sdílený chiaki.log=${File(filesDir, "chiaki.log").length()} B")
+                        }
                     )
                 } finally {
                     prubeh.dokonci()
@@ -2204,8 +2247,11 @@ class RemotePlayService : Service() {
 
     private fun idRelace(s: Session?) = s?.let { Integer.toHexString(System.identityHashCode(it)) } ?: "žádná"
 
-    private fun potvrdObraz(presGl: Boolean, relace: Long) {
-        if (telefon || !bezi || relace != relaceCteni.get()) return
+    private fun potvrdObraz(presGl: Boolean, relace: Long, cesta: String = if (presGl) "GL" else "YUV") {
+        if (!bezi || relace != relaceCteni.get()) return
+        if (hlidaniPs5.snimek(session))
+            zapis("[PS5 první dekódovaný snímek #${idRelace(session)}] cesta=$cesta, po připojení=${if (pripojenoKdy > 0) System.currentTimeMillis() - pripojenoKdy else -1} ms")
+        if (telefon) return
         synchronized(volbaObrazu) {
             if (!volbaObrazu.snimek(presGl)) return
             prefsObraz.edit().putBoolean("yuvOvereno", volbaObrazu.yuvOvereno)
@@ -2290,6 +2336,7 @@ class RemotePlayService : Service() {
     }
 
     companion object {
+        private val hlidaniPs5 = HlidaniPs5()
         @Volatile var pribehStav = "Příběh: čekám na Remote Play…"
         const val ACTION_STOP = "cz.titulky.tv.REMOTE_STOP"
         const val ACTION_PREPNOUT = "cz.titulky.tv.REMOTE_PREPNOUT"

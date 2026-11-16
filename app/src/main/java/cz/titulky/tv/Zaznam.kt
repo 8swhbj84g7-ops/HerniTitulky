@@ -21,6 +21,7 @@ object Zaznam {
         fun chiaki(): String = runCatching {
             val f = File(a.filesDir, "chiaki.log")
             if (!f.exists()) return@runCatching "(soubor chiaki.log neexistuje)"
+            if (f.length() == 0L) return@runCatching "(0 B; nativní zápis může být bufferovaný nebo přepsaný novou Session. Nula řádků nedokazuje absenci video paketů. Diagnostika dekódovaných snímků je v části PS5 / obraz; nativní logcat má tag Chiaki.)"
             val radky = f.readLines().takeLast(3000)
             val znovu = radky.count { it.contains("re-sending") }
             "(posledních ${radky.size} řádků, z toho opakované odeslání: $znovu×)\n" +
