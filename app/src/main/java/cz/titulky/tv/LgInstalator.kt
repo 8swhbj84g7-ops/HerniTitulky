@@ -257,18 +257,18 @@ internal class LgInstalator(
             while (true) {
                 kontrola()
                 if (vstup.available() == 0) {
-                    if (channel.isClosed) throw LgInstalacniChyba(LgChyba.INSTALACE)
+                    if (channel.isClosed) throw LgInstalacniChyba(if (pending.isNotBlank()) LgChyba.ODPOVED else LgChyba.KOMUNIKACE)
                     Thread.sleep(40)
                     continue
                 }
                 val value = vstup.read()
-                if (value < 0) throw LgInstalacniChyba(LgChyba.INSTALACE)
-                if (++bytes > 65536) throw LgInstalacniChyba(LgChyba.INSTALACE)
+                if (value < 0) throw LgInstalacniChyba(if (pending.isNotBlank()) LgChyba.ODPOVED else LgChyba.KOMUNIKACE)
+                if (++bytes > 65536) throw LgInstalacniChyba(LgChyba.ODPOVED)
                 pending.append(value.toChar())
                 if (value == 10) {
                     val json = try { JSONObject(pending.toString()) } catch (_: JSONException) { continue }
                     pending.setLength(0)
-                    if (!json.optBoolean("returnValue", true)) throw LgInstalacniChyba(LgChyba.INSTALACE)
+                    if (!json.optBoolean("returnValue", true)) throw LgInstalacniProtokol.chybaOdpovedi(json)
                     if (hotovo(json)) return
                 }
             }

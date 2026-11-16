@@ -53,6 +53,7 @@ class LgPruvodce(private val activity: Activity, private val vyhledej: () -> Uni
     private var prijimac: LgKontrola? = null
     private var overenaIp = ""
     private var chyba: LgChyba? = null
+    private var detailChyby: String? = null
     private var instalator: LgInstalator? = null
     private var stavInstalace: TextView? = null
     private var zadanaIp = TvProfily(activity).let { p -> p.posledniId?.let { p.najdi(it) } }
@@ -202,11 +203,13 @@ class LgPruvodce(private val activity: Activity, private val vyhledej: () -> Uni
         if (LgDevUloziste(activity).maParovani(zadanaIp)) radek(text(t("lgParovaniUlozene"), 16f))
         stavInstalace = text(when {
             bezi -> t("lgFaze" + faze.name)
-            chyba != null -> t("lgChyba" + chyba!!.name)
+            chyba != null -> t("lgChyba" + chyba!!.name) +
+                (detailChyby?.let { "\n\n" + t("lgChybaDetail") + it }
+                    ?: if (chyba == LgChyba.INSTALACE) "\n\n" + t("lgChybaBezDetailu") else "")
             vysledek != null -> t(if (vysledek!!.zmeneno) "lgOvereno" else "lgBezPrepisu").replace("{verze}", vysledek!!.verze) + "\n" + t(if (vysledek!!.spusteno) "lgSpusteno" else "lgSpustRucne")
             prijimac != null -> t("lgVerze" + prijimac!!.stav.name).replace("{tv}", prijimac!!.verze.orEmpty()).replace("{apk}", prijimac!!.dostupna)
             else -> t("lgPripravenoInstalace")
-        }, 17f, Color.parseColor(when { chyba != null -> "#FF9191"; vysledek != null -> "#3CFF6E"; else -> "#B2B3BF" })).also { radek(it) }
+        }, 17f, Color.parseColor(when { chyba != null -> "#FF9191"; vysledek != null -> "#3CFF6E"; else -> "#B2B3BF" })).also { it.setTextIsSelectable(true); radek(it) }
         if (bezi) {
             radek(ProgressBar(activity))
             radek(tlacitko(t("lgZrusitInstalaci")) { instalator?.zrus() })
@@ -247,7 +250,7 @@ class LgPruvodce(private val activity: Activity, private val vyhledej: () -> Uni
 
     private fun spustInstalaci(heslo: CharArray, jenKontrola: Boolean) {
         if (bezi) { heslo.fill('\u0000'); return }
-        bezi = true; chyba = null; vysledek = null; faze = LgFaze.BALICEK
+        bezi = true; chyba = null; detailChyby = null; vysledek = null; faze = LgFaze.BALICEK
         val ipOperace = zadanaIp
         val profiles = TvProfily(activity)
         val expected = prijimac?.takeIf { overenaIp == ipOperace }?.id
@@ -280,8 +283,9 @@ class LgPruvodce(private val activity: Activity, private val vyhledej: () -> Uni
                 }
             } catch (e: Exception) {
                 val kod = (e as? LgInstalacniChyba)?.kod ?: LgChyba.OVERENI
+                val detail = (e as? LgInstalacniChyba)?.detail
                 ui.post { if (dialog.isShowing && !activity.isDestroyed && instalator === job) {
-                    bezi = false; chyba = kod; prijimac = null; vykresli()
+                    bezi = false; chyba = kod; detailChyby = detail; prijimac = null; vykresli()
                 } }
             } finally { heslo.fill('\u0000') }
         }.apply { isDaemon = true }.start()
