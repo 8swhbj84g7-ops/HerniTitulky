@@ -8,6 +8,51 @@ import org.junit.Test
 import java.io.ByteArrayOutputStream
 
 class LgInstalatorTest {
+    private fun odmitnuti(json: JSONObject): LgInstalacniChyba {
+        try { LgInstalacniProtokol.instalace(json) }
+        catch (e: LgInstalacniChyba) { return e }
+        throw AssertionError("LG chyba nebyla zachycena")
+    }
+
+    @Test fun installationFailureIncludesLgCodeReasonAndState() {
+        val error = odmitnuti(JSONObject("""{"id":"cz.playcaption.overlaytest","details":{"state":"install failed","errorCode":-5,"reason":"ipk verified failed"}}"""))
+        assertEquals(LgChyba.INSTALACE, error.kod)
+        assertTrue(error.message!!.contains("errorCode=-5"))
+        assertTrue(error.message!!.contains("reason=ipk verified failed"))
+        assertTrue(error.message!!.contains("state=install failed"))
+    }
+
+    @Test fun directLunaErrorKeepsCodeAndErrorText() {
+        val error = odmitnuti(JSONObject("""{"returnValue":false,"errorCode":-1,"errorText":"Not enough storage"}"""))
+        assertTrue(error.message!!.contains("errorCode=-1"))
+        assertTrue(error.message!!.contains("reason=Not enough storage"))
+        assertEquals(LgChyba.INSTALACE, odmitnuti(JSONObject("""{"returnValue":false}""")).kod)
+    }
+
+    @Test fun nonzeroErrorCodeCannotBeTreatedAsProgressOrSuccess() {
+        odmitnuti(JSONObject("""{"id":"cz.playcaption.overlaytest","details":{"state":"installing","errorCode":-5,"reason":"ipk verified failed"}}"""))
+        odmitnuti(JSONObject("""{"returnValue":true,"errorCode":-5,"details":{"state":"installed"}}"""))
+        assertEquals(true, LgInstalacniProtokol.instalace(JSONObject("""{"returnValue":true,"errorCode":0,"details":{"state":"installed"}}""")))
+    }
+
+    @Test fun diagnosticContainsOnlyBoundedErrorFields() {
+        val json = JSONObject().put("returnValue", false).put("errorCode", -5)
+            .put("errorText", "bad\n\u0000" + "x".repeat(1000))
+            .put("passphrase", "SECRET-PASS").put("token", "SECRET-TOKEN").put("key", "SECRET-KEY")
+        val message = odmitnuti(json).message!!
+        assertFalse(message.contains("SECRET"))
+        assertFalse(message.contains('\u0000'))
+        assertFalse(message.contains('\n'))
+        assertTrue(message.length < 400)
+    }
+
+    @Test fun missingOrStructuredReasonIsNotInventedOrSerialized() {
+        assertNull(odmitnuti(JSONObject("""{"returnValue":false}""")).detail)
+        val json = JSONObject().put("returnValue", false)
+            .put("errorText", JSONObject().put("token", "SECRET"))
+        assertNull(odmitnuti(json).detail)
+    }
+
     private val bytes = "!<arch>\nsynteticky testovaci balicek".toByteArray()
     private fun manifest() = JSONObject().put("schema", 1).put("platform", "webos").put("id", LG_APP_ID)
         .put("version", "0.1.0").put("file", "${LG_APP_ID}_0.1.0_all.ipk").put("size", bytes.size).put("sha256", lgSha256(bytes))

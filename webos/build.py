@@ -6,15 +6,18 @@ import io
 import json
 from pathlib import Path
 import subprocess
+import sys
 import tarfile
 import zipfile
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
+# webOS 5.x odmítá TAR s rokem 1970; pevné datum zachová reprodukovatelnost.
+IPK_TIMESTAMP = 946684800  # 2000-01-01 UTC
 
 
 def normalize_ipk(path):
-    """Odstraní čas a lokální UID/GID, které CLI zapisuje do archivů."""
+    """Sjednotí časy a UID/GID bez neplatně starých dat pro webOS 5.x."""
     data = path.read_bytes()
     if data[:8] != b"!<arch>\n":
         raise ValueError("Neplatný IPK archiv")
@@ -29,14 +32,14 @@ def normalize_ipk(path):
             output = io.BytesIO()
             with tarfile.open(fileobj=io.BytesIO(payload)) as source, tarfile.open(fileobj=output, mode="w", format=tarfile.PAX_FORMAT) as target:
                 for member in sorted(source.getmembers(), key=lambda item: item.name):
-                    member.mtime = 0
+                    member.mtime = IPK_TIMESTAMP
                     member.uid = member.gid = 0
                     member.uname = member.gname = ""
                     member.pax_headers = {}
                     target.addfile(member, source.extractfile(member) if member.isfile() else None)
-            payload = bytearray(gzip.compress(output.getvalue(), compresslevel=9, mtime=0))
+            payload = bytearray(gzip.compress(output.getvalue(), compresslevel=9, mtime=IPK_TIMESTAMP))
             payload[9] = 255
-        result.extend((name.ljust(16) + "0".ljust(12) + "0".ljust(6) + "0".ljust(6) +
+        result.extend((name.ljust(16) + str(IPK_TIMESTAMP).ljust(12) + "0".ljust(6) + "0".ljust(6) +
                        "100644".ljust(8) + str(len(payload)).ljust(10) + "`\n").encode("ascii"))
         result.extend(payload)
         if len(payload) % 2:
@@ -54,10 +57,13 @@ def verify_ipk(path, expected):
     while offset < len(data):
         header = data[offset:offset + 60]
         size = int(header[48:58])
-        if header[:16].strip().startswith(b"data.tar"):
+        archive_name = header[:16].decode("ascii").strip().rstrip("/")
+        if archive_name in ("control.tar.gz", "data.tar.gz"):
             with tarfile.open(fileobj=io.BytesIO(data[offset + 60:offset + 60 + size])) as archive:
                 for item in archive.getmembers():
-                    if item.isfile():
+                    if item.mtime < IPK_TIMESTAMP:
+                        raise ValueError("Příliš starý čas v IPK: " + archive_name + "/" + item.name)
+                    if archive_name == "data.tar.gz" and item.isfile():
                         name = item.name.removeprefix("./")
                         if name in found:
                             raise ValueError("Duplicitní soubor v IPK: " + name)
@@ -72,6 +78,7 @@ def verify_ipk(path, expected):
 
 
 def main():
+    subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", str(HERE), "-p", "test_build.py"], check=True)
     app = json.loads((HERE / "app/appinfo.json").read_text(encoding="utf8"))
     service = json.loads((HERE / "service/package.json").read_text(encoding="utf8"))
     assert app["version"] == service["version"], "Nesouhlasí verze UI a služby"
@@ -107,7 +114,7 @@ def main():
     files["INSTALACE-Z-ANDROIDU.md"] = (HERE / "INSTALACE-Z-ANDROIDU.md").read_bytes()
     files["source/LICENSE"] = (ROOT / "LICENSE").read_bytes()
     files["source/BACKLOG.md"] = (ROOT / "BACKLOG.md").read_bytes()
-    sources = ["README.md", "NAVOD-LG.md", "TESTOVANI.md", "SHODA-ANDROID.md", "INSTALACE-Z-ANDROIDU.md", "test.cjs", "test-udp.cjs", "test-input.cjs", "test-receiver.cjs", "test-controls.cjs", "test-story.cjs", "build.py"]
+    sources = ["README.md", "NAVOD-LG.md", "TESTOVANI.md", "SHODA-ANDROID.md", "INSTALACE-Z-ANDROIDU.md", "test.cjs", "test-udp.cjs", "test-input.cjs", "test-receiver.cjs", "test-controls.cjs", "test-story.cjs", "build.py", "test_build.py"]
     # as_posix: na Windows by relative_to dalo "app\\app.js" a název v ZIPu by nesouhlasil
     sources += [p.relative_to(HERE).as_posix() for folder in ["app", "service"] for p in sorted((HERE / folder).iterdir())]
     for name in sources:

@@ -3,8 +3,8 @@ package cz.titulky.tv
 import org.json.JSONObject
 import java.net.InetAddress
 
-internal enum class LgChyba { ADRESA, BALICEK, KEY_SERVER, PASSPHRASE, IDENTITA, SSH, PRENOS, INSTALACE, OVERENI, CAS, ZRUSENO, RELACE, PAROVANI }
-internal class LgInstalacniChyba(val kod: LgChyba) : Exception(kod.name)
+internal enum class LgChyba { ADRESA, BALICEK, KEY_SERVER, PASSPHRASE, IDENTITA, SSH, PRENOS, INSTALACE, OVERENI, CAS, ZRUSENO, RELACE, PAROVANI, KOMUNIKACE, ODPOVED }
+internal class LgInstalacniChyba(val kod: LgChyba, val detail: String? = null) : Exception(kod.name + detail?.let { ": $it" }.orEmpty())
 internal enum class LgFaze { BALICEK, KLIC, PRIPOJENI, PRENOS, INSTALACE, OVERENI, KONTROLA }
 
 internal object LgInstalacniProtokol {
@@ -34,13 +34,29 @@ internal object LgInstalacniProtokol {
 
     /** null = stále probíhá; true teprve pro koncový stav instalační služby. */
     fun instalace(json: JSONObject): Boolean? {
-        if (json.has("returnValue") && !json.optBoolean("returnValue")) throw LgInstalacniChyba(LgChyba.INSTALACE)
+        val details = json.optJSONObject("details")
+        if ((json.has("returnValue") && !json.optBoolean("returnValue")) ||
+            json.optInt("errorCode", 0) != 0 || (details?.optInt("errorCode", 0) ?: 0) != 0) throw chybaOdpovedi(json)
         // LG subscription události po úvodním ACK nemají returnValue, ale nesou ID instalované aplikace.
         if (!json.has("returnValue") && (json.optString("id") != LG_APP_ID || json.optJSONObject("details") == null))
-            throw LgInstalacniChyba(LgChyba.INSTALACE)
+            throw chybaOdpovedi(json)
         val state = json.optJSONObject("details")?.optString("state").orEmpty().uppercase()
-        if ("FAILED" in state || "ERROR" in state || state in listOf("CANCELLED", "CANCELED")) throw LgInstalacniChyba(LgChyba.INSTALACE)
+        if ("FAILED" in state || "ERROR" in state || state in listOf("CANCELLED", "CANCELED")) throw chybaOdpovedi(json)
         return if (state == "INSTALLED" || state == "SUCCESS" || state.startsWith("SUCCESS_")) true else null
+    }
+
+    /** Jen chybová pole LG, nikdy celý JSON, SSH výpis ani přihlašovací údaje. */
+    fun chybaOdpovedi(json: JSONObject): LgInstalacniChyba {
+        val details = json.optJSONObject("details")
+        fun text(value: Any?, limit: Int) = (value as? String)?.replace(Regex("[\\p{C}\\s]+"), " ")?.trim()?.take(limit)?.takeIf { it.isNotEmpty() }
+        val code = sequenceOf(details?.opt("errorCode"), json.opt("errorCode"))
+            .mapNotNull { it?.toString()?.takeIf { code -> code.matches(Regex("-?[0-9]{1,10}")) && code != "0" } }.firstOrNull()
+        val reason = sequenceOf(details?.opt("reason"), details?.opt("errorText"), json.opt("errorText"), json.opt("reason"))
+            .mapNotNull { text(it, 240) }.firstOrNull()
+        val state = text(details?.opt("state"), 80)
+        val detail = listOfNotNull(code?.let { "errorCode=$it" }, reason?.let { "reason=$it" }, state?.let { "state=$it" })
+            .joinToString(" · ").takeIf { it.isNotEmpty() }
+        return LgInstalacniChyba(LgChyba.INSTALACE, detail)
     }
 
     fun identita(value: String, ocekavaneId: String?): String {
