@@ -296,6 +296,22 @@ stránkuje aktuální repliku a potvrzuje její dočtení.
 - Tento záznam neprohlašuje nové hraní s integrovanou verzí za dokončené.
 
 
+## LG 0.2.3 – vyhledání a start přijímače (2026-11-16)
+
+- `:app:testDebugUnitTest :app:assembleDebug`: testy identity/platformy a zachování
+  Android TV převzetí, skutečné UDP dotazy na známé LG, chybný/chybějící nonce,
+  jiná identita, neodpovídající TV, původní Android broadcast a souběžné hledání.
+- `python3 webos/build.py`: pozdější připojení sítě, změna IP, přímá odpověď,
+  opožděný bind/error starého socketu, timeout startu a návrat do připraveného stavu;
+  zůstávají testy Standardního režimu, Story, ovladače a přepnutí HDMI.
+- Fyzická C5, SDK 11.2.0: instalace 0.2.3, přímé discovery se shodou ID/nonce,
+  původní broadcast se stejným ID a dvě opětovná spuštění přijímače s odpovědí.
+- Neověřeno: problémová B4, fyzická Android TV, vizuální titulky při hraní a
+  skutečné odpojení/obnovení domácí sítě. Simulace není důkaz příčiny hlášené B4.
+- Přímý dotaz je doplněk: nová TV nebo TV s jinou IP musí být nejdřív nalezena
+  broadcastem. Neobchází se izolace klientů ani síťová pravidla routeru.
+
+
 ## Android odesílač pro LG při zhasnutém displeji
 
 Větev `codex/lg-screen-off` ruší minutové ukončení pouze pro aktivní LG výstup

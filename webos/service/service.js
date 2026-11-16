@@ -13,6 +13,8 @@ var announceTimer = null;
 var ready = false;
 var storyPeer = null;
 var receiverName = "LG PlayCaption";
+var networkReady = false;
+var announcement = null;
 var sender = null;
 var senderSeen = 0;
 var rejectedAt = 0;
@@ -25,11 +27,13 @@ function stop() {
     clearInterval(announceTimer);
     announceTimer = null;
     ready = false;
+    networkReady = false;
+    announcement = null;
     storyPeer = null;
     sender = null;
     senderSeen = 0;
     rejectedAt = 0;
-    if (socket) socket.close();
+    if (socket) { try { socket.close(); } catch (error) {} }
     socket = null;
 }
 
@@ -37,22 +41,28 @@ function start() {
     if (socket) return;
     var receiver = dgram.createSocket("udp4");
     socket = receiver;
-    var addresses = [];
-    var identity = os.hostname();
-    var interfaces = os.networkInterfaces();
-    Object.keys(interfaces).forEach(function (name) {
-        interfaces[name].forEach(function (iface) {
-            if (iface.internal || iface.family !== "IPv4") return;
-            identity += iface.mac;
-            var ip = iface.address.split(".");
-            var mask = iface.netmask.split(".");
-            addresses.push(ip.map(function (part, i) { return Number(part) | (255 ^ Number(mask[i])); }).join("."));
-        });
-    });
-    var id = crypto.createHash("sha256").update(identity).digest("hex").slice(0, 12);
-    receiverName = "LG PlayCaption · " + id.toUpperCase();
-    var announcement = Buffer.from("PLAYCAPTION_TV\tlg-" + id + "\t" + receiverName + "\t0", "utf8");
     function announce() {
+        if (socket !== receiver) return;
+        // Po obnovení Wi-Fi/LAN se IP i broadcast mohou změnit bez restartu služby.
+        var addresses = [];
+        var identity = os.hostname();
+        var interfaces = os.networkInterfaces();
+        Object.keys(interfaces).forEach(function (name) {
+            interfaces[name].forEach(function (iface) {
+                if (iface.internal || iface.family !== "IPv4") return;
+                identity += iface.mac;
+                var ip = iface.address.split(".");
+                var mask = iface.netmask.split(".");
+                addresses.push(ip.map(function (part, i) { return Number(part) | (255 ^ Number(mask[i])); }).join("."));
+            });
+        });
+        var id = crypto.createHash("sha256").update(identity).digest("hex").slice(0, 12);
+        var name = "LG PlayCaption · " + id.toUpperCase();
+        var changed = receiverName !== name || networkReady !== (addresses.length > 0);
+        receiverName = name;
+        networkReady = addresses.length > 0;
+        announcement = Buffer.from("PLAYCAPTION_TV\tlg-" + id + "\t" + receiverName + "\t0", "utf8");
+        if (changed) notify({ returnValue:true, ready:ready, networkReady:networkReady, name:receiverName });
         addresses.forEach(function (address) {
             receiver.send(announcement, 41988, address, function (error) {
                 if (error) console.error("PlayCaption discovery:", error.code);
@@ -60,10 +70,17 @@ function start() {
         });
     }
     receiver.on("error", function (error) {
+        if (socket !== receiver) return;
         notify({ returnValue: false, errorText: "Příjem UDP selhal: " + error.code });
         stop();
     });
     receiver.on("message", function (buffer, remote) {
+        if (socket !== receiver) return;
+        var query = buffer.length === 49 && /^PLAYCAPTION_FIND\t([a-f0-9]{32})$/.exec(buffer.toString("utf8"));
+        if (query && ready && announcement) {
+            receiver.send(Buffer.concat([announcement, Buffer.from("\t" + query[1])]), remote.port, remote.address, function () {});
+            return;
+        }
         var packet = parse(buffer);
         var now = Date.now();
         if (!packet) return;
@@ -86,10 +103,11 @@ function start() {
         notify({ returnValue: true, packet: packet, source: remote.address });
     });
     receiver.bind(41989, "0.0.0.0", function () {
+        if (socket !== receiver) return;
         receiver.setBroadcast(true);
         ready = true;
-        notify({ returnValue: true, ready: true, name: receiverName });
         announce();
+        notify({ returnValue: true, ready: true, networkReady: networkReady, name: receiverName });
         announceTimer = setInterval(announce, 2000);
     });
 }
@@ -100,7 +118,7 @@ service.register("listen", function (message) {
         return;
     }
     subscriptions[message.uniqueToken] = message;
-    message.respond({ returnValue: true, ready: ready, name: receiverName });
+    message.respond({ returnValue: true, ready: ready, networkReady: networkReady, name: receiverName });
     start();
 }, function (message) {
     delete subscriptions[message.uniqueToken];

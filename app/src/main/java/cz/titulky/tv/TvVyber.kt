@@ -69,7 +69,7 @@ class TvVyber(
                     // Samsung přijímač se pozná podle vlastního ID; ostatní platformy se řídí profilem jako dosud.
                     if (SamsungPrijimac.jeSamsung(tv.id)) return@filter platforma == TvPlatforma.NEZNAMA || platforma == TvPlatforma.SAMSUNG
                     if (platforma == TvPlatforma.SAMSUNG) return@filter false
-                    val p = televize.najdi(tv.id)?.platforma ?: TvPlatforma.NEZNAMA
+                    val p = televize.platformaPrijimace(tv.id)
                     platforma == TvPlatforma.NEZNAMA || p == platforma || p == TvPlatforma.NEZNAMA
                 }
                 val ulozene = televize.seznam().filter { profil ->
