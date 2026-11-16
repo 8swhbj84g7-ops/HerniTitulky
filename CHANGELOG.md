@@ -1,5 +1,9 @@
 # Changelog
 
+## Nevydáno
+
+- LG přijímač 0.2.2: balení IPK používá pevné datum 1. 1. 2000 místo roku 1970, které může webOS 5.x odmítat chybou `-5: ipk verified failed`. Build kontroluje data v obou TAR archivech; regresní testy hlídají obsah, oprávnění a opakovatelnost. Chování přijímače a protokoly se nemění; ověření na webOS 5.6.2 ještě čeká na uživatele.
+
 ## 0.21
 
 - Story experiment: konzervativní skládání nedokončených anglických vět před překladem, ID/revize zdrojů, omezené čekání a oddělení následující věty. Volby a přetížená fronta čekání ukončí; Standardní režim a LG protokol zůstávají. Bez oprav jednotlivých slov a bez AI služby. Herní přejímka ještě probíhá.
