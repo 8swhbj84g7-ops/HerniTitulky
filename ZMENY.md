@@ -4,6 +4,14 @@
 Od verze 0.10 se vyvíjí jen jedna aplikace (dřívější NextGen, větev `master`) – umí „Jen televize“ i „S telefonem“.
 Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCode + versionName) a sem se dopíše, co je nového.
 
+## Připravené změny (nevydáno)
+
+- LG průvodce odděluje úspěšnou instalaci a přijetí požadavku na spuštění od
+  samostatné kontroly běžícího přijímače. Potvrdí jen LG se shodným ID i IP,
+  ukáže čas kontroly a zapíše výsledek do Záznamu. Opožděné/zrušené hledání se ignoruje.
+- Kontrola využívá stávající discovery včetně staršího ohlášení bez nového ACK.
+  Nemění výstup titulků, přenosové protokoly ani instalační balíček.
+
 ## 0.21 (versionCode 33)
 
 Co je nového pro hráče:
