@@ -55,7 +55,7 @@ class RemotePlayService : Service() {
     private fun statistika(ted: Long) {
         if (stOd == 0L) { stOd = ted; return }
         if (ted - stOd < 30_000) return
-        val zprava = "[za 30 s: čteno $stCteni×, beze změny $stSkipStejne×, čekání na titulek $stSkipVynoreni×, druhý pokus $stKontrast×, nad nápovědou $stNad×, poškozený obraz $stPoskozeno×, snímků $snimkuCelkem]"
+        val zprava = "[za 30 s: čteno $stCteni×, beze změny $stSkipStejne×, čekání na titulek $stSkipVynoreni×, druhý pokus $stKontrast×, nad nápovědou $stNad×, poškozený obraz $stPoskozeno×, snímků od startu relace $snimkuCelkem]"
         ui.post { zapis(zprava) }
         stCteni = 0; stSkipStejne = 0; stSkipVynoreni = 0; stKontrast = 0; stNad = 0; stPoskozeno = 0; stOd = ted
     }
@@ -315,6 +315,8 @@ class RemotePlayService : Service() {
      * (OpenGL) jako u telefonů. Zjistí se samo po prvním připojení a televize si to zapamatuje.
      */
     private val prefsObraz by lazy { getSharedPreferences("obraz", MODE_PRIVATE) }
+    private val volbaObrazu by lazy { VolbaObrazu(prefsObraz.getBoolean("gl", false),
+        prefsObraz.getBoolean("glOvereno", false), prefsObraz.getBoolean("yuvOvereno", false)) }
     @Volatile private var obrazPresGl = false
     private var pripojenoKdy = 0L
 
@@ -323,10 +325,14 @@ class RemotePlayService : Service() {
         if (session == null || telefon || obrazPresGl) return@Runnable
         val ted = System.currentTimeMillis()
         val bezObrazu = posledniSnimekKdy <= pripojenoKdy || ted - posledniSnimekKdy > 6000
+        zapis("[obraz: kontrola YUV #${idRelace(session)}] bezObrazu=$bezObrazu, snímků=$snimkuCelkem, YUV ověřeno=${volbaObrazu.yuvOvereno}")
         if (bezObrazu) {
+            if (!volbaObrazu.prepnoutNaGl()) {
+                zapis("[obraz: YUV již dávalo snímky – neměním dekodér, spojení hlídá hlidacSpojeni]")
+                return@Runnable
+            }
             obrazPresGl = true
-            prefsObraz.edit().putBoolean("gl", true).apply()
-            zapis("[televize nedává obraz (YUV) → přepínám na OpenGL a připojuji znovu]")
+            zapis("[televize nedává obraz (YUV) → zkouším OpenGL bez trvalého uložení a připojuji znovu]")
             zapniUsporu("obraz se zastavil")
             zastav("", ukazat = false)
             neuspechu = 0
@@ -345,7 +351,12 @@ class RemotePlayService : Service() {
             if (!aktivni || !automat) return
             val ted = System.currentTimeMillis()
             if (pripojeno() && posledniSnimekKdy > 0 && ted - posledniSnimekKdy > 30_000) {
+                zapis("[PS5 hlidacSpojeni #${idRelace(session)}] cesta=${if (obrazPresGl) "GL" else "YUV"}, telefon=$telefon, snímků=$snimkuCelkem, bez snímku ${ted - posledniSnimekKdy} ms")
                 zapis("[žádný obraz ${(ted - posledniSnimekKdy) / 1000} s – spojení je mrtvé, připojuji znovu]")
+                if (!telefon && snimkuCelkem == 0 && volbaObrazu.vratitNeovereneGl()) {
+                    obrazPresGl = false
+                    zapis("[obraz: OpenGL nedalo žádný snímek – při stávajícím hlidacSpojeni vracím neověřený pokus na YUV]")
+                }
                 // s H.265 nepřišel ani jeden snímek → telefon ho asi neumí, příště H.264
                 if (pouzitHevc && snimkuCelkem == 0) {
                     prefsObraz.edit().putBoolean("bezHevc", true).apply()
@@ -494,6 +505,7 @@ class RemotePlayService : Service() {
         logDelka = -1L; poskozenoKdy = 0L
         stav = "Připojuji k PS5 ($ip)…"
         zapis("[připojuji k PS5 $ip]")
+        zapis("[PS5 role] telefon=$telefon, vybraná TV=${Propojeni.Vysilac.cilIp != null}, příjem z telefonu=${PrijemService.bezi}")
         drzWifi(true)
         posledniSnimekKdy = System.currentTimeMillis() // hlídač spojení počítá od začátku připojování
         // zahřát čtečku a spojení s překladačem už teď – připojení k PS5 trvá ~6 s,
@@ -507,11 +519,17 @@ class RemotePlayService : Service() {
         // Telefony (Xiaomi aj.) do YUV dekódovat neumí → obraz přes grafický čip (GlSnimac).
         snimac?.zavri(); snimac = null
         val plocha: android.view.Surface
-        obrazPresGl = obrazPresGl || prefsObraz.getBoolean("gl", false)
+        val relaceObrazu = relaceCteni.get()
+        obrazPresGl = telefon || volbaObrazu.gl
+        if (!telefon && prefsObraz.getBoolean("gl", false) && !volbaObrazu.glOvereno)
+            zapis("[obraz: stará automatická volba GL bez potvrzeného snímku – zachovám ji pro tento pokus a ověřím obraz]")
         if (telefon || obrazPresGl) {
             zapis(if (telefon) "[obraz: OpenGL (telefon)]" else "[obraz: OpenGL (televize)]")
-            val g = GlSnimac(sirkaStreamu, vyskaStreamu) { gl ->
+            val g = GlSnimac(sirkaStreamu, vyskaStreamu, priChybe = {
+                zapis("[obraz: chyba GL před předáním snímku: ${it.javaClass.simpleName}]")
+            }) { gl ->
                 try {
+                    potvrdObraz(true, relaceObrazu)
                     val volna = volnaCteckaProSnimek()
                     if (volna != null) zpracuj(volna, sirkaStreamu.toFloat(), vyskaStreamu.toFloat()) { vyrezZGl(gl) }
                 } catch (e: Throwable) { chybaObrazu(e) }
@@ -526,6 +544,7 @@ class RemotePlayService : Service() {
             r.setOnImageAvailableListener({ ir ->
                 try {
                     ir.acquireLatestImage()?.let { img ->
+                        potvrdObraz(false, relaceObrazu)
                         val volna = volnaCteckaProSnimek()
                         if (volna != null) zpracuj(img, volna) else img.close()
                     }
@@ -552,8 +571,14 @@ class RemotePlayService : Service() {
             session = null
             ukonciStareSpojeni()
             val s = Session(info, logSoubor, false)
+            val id = idRelace(s)
+            zapis("[PS5 relace #$id] vytvořena, cesta=${if (obrazPresGl) "GL" else "YUV"}, telefon=$telefon")
             synchronized(vsechnaSpojeni) { vsechnaSpojeni += s }
-            s.eventCallback = { udalost -> ui.post { onUdalost(udalost) } }
+            s.eventCallback = { udalost -> ui.post {
+                if (udalost is ConnectedEvent || udalost is QuitEvent)
+                    zapis("[PS5 událost #$id] ${udalost.javaClass.simpleName}, aktuální #${idRelace(session)}")
+                onUdalost(udalost)
+            } }
             // telefon: obraz přímo z dekodéru do paměti (jako u Xboxu) – musí se zapnout před setSurface;
             // když to dekodér neumí, jde obraz sám dál přes OpenGL (GlSnimac)
             pametZapsano = false
@@ -1059,9 +1084,10 @@ class RemotePlayService : Service() {
     private var posledniZapis = ""
 
     /** Záznam, co aplikace četla a co s tím udělala → files/titulky.log (jen změny). */
-    private fun zapis(radek: String) {
+    @Synchronized private fun zapis(radek: String) {
         if (radek.isBlank() || radek == posledniZapis) return
         posledniZapis = radek
+        if (radek.startsWith("[PS5 ") || radek.startsWith("[obraz:")) android.util.Log.i("PlayCaptionDiag", radek)
         runCatching {
             val f = File(filesDir, "titulky.log")
             if (f.length() > 300_000) f.writeText("")
@@ -2024,6 +2050,7 @@ class RemotePlayService : Service() {
                 // za 10 s zkontrolujeme, jestli opravdu chodí obraz
                 ui.postDelayed({
                     if (session != null && snimkuCelkem == 0) {
+                        zapis("[PS5 bez obrazu #${idRelace(session)}] 10 s po ConnectedEvent, cesta=${if (obrazPresGl) "GL" else "YUV"}, telefon=$telefon")
                         stav = "Připojeno, ale nechodí žádný obraz ✘"
                         ukaz(stav, 10000)
                     }
@@ -2105,11 +2132,32 @@ class RemotePlayService : Service() {
     private fun ukonciVPozadi(spojeni: List<Session>) {
         Thread {
             for (s in spojeni) {
-                runCatching { s.setSurface(null) }
-                runCatching { s.stop() }
-                runCatching { s.dispose() }
+                val id = idRelace(s)
+                val prubeh = PrubehUkonceni(id, android.os.SystemClock::elapsedRealtime, ::zapis)
+                val kontrola = diagnostikaKonce.scheduleAtFixedRate({ prubeh.kontrola(5000) },
+                    5000, 5000, java.util.concurrent.TimeUnit.MILLISECONDS)
+                try {
+                    prubeh.proved("setSurface(null)") { s.setSurface(null) }
+                    prubeh.proved("stop") { zapis("[PS5 konec #$id] stop výsledek ${s.stop()}") }
+                    prubeh.proved("dispose(join/free)") { s.dispose() }
+                } finally {
+                    prubeh.dokonci()
+                    kontrola.cancel(false)
+                }
             }
         }.apply { isDaemon = true; name = "ps5-konec" }.start()
+    }
+
+    private fun idRelace(s: Session?) = s?.let { Integer.toHexString(System.identityHashCode(it)) } ?: "žádná"
+
+    private fun potvrdObraz(presGl: Boolean, relace: Long) {
+        if (telefon || !bezi || relace != relaceCteni.get()) return
+        synchronized(volbaObrazu) {
+            if (!volbaObrazu.snimek(presGl)) return
+            prefsObraz.edit().putBoolean("yuvOvereno", volbaObrazu.yuvOvereno)
+                .putBoolean("glOvereno", volbaObrazu.glOvereno).putBoolean("gl", volbaObrazu.ulozitGl).apply()
+            zapis("[obraz: potvrzen skutečný snímek ${if (presGl) "GL" else "YUV"}], trvalé GL=${volbaObrazu.ulozitGl}")
+        }
     }
 
     /** Běží na telefonu → překlad se ukazuje na bílé obrazovce TelefonActivity, ne přes obraz. */
@@ -2222,6 +2270,11 @@ class RemotePlayService : Service() {
          * (zůstávají v paměti aplikace, dokud se aplikace úplně nezavře).
          */
         private val vsechnaSpojeni = mutableListOf<Session>()
+        private val diagnostikaKonce by lazy {
+            java.util.concurrent.Executors.newSingleThreadScheduledExecutor {
+                Thread(it, "ps5-diagnostika").apply { isDaemon = true }
+            }
+        }
 
         fun spustVse(context: android.content.Context, prevzit: Boolean = false) {
             // na telefonu se přes obraz nekreslí – overlay nespouštět

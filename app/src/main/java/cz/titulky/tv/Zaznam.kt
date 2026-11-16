@@ -34,9 +34,16 @@ object Zaznam {
                 "Xbox:", "staré spojení", "kodek", "obraz: ", "jiné zařízení", "ukončeno v aplikaci")
             f.readLines().filter { r -> klice.any { it in r } }.takeLast(30).joinToString("\n").ifBlank { "(nic)" }
         }.getOrDefault("(nejde přečíst)")
+        fun diagnostikaPs5(): String = runCatching {
+            val f = File(a.filesDir, "titulky.log")
+            if (!f.exists()) "(nic)" else f.readLines()
+                .filter { "[PS5 " in it || "[obraz:" in it || "[TV příjem]" in it }
+                .takeLast(100).joinToString("\n").ifBlank { "(nic)" }
+        }.getOrDefault("(nejde přečíst)")
         val verze = runCatching { a.packageManager.getPackageInfo(a.packageName, 0).versionName }.getOrNull()
         val obsah = "Verze: $verze   Stav: ${RemotePlayService.stav}\n\n=== pád ===\n" + konec("pad.txt", 25) +
             "\n\n=== spojení (připojení / odpojení) ===\n" + spojeni() +
+            "\n\n=== PS5 / obraz / příjem z telefonu ===\n" + diagnostikaPs5() +
             "\n\n=== titulky.log ===\n" + konec("titulky.log", 120) +
             "\n\n=== xbox.log ===\n" + konec("xbox.log", 15) +
             "\n\n=== chiaki.log ===\n" + chiaki()

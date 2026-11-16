@@ -4,6 +4,18 @@
 Od verze 0.10 se vyvíjí jen jedna aplikace (dřívější NextGen, větev `master`) – umí „Jen televize“ i „S telefonem“.
 Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCode + versionName) a sem se dopíše, co je nového.
 
+## Nevydané změny
+
+- Diagnostika PS5 bez obrazu: ID relací, délky jednotlivých kroků ukončování,
+  upozornění se stackem při překročení pěti sekund a záznam hlídače/YUV/GL.
+  Pořadí nativních volání zůstává; zaseknutí `setSurface(null)` na TCL zatím
+  není potvrzené. První selhání GL a stav příjmu titulků z telefonu jsou viditelné
+  v Záznamu. Postup přejímky: `docs/PS5-BEZ-OBRAZU.md`.
+- Automatická volba obrazu TV se potvrzuje skutečným snímkem, ne časovačem.
+  Po doloženém YUV výpadek sám nepřepíná na GL; neověřený GL pokus bez snímků
+  vrací stávající hlídač na YUV. Stará volba GL se nejprve zachovává a ověřuje,
+  telefon, kodeky, časy připojení a spárování zůstávají. Přejímka TCL ještě zbývá.
+
 ## 0.21 (versionCode 33)
 
 Co je nového pro hráče:
