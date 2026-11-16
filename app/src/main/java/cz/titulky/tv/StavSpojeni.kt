@@ -18,13 +18,16 @@ internal class StavObrazu {
     private var pripojenoOd: Long? = null
     private var posledniSnimek: Long? = null
     private var chyba: String? = null
+    private var chybaUkonceni: String? = null
 
-    @Synchronized fun zacni() { pripojenoOd = null; posledniSnimek = null; chyba = null }
+    @Synchronized fun zacni() { pripojenoOd = null; posledniSnimek = null; chyba = null; chybaUkonceni = null }
+    @Synchronized fun ukonciChybou(duvod: String) { chybaUkonceni = duvod }
     @Synchronized fun pripojeno(ted: Long) { pripojenoOd = ted }
     @Synchronized fun snimek(ted: Long) { posledniSnimek = ted; chyba = null }
     @Synchronized fun chyba(duvod: String) { chyba = duvod }
 
     @Synchronized fun prehled(ted: Long, aktivni: Boolean, pozastaveno: Boolean, duvod: String): PrehledSpojeni = when {
+        chybaUkonceni != null -> PrehledSpojeni("stavUkoncenoChybou", UrovenSpojeni.CHYBA, chybaUkonceni!!)
         !aktivni -> PrehledSpojeni("stavVypnuto", UrovenSpojeni.VYPNUTO)
         pozastaveno -> PrehledSpojeni("stavPozastaveno", UrovenSpojeni.VYPNUTO)
         chyba != null -> PrehledSpojeni("stavChybaObrazu", UrovenSpojeni.CHYBA, chyba!!)

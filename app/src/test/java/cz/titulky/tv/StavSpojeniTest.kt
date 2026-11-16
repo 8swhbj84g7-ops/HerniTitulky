@@ -4,6 +4,23 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class StavSpojeniTest {
+    @Test fun fatalReasonSurvivesStopSelfAndLateFrameUntilNewAttemptOrManualStop() {
+        val stav = StavObrazu()
+        val reason = "PS5 chce PIN pro přihlášení – zatím nepodporováno ✘"
+        stav.zacni(); stav.pripojeno(0); stav.snimek(1)
+        // zastav() uvolní relaci; stopSelf/onDestroy pak vypne aktivni.
+        stav.zacni(); stav.ukonciChybou(reason)
+        val failed = stav.prehled(2, false, false, reason)
+        assertEquals(UrovenSpojeni.CHYBA, failed.uroven)
+        assertEquals(reason, failed.detail)
+        assertTrue(Texty.spojeni("cs", failed).contains("PS5 chce PIN"))
+        stav.snimek(3)
+        assertEquals(UrovenSpojeni.CHYBA, stav.prehled(4, false, false, reason).uroven)
+        stav.zacni()
+        assertEquals(UrovenSpojeni.CEKANI, stav.prehled(5, true, false, "Připojuji").uroven)
+        assertEquals(UrovenSpojeni.VYPNUTO, stav.prehled(6, false, false, "Remote Play zastaveno.").uroven)
+    }
+
     @Test fun runningServiceAndHandshakeDoNotProveVideo() {
         val stav = StavObrazu()
         stav.zacni()

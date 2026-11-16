@@ -184,6 +184,7 @@ class RemotePlayService : Service() {
                 stopSelf()
             }
             else -> {
+                if (!aktivni) obrazStav.zacni()
                 automat = true
                 aktivni = true
                 if (posluchac == null) posluchac = Predavani.Posluchac(this) { ui.post { prevzaloJine() } }
@@ -2037,7 +2038,9 @@ class RemotePlayService : Service() {
             }
             is LoginPinRequestEvent -> {
                 automat = false
-                zastav("PS5 chce PIN pro přihlášení – zatím nepodporováno ✘")
+                val duvod = "PS5 chce PIN pro přihlášení – zatím nepodporováno ✘"
+                zastav(duvod)
+                obrazStav.ukonciChybou(duvod)
                 stopSelf()
             }
             is QuitEvent -> {

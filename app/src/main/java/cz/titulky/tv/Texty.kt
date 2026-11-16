@@ -40,6 +40,7 @@ object Texty {
             "Connessione alla console tramite Riproduzione remota e associazione con PIN."),
         "sparovano" to listOf("Spárováno", "Spárované", "Gekoppelt", "Sparowano", "Associée", "Vinculada", "Associata"),
         "stavNavazuji" to listOf("Navazuji spojení s konzolí…", "Nadväzujem spojenie s konzolou…"),
+        "stavUkoncenoChybou" to listOf("Spojení ukončeno kvůli chybě", "Spojenie ukončené pre chybu"),
         "stavPodrobnosti" to listOf("Podrobnosti jsou v nabídce Záznam.", "Podrobnosti sú v ponuke Záznam."),
         "stavPozastaveno" to listOf("Překlad pozastavený", "Preklad pozastavený"),
         "stavCekaObraz" to listOf("Konzole připojena – čekám na první snímek", "Konzola pripojená – čakám na prvú snímku"),
@@ -521,7 +522,7 @@ object Texty {
     internal fun spojeni(jazyk: String, stav: PrehledSpojeni, podrobne: Boolean = false): String {
         val detail = when {
             podrobne || stav.detail.isBlank() -> stav.detail
-            stav.klic != "stavNavazuji" -> t(jazyk, "stavPodrobnosti")
+            stav.klic != "stavNavazuji" && stav.klic != "stavUkoncenoChybou" -> t(jazyk, "stavPodrobnosti")
             else -> {
                 val radek = stav.detail.lineSequence().firstOrNull { it.isNotBlank() }?.trim().orEmpty()
                 if (radek.length > 220 || radek != stav.detail.trim())
