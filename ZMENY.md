@@ -25,6 +25,15 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
   zvoleného cíle. Do té doby pokračuje Standardní výstup; přenos se přepne až
   s první Story stránkou. Staré titulky se po návratu na Standardní neopakují,
   volby zůstávají funkční. Místní Story v telefonu se nemění.
+- Stav konzole už nezelená pouhým spuštěním služby: rozlišuje čekání na spojení,
+  čekání na první snímek, příjem a výpadek obrazu. V běžném UI jsou krátké hlášky;
+  úplné důvody a technické podrobnosti zůstávají v Záznamu.
+- Fatální důvod (např. požadavek PS5 na přihlašovací PIN) zůstává viditelný
+  i po zastavení služby; nový pokus nebo ruční vypnutí jej vyčistí.
+- Výstup do TV ukazuje chyby UDP odesílání a otevřeně uvádí, že přijetí a zobrazení
+  nejsou potvrzené. Android přijímač hlásí chybu soketu, oprávnění či okna překryvu
+  a skrytí mimo TV vstup. Aktuální stavy jsou i v Záznamu.
+- Beze změny formátů paketů pro LG, Samsung a Android TV, kodeků a nastavení.
 
 ## 0.21 (versionCode 33)
 

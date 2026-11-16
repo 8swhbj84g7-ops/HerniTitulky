@@ -45,8 +45,14 @@ class OverlayService : Service() {
      */
     private fun zkusOkna(@Suppress("UNUSED_PARAMETER") pokus: Int) {
         wm = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        if (android.provider.Settings.canDrawOverlays(this) && runCatching { addOverlay() }.isSuccess) return
-        zapisLog("[CHYBÍ povolení „Zobrazovat přes jiné aplikace“ – titulky nejde ukázat]")
+        pripravena = false
+        synchronized(chybyOken) { chybyOken.clear() }
+        if (!android.provider.Settings.canDrawOverlays(this)) {
+            synchronized(chybyOken) { chybyOken["povolení"] = PrehledSpojeni("prekryvPovoleni", UrovenSpojeni.CHYBA) }
+        } else {
+            runCatching { addOverlay(); pripravena = true }.onFailure { chybaOkna("titulky", it) }
+        }
+        chybaOkna?.let { zapisLog("[překryv: ${it.klic} ${it.detail}]") }
     }
 
     private fun zapisLog(s: String) {
@@ -107,7 +113,7 @@ class OverlayService : Service() {
         textView = tv
         podklad = pod
         nastavVychoziPolohu()
-        runCatching { wm.addView(pod, WindowManager.LayoutParams().apply { copyFrom(lp) }) }
+        okno("podklad") { wm.addView(pod, WindowManager.LayoutParams().apply { copyFrom(lp) }) }
         wm.addView(tv, lp)
 
         // druhé okno: spodní nápověda / úkol mise – žluté písmo
@@ -120,7 +126,7 @@ class OverlayService : Service() {
         val lpN = WindowManager.LayoutParams().apply { copyFrom(lp) }
         napoveda = nap
         layoutNapovedy = lpN
-        runCatching { wm.addView(nap, lpN) }
+        okno("nápověda") { wm.addView(nap, lpN) }
     }
 
     private var napoveda: TextView? = null
@@ -134,7 +140,7 @@ class OverlayService : Service() {
         if (text.isBlank() || box == null || box.size != 4) { schovejNapovedu.run(); return }
         umisti(tv, lp, box, 1, sirsi = 1.08f, minSirka = 0.12f, maxSirka = 0.6f)
         tv.maxLines = 2
-        runCatching { wm.updateViewLayout(tv, lp) }
+        okno("nápověda") { wm.updateViewLayout(tv, lp) }
         tv.text = text
         tv.visibility = android.view.View.VISIBLE
         ui.postDelayed(schovejNapovedu, 60_000) // pojistka, kdyby zpráva o zmizení nepřišla
@@ -150,7 +156,7 @@ class OverlayService : Service() {
         pod.minHeight = tv.minHeight
         pod.text = tv.text.toString()
         pod.visibility = tv.visibility
-        runCatching { wm.updateViewLayout(pod, WindowManager.LayoutParams().apply { copyFrom(lp) }) }
+        okno("podklad") { wm.updateViewLayout(pod, WindowManager.LayoutParams().apply { copyFrom(lp) }) }
     }
 
     private var layout: WindowManager.LayoutParams? = null
@@ -259,13 +265,13 @@ class OverlayService : Service() {
         val w = obr.widthPixels.toFloat(); val h = obr.heightPixels.toFloat()
         val r = ramecekTitulku ?: SrafovanyRamecek(this, "Titulky hry", OblastTitulku.MODRA).also { v ->
             ramecekTitulku = v
-            runCatching { wm.addView(v, oknoVoleb(true)) }
+            okno("oblast titulků") { wm.addView(v, oknoVoleb(true)) }
         }
         val lp = (r.layoutParams as? WindowManager.LayoutParams) ?: oknoVoleb(true)
         lp.x = (o[0] * w).toInt(); lp.y = (o[1] * h).toInt()
         lp.width = ((o[2] - o[0]) * w).toInt().coerceAtLeast(20)
         lp.height = ((o[3] - o[1]) * h).toInt().coerceAtLeast(20)
-        runCatching { wm.updateViewLayout(r, lp) }
+        okno("oblast titulků") { wm.updateViewLayout(r, lp) }
         r.visibility = android.view.View.VISIBLE
         r.invalidate()
         // pojistka: zmizí sám i bez zprávy z telefonu
@@ -298,13 +304,13 @@ class OverlayService : Service() {
         if (ramecek) {
             val r = ramecekVoleb ?: SrafovanyRamecek(this, "Volby odpovědí").also { v ->
                 ramecekVoleb = v
-                runCatching { wm.addView(v, oknoVoleb(true)) }
+                okno("oblast voleb") { wm.addView(v, oknoVoleb(true)) }
             }
             val lp = (r.layoutParams as? WindowManager.LayoutParams) ?: oknoVoleb(true)
             lp.x = (o[0] * w).toInt(); lp.y = (o[1] * h).toInt()
             lp.width = ((o[2] - o[0]) * w).toInt().coerceAtLeast(20)
             lp.height = ((o[3] - o[1]) * h).toInt().coerceAtLeast(20)
-            runCatching { wm.updateViewLayout(r, lp) }
+            okno("oblast voleb") { wm.updateViewLayout(r, lp) }
             r.visibility = android.view.View.VISIBLE
             r.invalidate()
             // pojistka: když nemá svítit pořád, po 8 s zmizí i bez zprávy z telefonu
@@ -320,7 +326,7 @@ class OverlayService : Service() {
             v.setPadding((12 * d).toInt(), (8 * d).toInt(), (12 * d).toInt(), (8 * d).toInt())
             v.visibility = android.view.View.INVISIBLE
             seznamVoleb = v
-            runCatching { wm.addView(v, oknoVoleb(true)) }
+            okno("volby") { wm.addView(v, oknoVoleb(true)) }
         }
         if (volby.isEmpty()) { seznam.visibility = android.view.View.INVISIBLE; return }
         seznam.removeAllViews()
@@ -357,7 +363,7 @@ class OverlayService : Service() {
             lp.x = (o[2] * w + mezera).toInt()
         }
         lp.y = (o[1] * h).toInt()
-        runCatching { wm.updateViewLayout(seznam, lp) }
+        okno("volby") { wm.updateViewLayout(seznam, lp) }
         seznam.visibility = android.view.View.VISIBLE
     }
 
@@ -393,7 +399,7 @@ class OverlayService : Service() {
                 konecUpravy.run()
                 nastavVychoziPolohu()
             }
-            textView?.let { tv -> layout?.let { lp -> runCatching { wm.updateViewLayout(tv, lp) } } }
+            textView?.let { tv -> layout?.let { lp -> okno("titulky") { wm.updateViewLayout(tv, lp) } } }
             showText(obarvi(text, intent.getIntArrayExtra(EXTRA_BARVY_JMEN)), intent.getLongExtra(EXTRA_DOBA, 6000))
         }
         return START_STICKY
@@ -432,6 +438,7 @@ class OverlayService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
+        pripravena = false
         ui.removeCallbacks(hideRunnable)
         ui.removeCallbacks(konecUpravy)
         ui.removeCallbacks(schovejRamecek)
@@ -452,6 +459,38 @@ class OverlayService : Service() {
     }
 
     companion object {
+        @Volatile internal var pripravena = false
+            private set
+        private val chybyOken = linkedMapOf<String, PrehledSpojeni>()
+        private val chybaOkna get() = synchronized(chybyOken) { chybyOken.values.firstOrNull() }
+        @Volatile private var chybaSluzby: PrehledSpojeni? = null
+        internal val chyba get() = chybaSluzby ?: chybaOkna
+
+        private fun chybaOkna(okno: String, e: Throwable) {
+            synchronized(chybyOken) {
+                chybyOken[okno] = PrehledSpojeni("prekryvOkno", UrovenSpojeni.CHYBA, "$okno: ${e.javaClass.simpleName}")
+            }
+        }
+
+        private inline fun okno(jmeno: String, akce: () -> Unit) {
+            runCatching(akce).onSuccess { synchronized(chybyOken) { chybyOken.remove(jmeno) } }
+                .onFailure { chybaOkna(jmeno, it) }
+        }
+
+        /** Nezveřejňovat exception.message: může obsahovat údaje z Intentu. */
+        internal fun posli(context: Context, intent: Intent) {
+            runCatching { context.startService(intent) }
+                .recoverCatching { context.startForegroundService(intent) }
+                .onSuccess { chybaSluzby = null }
+                .onFailure { chybaSluzby = PrehledSpojeni("prekryvSluzba", UrovenSpojeni.CHYBA, it.javaClass.simpleName) }
+        }
+
+        internal fun spust(context: Context) {
+            runCatching { context.startForegroundService(Intent(context, OverlayService::class.java)) }
+                .onSuccess { chybaSluzby = null }
+                .onFailure { chybaSluzby = PrehledSpojeni("prekryvSluzba", UrovenSpojeni.CHYBA, it.javaClass.simpleName) }
+        }
+
         const val ACTION_SET_TEXT = "cz.titulky.tv.SET_TEXT"
         /** Spodní nápověda / úkol mise (žlutě, vlastní box). EXTRA_TEXT prázdný = schovat. */
         const val ACTION_SET_NAPOVEDA = "cz.titulky.tv.SET_NAPOVEDA"
