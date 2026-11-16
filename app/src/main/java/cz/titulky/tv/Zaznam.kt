@@ -35,7 +35,14 @@ object Zaznam {
             f.readLines().filter { r -> klice.any { it in r } }.takeLast(30).joinToString("\n").ifBlank { "(nic)" }
         }.getOrDefault("(nejde přečíst)")
         val verze = runCatching { a.packageManager.getPackageInfo(a.packageName, 0).versionName }.getOrNull()
-        val obsah = "Verze: $verze   Stav: ${RemotePlayService.stav}\n\n=== pád ===\n" + konec("pad.txt", 25) +
+        val jazyk = Nastaveni(a).jazykNeboCs
+        val prijem = PrijemService.prehled()
+        val stavy = "\nObraz: " + Texty.spojeni(jazyk, RemotePlayService.prehledSpojeni()) +
+            "\nVýstup: " + (if (Propojeni.Vysilac.cilIp == null) "toto zařízení" else
+                Propojeni.Vysilac.cilJmeno + " · " + Texty.prenos(jazyk, Propojeni.Vysilac.stavPrenosu)) +
+            (if (PrijemService.bezi || prijem.uroven == UrovenSpojeni.CHYBA) "\nTV příjem: " + Texty.spojeni(jazyk, prijem) else "") +
+            OverlayService.chyba?.let { "\nPřekryv: " + Texty.spojeni(jazyk, it) }.orEmpty()
+        val obsah = "Verze: $verze   Stav: ${RemotePlayService.stav}" + stavy + "\n\n=== pád ===\n" + konec("pad.txt", 25) +
             "\n\n=== spojení (připojení / odpojení) ===\n" + spojeni() +
             "\n\n=== titulky.log ===\n" + konec("titulky.log", 120) +
             "\n\n=== xbox.log ===\n" + konec("xbox.log", 15) +

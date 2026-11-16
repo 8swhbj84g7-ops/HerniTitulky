@@ -732,8 +732,6 @@ class TelefonActivity : Activity() {
         stav = TextView(this).apply {
             textSize = 13f
             setTextColor(Color.parseColor("#BBBBBB"))
-            maxLines = 2
-            ellipsize = android.text.TextUtils.TruncateAt.END
         }
         val zastavit = TextView(this).apply {
             text = t("zastavit")
@@ -1003,15 +1001,14 @@ class TelefonActivity : Activity() {
                 return
             }
             // stav spojení
-            val (klic, barva) = when {
-                RemotePlayService.bezi -> "stavPripojeno" to Color.parseColor("#14A23C")
-                else -> "stavPripojuji" to Color.parseColor("#E08A00")
+            val spojeni = RemotePlayService.prehledSpojeni()
+            val barva = when (spojeni.uroven) {
+                UrovenSpojeni.OK -> Color.parseColor("#14A23C")
+                UrovenSpojeni.CHYBA -> Color.parseColor("#D32F2F")
+                UrovenSpojeni.CEKANI -> Color.parseColor("#E08A00")
+                UrovenSpojeni.VYPNUTO -> Color.GRAY
             }
-            // při potížích ukázat i přesný důvod (např. "Remote Play ukončeno: …")
-            val duvod = RemotePlayService.stav
-            val k = if (RemotePlayService.naXboxu) klic + "Xbox" else klic
-            stav.text = if (!RemotePlayService.bezi && (duvod.contains("ukončeno", true) || duvod.contains("✘")))
-                t(k) + "\n" + duvod else t(k)
+            stav.text = Texty.spojeni(nast.jazykNeboCs, spojeni)
             if (nast.pribehovy) stav.append("\n" + RemotePlayService.pribehStav)
             tecka.background = zaobleni(barva)
             prepnoutKonzoli?.let { b ->
@@ -1051,10 +1048,11 @@ class TelefonActivity : Activity() {
                 posledni = null
             }
             if (doTv) {
-                val s = t("tvBeziKratce")
+                val prenos = Propojeni.Vysilac.stavPrenosu
+                val s = Propojeni.Vysilac.cilJmeno + "\n" + Texty.prenos(nast.jazykNeboCs, prenos)
                 if (titulek.text.toString() != s) {
                     titulek.text = s
-                    titulek.setTextColor(Color.parseColor("#3CFF6E"))
+                    titulek.setTextColor(Color.parseColor(if (prenos.chyba != null) "#FF7272" else "#FFC24B"))
                 }
                 napoveda.visibility = View.GONE
                 ui.postDelayed(this, 300)
@@ -1077,7 +1075,7 @@ class TelefonActivity : Activity() {
             napoveda.text = n
             napoveda.visibility = if (n.isEmpty() || naSirku) View.GONE else View.VISIBLE
             // na šířku: tečka zelená = spojeno s PS5, oranžová = připojuji
-            if (naSirku) sirkaTecka.background = zaobleni(Color.parseColor(if (RemotePlayService.bezi) "#3CFF6E" else "#E08A00"))
+            if (naSirku) sirkaTecka.background = zaobleni(barva)
             ui.postDelayed(this, 100)
         }
     }

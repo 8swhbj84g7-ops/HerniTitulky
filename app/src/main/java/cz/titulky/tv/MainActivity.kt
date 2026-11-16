@@ -729,16 +729,20 @@ class MainActivity : Activity() {
         nastavObsah(sloupec, sirka = ViewGroup.LayoutParams.MATCH_PARENT)
         zpet.requestFocus()
 
-        var bylPripojen = PrijemService.telefonPripojen()
+        var bylPripojen = PrijemService.prehled().uroven == UrovenSpojeni.OK
         val obnovPrijem = object : Runnable {
             override fun run() {
                 if (obrazovka != "prijem") return
-                val ok = PrijemService.telefonPripojen()
-                stav.text = t(if (ok) "prijemPripojen" else "prijemCekam")
-                stav.background = zaobleni(if (ok) ZELENA else Color.parseColor("#B07A10"), 999f)
+                val prijem = PrijemService.prehled()
+                stav.text = Texty.spojeni(nast.jazykNeboCs, prijem)
+                stav.background = zaobleni(when (prijem.uroven) {
+                    UrovenSpojeni.OK -> ZELENA
+                    UrovenSpojeni.CHYBA -> Color.parseColor("#B71C1C")
+                    else -> Color.parseColor("#B07A10")
+                }, 999f)
                 // telefon se právě připojil → sama přepnout na hru
-                if (ok && !bylPripojen) moveTaskToBack(true)
-                bylPripojen = ok
+                if (prijem.uroven == UrovenSpojeni.OK && !bylPripojen) moveTaskToBack(true)
+                bylPripojen = prijem.uroven == UrovenSpojeni.OK
                 ui.postDelayed(this, 1000)
             }
         }
@@ -775,12 +779,13 @@ class MainActivity : Activity() {
             else -> t("tvPlatformaNeznama")
         }
         tvStav?.text = when {
-            posila -> "● " + t("tvOdesila")
+            posila -> Texty.prenos(nast.jazykNeboCs, Propojeni.Vysilac.stavPrenosu)
             lokalni -> t("tvJenZde")
             profil != null -> t("tvPripravena")
             else -> t("tvVyberVystup")
         }
-        tvStav?.setTextColor(if (posila) Color.parseColor("#3CFF6E") else TEXT2)
+        tvStav?.setTextColor(if (!posila) TEXT2 else if (Propojeni.Vysilac.stavPrenosu.chyba != null)
+            Color.parseColor("#FF7272") else Color.parseColor("#FFC24B"))
     }
 
     private var prepnoutBtn: TextView? = null
@@ -802,17 +807,18 @@ class MainActivity : Activity() {
     private fun obnovStav() {
         obnovTvKartu()
         if (!::stavText.isInitialized) return
-        val (barva, klic) = when {
-            !nejakaKonzole -> SEDA to "stavNesparovano"
-            !RemotePlayService.aktivni || RemotePlayService.pozastaveno -> SEDA to "stavVypnuto"
-            RemotePlayService.bezi -> ZELENA to "stavPripojeno"
-            else -> Color.parseColor("#B07A10") to "stavPripojuji"
+        val spojeni = if (!nejakaKonzole) PrehledSpojeni("stavNesparovano", UrovenSpojeni.VYPNUTO)
+            else RemotePlayService.prehledSpojeni()
+        val chybaPrekryvu = if (!telefon && RemotePlayService.aktivni) OverlayService.chyba else null
+        val barva = when {
+            chybaPrekryvu != null || spojeni.uroven == UrovenSpojeni.CHYBA -> Color.parseColor("#B71C1C")
+            spojeni.uroven == UrovenSpojeni.OK -> ZELENA
+            spojeni.uroven == UrovenSpojeni.CEKANI -> Color.parseColor("#B07A10")
+            else -> SEDA
         }
-        // při připojování ukázat i přesný důvod, proč to zatím nejde (např. "Remote Play ukončeno: …")
-        val duvod = RemotePlayService.stav
-        val k = if (RemotePlayService.naXboxu && (klic == "stavPripojeno" || klic == "stavPripojuji")) klic + "Xbox" else klic
-        stavText.text = if (klic == "stavPripojuji" && duvod.isNotBlank() && !duvod.contains("běží", true) && !RemotePlayService.naXboxu)
-            t(k) + "\n" + duvod.take(90) else t(k)
+        stavText.text = Texty.spojeni(nast.jazykNeboCs, spojeni) + chybaPrekryvu?.let {
+            "\n" + Texty.spojeni(nast.jazykNeboCs, it)
+        }.orEmpty()
         stavTecka.background = zaobleni(if (barva == ZELENA) Color.parseColor("#3CFF6E") else Color.parseColor("#DDDDDD"), 999f)
         stavKarta.background = vyber(barva, radius = 999f)
         // na čem se hraje: připojeno → podle spojení, jinak podle volby

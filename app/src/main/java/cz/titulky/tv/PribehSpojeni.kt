@@ -4,7 +4,7 @@ import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
 
-/** Jediný opakovaný stav a odpovědi pouze od zvoleného LG; žádná další čtecí fronta. */
+/** Jediný opakovaný stav a odpovědi pouze od zvolené TV; žádná další čtecí fronta. */
 internal class PribehSpojeni(ip: String, port: Int = 41989, private val cas: () -> Long) : AutoCloseable {
     @Volatile var zprava = ""
     @Volatile var odpoved: Pair<PribehProtokol.Odpoved, Long>? = null
@@ -27,12 +27,13 @@ internal class PribehSpojeni(ip: String, port: Int = 41989, private val cas: () 
                     if (text.isEmpty()) { Thread.sleep(50); continue }
                     val data = text.toByteArray(Charsets.UTF_8)
                     runCatching { sit.send(DatagramPacket(data, data.size)) }
+                        .onFailure { if (bezi) chyba = it.javaClass.simpleName }
                     val incoming = DatagramPacket(buffer, buffer.size)
                     runCatching {
                         sit.receive(incoming)
                         val ack = PribehProtokol.odpoved(String(buffer, 0, incoming.length, Charsets.UTF_8))
                         if (ack != null && ack.id == zprava.split('\t').getOrNull(1)) odpoved = ack to cas()
-                    }
+                    }.onFailure { if (bezi && it !is java.net.SocketTimeoutException) chyba = it.javaClass.simpleName }
                     // Odpověď nesmí změnit heartbeat na těsnou smyčku.
                     Thread.sleep(250)
                 }

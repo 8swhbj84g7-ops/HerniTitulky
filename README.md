@@ -61,6 +61,11 @@ Licence AGPLv3 se vztahuje na zdrojový kód, ne na název a logo. Název **Play
 
 ## LG v Android aplikaci
 
+Stav spojení rozlišuje běh služby, spojení s konzolí a skutečný příjem snímků.
+Zvolená TV ani úspěšné odeslání UDP dat nepotvrzují jejich přijetí nebo zobrazení;
+aplikace to u výstupu výslovně uvádí. Aktuální chybu sítě a na Android TV také
+chybu překryvu najdeš na stavové obrazovce a v nabídce **Záznam**.
+
 Vyber LG webOS a projdi průvodcem. Jedno spárování slouží k instalaci, kontrole
 verze, aktualizaci i zobrazení platnosti Developer Mode. Přibalený přijímač se
 instaluje pouze tehdy, když v TV chybí nebo je starší. Novější se nepřepisuje.

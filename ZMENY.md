@@ -4,6 +4,15 @@
 Od verze 0.10 se vyvíjí jen jedna aplikace (dřívější NextGen, větev `master`) – umí „Jen televize“ i „S telefonem“.
 Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCode + versionName) a sem se dopíše, co je nového.
 
+## Připravené změny (nevydáno)
+
+- Stav konzole už nezelená pouhým spuštěním služby: rozlišuje čekání na spojení,
+  čekání na první snímek, příjem a výpadek obrazu. Důvody chyb se nezkracují.
+- Výstup do TV ukazuje chyby UDP odesílání a otevřeně uvádí, že přijetí a zobrazení
+  nejsou potvrzené. Android přijímač hlásí chybu soketu, oprávnění či okna překryvu
+  a skrytí mimo TV vstup. Aktuální stavy jsou i v Záznamu.
+- Beze změny formátů paketů pro LG, Samsung a Android TV, kodeků a nastavení.
+
 ## 0.21 (versionCode 33)
 
 Co je nového pro hráče:
