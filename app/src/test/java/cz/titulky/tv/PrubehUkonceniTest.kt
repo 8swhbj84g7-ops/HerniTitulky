@@ -4,6 +4,60 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class PrubehUkonceniTest {
+    @Test fun ukonceniZastaviRelaciPredDisposeBezOdpojovaniSurface() {
+        var cas = 0L
+        val log = mutableListOf<String>()
+        val calls = mutableListOf<String>()
+        val p = PrubehUkonceni("test", { cas }, log::add)
+        p.ukonci(
+            stop = { calls += "stop"; cas += 25 },
+            dispose = { assertEquals(listOf("stop"), calls); calls += "dispose"; cas += 25 }
+        )
+        p.dokonci()
+        assertEquals(listOf("stop", "dispose"), calls)
+        assertFalse(log.any { "setSurface" in it })
+        assertEquals(2, log.count { "konec 25 ms" in it })
+        assertTrue(log.any { "dokončeno 50 ms" in it })
+    }
+
+    @Test fun blokujiciDisposeUzNemuzeZabranitZavolaniStop() {
+        val cas = java.util.concurrent.atomic.AtomicLong(0)
+        val log = java.util.concurrent.CopyOnWriteArrayList<String>()
+        val uvnitr = java.util.concurrent.CountDownLatch(1)
+        val uvolni = java.util.concurrent.CountDownLatch(1)
+        val stopped = java.util.concurrent.atomic.AtomicBoolean(false)
+        val p = PrubehUkonceni("test", cas::get, { log.add(it) })
+        val worker = Thread {
+            try {
+                p.ukonci(stop = { stopped.set(true) }, dispose = {
+                    uvnitr.countDown()
+                    check(uvolni.await(2, java.util.concurrent.TimeUnit.SECONDS))
+                })
+            } finally { p.dokonci() }
+        }.apply { name = "ps5-konec"; isDaemon = true; start() }
+        try {
+            assertTrue(uvnitr.await(2, java.util.concurrent.TimeUnit.SECONDS))
+            assertTrue(stopped.get())
+            cas.set(5000)
+            assertTrue(p.kontrola(5000))
+            assertTrue(log.any { "překročeno: dispose(join/free)" in it })
+            assertFalse(log.any { "setSurface" in it })
+            assertTrue(worker.isAlive) // limit jen diagnostikuje, neuvolňuje nativní paměť
+        } finally { uvolni.countDown(); worker.join(2000) }
+        assertFalse(worker.isAlive)
+        assertFalse(p.kontrola(5000))
+    }
+
+    @Test fun chybaStopSeZapiseBezArgumentuADisposeStaleMusiCekatPresJoin() {
+        val log = mutableListOf<String>()
+        var disposed = false
+        val p = PrubehUkonceni("test", { 0L }, log::add)
+        p.ukonci(stop = { error("secret-token-account") }, dispose = { disposed = true })
+        assertTrue(disposed)
+        assertTrue(log.any { "stop chyba IllegalStateException" in it })
+        assertFalse(log.any { "secret-token-account" in it })
+    }
+
     @Test fun kontrolaUvidiStackSkutecneCekajicihoVlakna() {
         val cas = java.util.concurrent.atomic.AtomicLong(0)
         val log = java.util.concurrent.CopyOnWriteArrayList<String>()

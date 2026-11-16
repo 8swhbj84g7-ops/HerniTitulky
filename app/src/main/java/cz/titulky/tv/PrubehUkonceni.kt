@@ -2,7 +2,7 @@ package cz.titulky.tv
 
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** Pouze měří původní volání; limit nikdy nepřerušuje nativní práci ani neuvolňuje její paměť. */
+/** Měří ukončování; limit nikdy nepřerušuje nativní práci ani neuvolňuje její paměť. */
 internal class PrubehUkonceni(
     private val id: String,
     private val ted: () -> Long,
@@ -16,6 +16,12 @@ internal class PrubehUkonceni(
     @Volatile private var hotovo = false
 
     init { zapis("[PS5 konec #$id] začátek") }
+
+    fun ukonci(stop: () -> Unit, dispose: () -> Unit) {
+        // TCL blokuje v odpojení Surface; nejprve zastavit síť, dekodér uvolní dispose až po join.
+        proved("stop", stop)
+        proved("dispose(join/free)", dispose)
+    }
 
     fun proved(nazev: String, akce: () -> Unit) {
         val k = Krok(nazev, ted(), Thread.currentThread())

@@ -2,10 +2,50 @@
 
 ## Stav – 16. 11. 2026
 
-Diagnostická větev `codex/ps5-session-diagnostics` vychází z masteru `bc5237d`.
-Stejná TCL 65C805 nebyla dostupná přes ADB. Zaseknutí `ps5-konec` v
-`setSurface(null)` není potvrzené a pořadí ukončování se zatím nemění.
-Tento krok není potvrzenou opravou původního incidentu.
+PR #15 zůstává draft. Adam předal přejímku na TCL 65C805, která potvrdila
+zablokování `ps5-konec` v `setSurface(null)` ještě před zavoláním `stop()`.
+Níže je úzká oprava. Její nové sestavení ještě nebylo ověřené na stejné TCL;
+bez opakované přejímky PR neslučovat. Původní soubory `ZALOHA\tv_titulky.log`
+a `ZALOHA\diag_vlakna\*` jsou u Adama, na tomto Macu nejsou k dispozici.
+
+## Rozhodující důkaz předaný Adamem
+
+- Relace `#a226453`, GL: připojena 20:33:29, přechod do „S telefonem“ 20:34:05.
+- `20:34:05 [PS5 konec #a226453] setSurface(null) začátek`.
+- `20:34:10 5000 ms překročeno: setSurface(null)`; stack
+  `ChiakiNative.sessionSetSurface(Native Method) ← Session.setSurface(Chiaki.kt:393)
+  ← ukonciVPozadi(RemotePlayService.kt:2140)`. `stop` nezačal.
+- Podle reportu ani po více než 90 s nenastal konec tohoto kroku; `ps5-konec`,
+  MediaCodec a Takion dál běžely. Telefon se připojil až po vynuceném ukončení TV.
+- Oddělená kontrola „S telefonem“: start 20:40:10, neprázdný PCT1 s 18 znaky
+  20:42:22, `vstupTV=true`, oprávnění překryvu=true a Adamem potvrzené zobrazení.
+  To potvrzuje funkční příjem/překryv v tomto pokusu, nikoli opravu ukončení.
+- `debuggerd -j` bez rootu nefungoval, ale diagnostický Java stack zachytil
+  vstup do konkrétního JNI volání. Pro tuto změnu není nutné získat root.
+
+## Úzká oprava po zachycení závady
+
+Ukončení nyní volá `stop()` → `dispose()` (`sessionJoin` → `sessionFree`).
+Samostatné `setSurface(null)` se v této cestě nevolá. Pouhé přehození na
+`stop()` → `setSurface(null)` → `dispose()` by stále mohlo zablokovat úklid
+ve stejném Surface volání.
+
+Jde o stejný postup jako
+[shutdown v Chiaki-TV](https://github.com/505e06b2/Chiaki-TV/blob/f814cf69d636f149ad5a3cfffd19cb22da90beda/android/app/src/main/java/com/metallic/chiaki/session/StreamSession.kt#L41).
+Lokální `Session.dispose()` čeká přes join a až potom volá free. Referenční
+[JNI sessionFree](https://github.com/505e06b2/Chiaki-TV/blob/f814cf69d636f149ad5a3cfffd19cb22da90beda/android/app/src/main/cpp/chiaki-jni.c#L368)
+zahrnuje ukončení video dekodéru. Je to podklad k použití API, nikoli nezávislé
+ověření shody každé dodané binární knihovny s tímto upstream commitem.
+
+Diagnostika měří nové kroky `stop` a `dispose(join/free)`. Pokud se zastaví až
+join nebo úklid dekodéru, záznam to rozliší. Žádné paralelní free, přerušení JNI,
+násilné zabíjení procesu nebo nový ukončovací timeout se nepřidává.
+
+Pozorování staré GL volby a rozdílu ~1000 ms proti dřívějším ~45 ms u YUV je
+samostatný výkonový nález. Tato úprava GL preference nemění: přejímka musí
+nejdřív zopakovat původní GL scénář. Historicky uložené GL už může být prvním
+snímkem označené jako ověřené; jednorázový návrat k YUV vyžaduje samostatný
+návrh a přejímku, nelze ho vydávat za součást opravy ukončení.
 
 Dodané podklady zachycují různé situace:
 
@@ -17,13 +57,11 @@ Dodané podklady zachycují různé situace:
 - Fotografie telefonu potvrzuje český překlad na telefonu. Nedokazuje odeslání,
   příjem ani zobrazení na TV. Režim „S telefonem“ musí mít spuštěný přijímač;
   TV při něm nemá držet vlastní Remote Play relaci.
-- Dřívější report popisuje obsazenou PS5 a pomoc po vynuceném ukončení, ale
-  k tomuto kroku nebyl k dispozici záznam stacku visícího vlákna na stejné TCL.
 
 ## Co tato větev mění
 
-- Každé ukončení má místní ID relace a začátek/konec kroků `setSurface(null)`,
-  `stop` a `dispose(join/free)` včetně délky. Při překročení diagnostických
+- Každé ukončení má místní ID relace a začátek/konec kroků `stop`
+  a `dispose(join/free)` včetně délky. Při překročení diagnostických
   5 sekund se jednou pro daný krok zachytí Java stack příslušného vlákna.
   Kontrola běží na samostatném vlákně, nezávisle na hlavním vlákně aplikace.
   Limit pouze zapisuje diagnostiku; nepřerušuje JNI, nevolá paralelně stop
@@ -46,41 +84,41 @@ Dodané podklady zachycují různé situace:
   nezapisuje. Výsledek je ve stejném `titulky.log` a v okně Záznam; nové značky
   jsou také v logcat pod tagem `PlayCaptionDiag`.
 
-## Přejímka na stejné TCL – Adam
+## Opakovaná přejímka na stejné TCL – Adam
 
-1. Použít APK sestavené z této větve se zachováním dat. Poznamenat verzi APK,
-   model/firmware Android TV a přesný čas.
-2. **Jen televize:** telefon zatím nepřipojovat. Zachytit normální příjem
-   snímků a záznam `[obraz: potvrzen skutečný snímek YUV]` nebo GL.
-3. Zastavit aplikaci běžným tlačítkem a zkusit dřívější chybný postup. Dokud
-   chyba trvá, nepoužívat Vynutit ukončení. Po alespoň pěti sekundách uložit
-   z TV část Záznam → „PS5 / obraz / příjem z telefonu“ a časově odpovídající
-   záznam telefonu. Původní `ZALOHA\diag_vlakna.ps1` je podle reportu u Adama,
-   není součástí tohoto repozitáře; případný debuggerd stack pořídit při závadě.
-4. Rozhodující důkaz pro podezření na `setSurface(null)` je stejná relace
-   `#ID`: začátek tohoto kroku, překročený limit a stack v
-   `ChiakiNative.sessionSetSurface` / `Session.setSurface`, bez následného
-   začátku `stop`. Pokud visí až `sessionJoin`, hypotéza o prvním kroku potvrzená
-   není. Pokud všechny kroky skončí, hledat jinou příčinu obsazené PS5.
-5. **S telefonem ověřit odděleně:** TV přepnout do „S telefonem“, na telefonu
-   vybrat právě tuto TV jako výstup. Ověřit `[TV příjem] start S telefonem` a
-   po českém titulku první neprázdný PCT1. Chybějící paket znamená problém
-   odeslání/přenosu/příjmu; `vstupTV=false` nebo chybějící oprávnění ukazuje
-   jinou větev než nulu snímků z PS5. Případná oprava se musí opřít o tyto logy.
-6. Až po zachycení stavu lze jako dočasné zotavení použít Nastavení TV →
-   Aplikace → PlayCaption → Vynutit ukončení a znovu spustit. Bez odinstalování
-   a bez mazání dat.
+1. Použít nové APK z aktuálního headu PR #15, sestavené stejným podpisem jako
+   dosavadní instalace. Aktualizovat bez mazání dat. Zapsat commit, model,
+   firmware, cestu GL/YUV a čas. Před začátkem smí být nutné jednou vynuceně
+   ukončit už visící starý proces; od začátku měřeného pokusu už nikoli.
+2. „Jen televize“: připojit PS5 a potvrdit příchod snímků. Na stejné GL cestě
+   přepnout do „S telefonem“. Pro stejné ID relace očekávat začátek/konec
+   `stop`, jeho návratový kód a začátek/konec `dispose(join/free)`. Nový záznam
+   nesmí ukazovat ukončovací volání `setSurface(null)`.
+3. Telefon musí převzít PS5 bez vynuceného ukončení TV a bez opakovaného
+   `Remote Play on Console is already in use`. Na TV ověřit neprázdný PCT1
+   a skutečně zobrazené české titulky. Pouhé přijetí paketu není přejímka obrazu.
+4. Opakovat nejméně třikrát: „Jen televize“ → „S telefonem“ → „Jen televize“.
+   Ověřit i běžné ukončení aplikace. Tlačítko „Vypnout překlad“ jen pozastavuje
+   čtení a není testem ukončení relace; jeho význam tento PR nemění.
+5. Zopakovat „Jen televize“ s YUV, pokud je tato cesta na dané instalaci dostupná
+   bez mazání dat. Nevyvozovat z pomalého GL závěr o rychlosti YUV bez porovnání
+   stejného měření a scény.
+6. Pokud některý krok zůstane viset, nejprve uložit stejnou relaci z TV logu,
+   stack z diagnostického limitu a časově odpovídající log telefonu. Teprve
+   potom lze jako zotavení použít Vynutit ukončení. PR zůstává draft, pokud
+   původní scénář nelze zopakovat, chybí důkaz převzetí nebo oprava nefunguje.
 
-Po potvrzení místa blokování teprve posoudit změnu pořadí stop/odpojení Surface
-a zopakovat oba režimy na stejné TCL. Samotný timeout není oprávnění k souběžnému
-`sessionFree`, dokud nativní vlákno paměť relace může používat.
+Limit pouze zapisuje diagnostiku. Není oprávněním k souběžnému `sessionFree`,
+dokud nativní vlákno paměť relace může používat. Bez releasu, tagu a změny verze.
 
 ## Automatická kontrola
 
 `bash gradlew :app:testDebugUnitTest :app:assembleDebug` a `git diff --check`.
-Na této větvi prošlo 201 JVM testů bez selhání nebo přeskočení a sestavení APK.
+Na této větvi prošlo 204 JVM testů bez selhání nebo přeskočení a sestavení APK.
 `VolbaObrazuTest` ověřuje historický úspěch YUV, zachování staré/ověřené volby GL,
 neukládání pouhého pokusu, návrat neověřeného GL a opakované snímky bez dalších
 zápisů nastavení. `PrubehUkonceniTest` simuluje čas a skutečně čekající Java
 vlákno; ověřuje pořadí, délky, jednorázový stack a pokračování po výjimce.
-Nejde o test nativního Chiaki na TCL ani o potvrzení příčiny její závady.
+Nové testy ověřují stop před dispose a diagnostiku při blokujícím dispose.
+Původní blokování potvrdil Adamův report, novou nativní cestu na TCL automatické
+JVM testy neověřují; rozhodne až opakovaná přejímka výše.

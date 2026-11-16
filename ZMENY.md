@@ -8,8 +8,10 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
 
 - Diagnostika PS5 bez obrazu: ID relací, délky jednotlivých kroků ukončování,
   upozornění se stackem při překročení pěti sekund a záznam hlídače/YUV/GL.
-  Pořadí nativních volání zůstává; zaseknutí `setSurface(null)` na TCL zatím
-  není potvrzené. První selhání GL a stav příjmu titulků z telefonu jsou viditelné
+  Adamův report z TCL potvrdil blokování `setSurface(null)` před `stop()`.
+  Ukončení nově používá `stop()` → `dispose(join/free)` bez samostatného
+  odpojování Surface. Nová oprava čeká na opakovanou přejímku stejné TCL.
+  První selhání GL a stav příjmu titulků z telefonu jsou viditelné
   v Záznamu. Postup přejímky: `docs/PS5-BEZ-OBRAZU.md`.
 - Automatická volba obrazu TV se potvrzuje skutečným snímkem, ne časovačem.
   Po doloženém YUV výpadek sám nepřepíná na GL; neověřený GL pokus bez snímků

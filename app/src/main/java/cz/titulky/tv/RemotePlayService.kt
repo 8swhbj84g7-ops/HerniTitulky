@@ -2137,9 +2137,10 @@ class RemotePlayService : Service() {
                 val kontrola = diagnostikaKonce.scheduleAtFixedRate({ prubeh.kontrola(5000) },
                     5000, 5000, java.util.concurrent.TimeUnit.MILLISECONDS)
                 try {
-                    prubeh.proved("setSurface(null)") { s.setSurface(null) }
-                    prubeh.proved("stop") { zapis("[PS5 konec #$id] stop výsledek ${s.stop()}") }
-                    prubeh.proved("dispose(join/free)") { s.dispose() }
+                    prubeh.ukonci(
+                        stop = { zapis("[PS5 konec #$id] stop výsledek ${s.stop()}") },
+                        dispose = { s.dispose() }
+                    )
                 } finally {
                     prubeh.dokonci()
                     kontrola.cancel(false)
