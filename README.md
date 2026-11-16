@@ -6,7 +6,9 @@
 
 > Spojení s PS5 zajišťuje otevřená knihovna **[Chiaki](https://git.sr.ht/~thestr4ng3r/chiaki)** (Florian Märkl a přispěvatelé, AGPLv3). Čtení titulků, překlad a zobrazení na televizi jsou vlastní práce PlayCaption, vyvíjená s pomocí AI. Podrobně v části [Poděkování](#poděkování-a-použitý-software).
 
-PlayCaption čte anglické titulky ze hry, překládá je a zobrazuje česky přes obraz z HDMI. Herní obraz a zvuk přicházejí z konzole přes HDMI; kopie přes Remote Play slouží ke čtení textu a nenahrazuje HDMI obraz. Podporu konkrétních kombinací HDR/VRR a dopad souběžného Remote Play na výkon je potřeba ověřit na dané sestavě.
+PlayCaption čte anglické titulky ze hry, překládá je a zobrazuje česky přes obraz z HDMI. Hru dál sleduješ přes HDMI v rozlišení a obrazovém režimu konzole. Pomocný Remote Play stream slouží ke čtení textu; nenahrazuje HDMI obraz a PlayCaption na jeho nižší rozlišení HDMI obraz nepřevádí.
+
+Na [předvedené sestavě](https://www.youtube.com/watch?v=N_jr-jix7TE) funguje souběžně Remote Play i HDR. Ukázka není měřením interního rozlišení hry ani přesného počtu vykreslených snímků. Podporu dalších kombinací HDR/VRR a dopad souběžného Remote Play na výkon je potřeba ověřit na konkrétní sestavě.
 
 - Android aplikace funguje na **Android TV / Google TV** a na Android telefonech/tabletech.
 - Pro **LG webOS** je dostupný experimentální přijímač titulků z Android telefonu/tabletu: [návod pro LG](webos/NAVOD-LG.md). Vyžaduje Developer Mode; ověřený model je LG C5. Samostatný překlad přímo v LG bez Android zařízení tato verze neumí.
