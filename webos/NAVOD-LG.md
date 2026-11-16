@@ -116,6 +116,9 @@ přebírá přihlášení z Android TV. Pro LG nepoužívej tento postup ani vol
 **+ Přidat Android zařízení**. Přihlášení ke konzoli už máš v tabletu/telefonu.
 
 Android zařízení nech odemčené s otevřeným PlayCaption, ideálně na nabíječce.
+Toto doporučení platí pro dosud ověřené hraní. Oprava minutového ukončení při
+zamknutí telefonu s aktivním LG výstupem je zatím vývojová a čeká na fyzickou
+přejímku; samotné automatické testy nepotvrzují běh při vypnutém displeji.
 Počítač při hraní není potřeba. Pokud chceš změnit vstup, otevři znovu PlayCaption LG
 a vyber ho uvnitř aplikace. Přepnutí přes systémové menu LG může překryv zavřít;
 přijímač nesleduje všechny změny vstupů na pozadí.
