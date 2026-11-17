@@ -36,18 +36,31 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
   Po doloženém YUV výpadek sám nepřepíná na GL; neověřený GL pokus bez snímků
   vrací stávající hlídač na YUV. Stará volba GL se nejprve zachovává a ověřuje,
   telefon, kodeky, časy připojení a spárování zůstávají. Přejímka TCL ještě zbývá.
+- PSN přihlášení: staré karty a formuláře prohlížeče už nemohou odeslat použitý
+  kód do nového pokusu. Otevřená stránka, formulář i QR patří jednomu pokusu;
+  skutečné chyby jeho ověření zůstávají viditelné.
+- PSN přihlášení: prohlížeč potvrzuje uložený účet až po ověření u Sony, kontrole
+  Account ID a úspěšném zápisu na zařízení. Během ověřování ukazuje průběh;
+  konkrétní chyba zůstává viditelná v aplikaci i na webové stránce.
+- Opakované odeslání stejného kódu nespouští další výměnu. Zrušený pokus nesmí
+  později přepsat účet; PIN párování čeká na dokončené přihlášení.
+- Instrukce rozlišují telefon/tablet a Android TV. Telefon u LG/Samsungu zadává
+  PIN z PS5 přímo, bez návratu přes Home na TV. Android TV zachovává přihlášení
+  telefonem přes QR a místní síť. Verze APK ani TV přijímačů se tímto krokem nemění.
 
 - Samsung: oprava nestabilního testu potvrzení dočtené Story repliky. Simulovaný
   čas ověřuje i případ, kdy 1 400 ms ještě nestačí kvůli fázi vykreslovacího tiku.
   Časování přijímače ani doba zobrazení titulků se nemění.
-- Oprava ztracených titulků při zapnutém Story a výstupu do Android TV: tento
-  přijímač používá Standardní PCT1, protože jeho PCS1 slouží předávání spárování.
-  Příběhový režim na Android TV přijímači tím není implementován. Telefon ukazuje
-  omezení a uloženou předvolbu Story zachovává pro jiné výstupy.
-- U LG/Samsungu a neznámých přijímačů se Story aktivuje až po platném PCA1 od
+- Android TV v režimu „S telefonem“ nově umí Story: měří stránky podle boxu,
+  zachovává čtecí čas při pauze, skrývá text mimo vstup a při volbách a potvrzuje
+  dočtení poslední stránky. Opakované pakety čtení nerestartují; staré generace
+  neobnoví zrušený text. PCS1 Story je oddělené od stávajícího předání spárování.
+- U všech TV včetně Androidu se Story aktivuje až po platném PCA1 od
   zvoleného cíle. Do té doby pokračuje Standardní výstup; přenos se přepne až
   s první Story stránkou. Staré titulky se po návratu na Standardní neopakují,
-  volby zůstávají funkční. Místní Story v telefonu se nemění.
+  volby zůstávají funkční. Starší Android TV bez podpory zůstane na Standardním
+  výstupu; je nutné aktualizovat telefon i TV. Místní Story, LG/Samsung protokol
+  a režim „Jen televize“ se nemění. Přejímka na TCL zatím neproběhla.
 - Stav konzole už nezelená pouhým spuštěním služby: rozlišuje čekání na spojení,
   čekání na první snímek, příjem a výpadek obrazu. V běžném UI jsou krátké hlášky;
   úplné důvody a technické podrobnosti zůstávají v Záznamu.
@@ -57,6 +70,12 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
   nejsou potvrzené. Android přijímač hlásí chybu soketu, oprávnění či okna překryvu
   a skrytí mimo TV vstup. Aktuální stavy jsou i v Záznamu.
 - Beze změny formátů paketů pro LG, Samsung a Android TV, kodeků a nastavení.
+
+- LG průvodce odděluje úspěšnou instalaci a přijetí požadavku na spuštění od
+  samostatné kontroly běžícího přijímače. Potvrdí jen LG se shodným ID i IP,
+  ukáže čas kontroly a zapíše výsledek do Záznamu. Opožděné/zrušené hledání se ignoruje.
+- Kontrola využívá stávající discovery včetně staršího ohlášení bez nového ACK.
+  Nemění výstup titulků, přenosové protokoly ani instalační balíček.
 
 ## 0.21 (versionCode 33)
 

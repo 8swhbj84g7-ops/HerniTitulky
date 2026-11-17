@@ -308,6 +308,7 @@ class MainActivity : Activity() {
     private lateinit var stavKarta: LinearLayout
 
     private fun ukazHlavni() {
+        zastavServer()
         if (!telefon && PrijemService.bezi) { ukazPrijem(); return }
         obrazovka = "hlavni"
         val vlevo = svisle()
@@ -1079,8 +1080,8 @@ class MainActivity : Activity() {
             .getButton(android.app.AlertDialog.BUTTON_NEGATIVE)?.requestFocus()
     }
 
-    private fun ukazPripojeni() {
-        zastavServer()
+    private fun ukazPripojeni(ukoncitPrihlaseni: Boolean = true) {
+        if (ukoncitPrihlaseni) zastavServer()
         obrazovka = "pripojeni"
         val sloupec = svisle()
         sloupec.addView(nadpisLogo())
@@ -1102,15 +1103,20 @@ class MainActivity : Activity() {
         // 0) než začneš – je potřeba druhý účet na PS5
         val k0 = karta()
         k0.addView(text(t("predemNadpis"), 20f, Color.parseColor("#FFC24B"), tucne = true))
-        k0.addView(text(t("predem"), 17f, Color.WHITE), odsazeni(top = 6))
+        k0.addView(text(t(if (telefon) "predemTelefon" else "predem"), 17f, Color.WHITE), odsazeni(top = 6))
         sloupec.addView(k0, odsazeni(bottom = 12))
 
         // 1) účet PlayStation
         val k1 = karta()
-        k1.addView(text(t("krok1"), 18f, Color.WHITE))
-        val ucetStav = text(if (udaje.accountIdBajty() != null) t("ucetOk") else "", 17f, Color.parseColor("#7DFF9A"))
+        k1.addView(text(t(if (telefon) "krok1Telefon" else "krok1"), 18f, Color.WHITE))
+        val maUcet = udaje.accountIdBajty() != null
+        val prihlaseni = psnPokus?.vysledek
+        val overuji = prihlaseni?.stav == PsnPokus.Stav.OVERUJE
+        val chybaPsn = prihlaseni?.takeIf { it.stav == PsnPokus.Stav.CHYBA }?.popisChyby(jazyk)
+        val ucetStav = text(if (overuji) t("psnOveruji") else chybaPsn ?: if (maUcet) t("ucetOk") else t("nejdrivUcet"),
+            17f, if (chybaPsn != null) Color.parseColor("#FF8A8A") else if (maUcet && !overuji) Color.parseColor("#7DFF9A") else TEXT2)
         k1.addView(ucetStav, odsazeni(top = 6))
-        k1.addView(tlacitkoCervene(if (udaje.accountIdBajty() != null) t("zmenitUcet") else t("prihlasit")) { ukazPsnTelefonem() }, obal(top = 8))
+        k1.addView(tlacitkoCervene(if (maUcet) t("zmenitUcet") else t("prihlasit")) { ukazPsnTelefonem() }, obal(top = 8))
         sloupec.addView(k1, odsazeni(bottom = 12))
 
         // 2) hledání PS5
@@ -1135,9 +1141,11 @@ class MainActivity : Activity() {
 
         // 3) PIN
         val k3 = karta()
-        k3.addView(text(t("krok3"), 18f, Color.WHITE))
+        k3.addView(text(t(if (telefon) "krok3Telefon" else "krok3"), 18f, Color.WHITE))
+        val lzeParovat = psnPokus?.lzeParovat(maUcet) ?: maUcet
         val pin = EditText(this).apply {
             hint = "12345678"
+            isEnabled = lzeParovat
             textSize = 26f * SKALA
             setTextColor(Color.WHITE)
             setHintTextColor(SEDA)
@@ -1153,7 +1161,7 @@ class MainActivity : Activity() {
             val ip = nalezenaIp ?: udaje.ipKonzole
             val cislo = pin.text.toString().filter { it.isDigit() }
             when {
-                udaje.accountIdBajty() == null -> parovaniStav.text = t("nejdrivUcet")
+                udaje.accountIdBajty() == null || psnPokus?.lzeParovat(true) == false -> parovaniStav.text = t("nejdrivUcet")
                 ip == null -> parovaniStav.text = t("nenalezena")
                 cislo.length != 8 -> parovaniStav.text = t("pinChyba")
                 else -> {
@@ -1170,7 +1178,7 @@ class MainActivity : Activity() {
                     })
                 }
             }
-        }, obal(top = 10))
+        }.apply { isEnabled = lzeParovat; alpha = if (lzeParovat) 1f else 0.5f }, obal(top = 10))
         k3.addView(parovaniStav, odsazeni(top = 6))
         sloupec.addView(k3, odsazeni(bottom = 12))
 
@@ -1183,6 +1191,7 @@ class MainActivity : Activity() {
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun ukazPsn() {
+        val pokus = pripravPsnPokus()
         obrazovka = "psn"
         val cookies = CookieManager.getInstance()
         cookies.removeAllCookies(null)
@@ -1199,10 +1208,10 @@ class MainActivity : Activity() {
             isFocusable = true
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
-                    zachytKod(request.url.toString())
+                    zachytKod(request.url.toString(), pokus)
 
                 override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
-                    zachytKod(url)
+                    zachytKod(url, pokus)
                 }
             }
         }
@@ -1212,47 +1221,49 @@ class MainActivity : Activity() {
         web.loadUrl(PsnPrihlaseni.ADRESA_PRIHLASENI)
     }
 
-    private var zpracovavam = false
-
     /** Po přihlášení Sony přesměruje na adresu s kódem → vyměnit za Account ID. */
-    private fun zachytKod(adresa: String): Boolean {
+    private fun zachytKod(adresa: String, pokus: PsnPokus): Boolean {
         val kod = PsnPrihlaseni.kodZAdresy(adresa) ?: return false
-        vymenKod(kod)
+        pokus.prihlas(kod)
         return true
     }
 
-    /** Kód z přihlášení (z prohlížeče v TV nebo z telefonu) → Account ID. */
-    private fun vymenKod(kod: String) {
-        if (zpracovavam) return
-        zpracovavam = true
-        Thread {
-            val id = runCatching { PsnPrihlaseni.accountId(kod) }.getOrNull()
+    private fun pripravPsnPokus(): PsnPokus {
+        zastavServer()
+        lateinit var pokus: PsnPokus
+        pokus = PsnPokus(PsnPrihlaseni::accountId, udaje::ulozAccountId) {
             runOnUiThread {
-                zpracovavam = false
-                if (id != null) udaje.accountId = id
-                ukazPripojeni()
-                if (id == null) android.widget.Toast.makeText(this, t("ucetChyba"), android.widget.Toast.LENGTH_LONG).show()
+                if (psnPokus !== pokus || isFinishing || isDestroyed) return@runOnUiThread
+                if (pokus.stav == PsnPokus.Stav.OVERUJE && obrazovka != "pripojeni") psnStav?.text = t("psnOveruji")
+                else if (obrazovka in listOf("psn", "psnqr", "pripojeni")) ukazPripojeni(ukoncitPrihlaseni = false)
             }
-        }.start()
+        }
+        psnPokus = pokus
+        return pokus
     }
 
     // ------------------------------------------------------------------ přihlášení přes telefon (QR)
 
     private var server: PrihlaseniTelefonem? = null
+    private var psnPokus: PsnPokus? = null
+    private var psnStav: TextView? = null
 
     private fun zastavServer() {
+        psnPokus?.zrus()
+        psnPokus = null
+        psnStav = null
         server?.zastav()
         server = null
     }
 
     private fun ukazPsnTelefonem() {
+        val pokus = pripravPsnPokus()
         obrazovka = "psnqr"
-        zastavServer()
         val cesky = nast.jazykNeboCs in listOf("cs", "sk")
-        server = PrihlaseniTelefonem(cesky) { kod -> runOnUiThread { if (obrazovka == "psnqr") vymenKod(kod) } }
-            .also { it.spust() }
-        val adresa = if (telefon) "http://127.0.0.1:${PrihlaseniTelefonem.PORT}"
-            else "http://${PrihlaseniTelefonem.mojeIp(this) ?: "?"}:${PrihlaseniTelefonem.PORT}"
+        val stranka = PrihlaseniTelefonem(cesky, pokus)
+        server = stranka.also { it.spust() }
+        val host = if (telefon) "127.0.0.1" else PrihlaseniTelefonem.mojeIp(this) ?: "?"
+        val adresa = "http://$host:${PrihlaseniTelefonem.PORT}${stranka.cesta}"
 
         val sloupec = svisle()
         sloupec.addView(nadpisLogo())
@@ -1274,11 +1285,12 @@ class MainActivity : Activity() {
             radek.addView(popis, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
             k.addView(radek)
         }
-        k.addView(text(t("qrCekam"), 17f, TEXT2), odsazeni(top = 14))
+        psnStav = text(t("qrCekam"), 17f, TEXT2)
+        k.addView(psnStav, odsazeni(top = 14))
         sloupec.addView(k, odsazeni(bottom = 12))
         // přihlášení přímo v prohlížeči televize Sony často odmítne (chyba) → na televizi nenabízet,
         // jen přes telefon (QR kód)
-        if (telefon) sloupec.addView(tlacitko(t("qrVTelevizi"), 17f) { zastavServer(); ukazPsn() }
+        if (telefon) sloupec.addView(tlacitko(t("qrVProhlizeci"), 17f) { ukazPsn() }
             .apply { setPadding(dp(20), dp(10), dp(20), dp(10)) }, obal(top = 4))
         sloupec.addView(tlacitko(t("zpet"), 17f) { ukazPripojeni() }
             .apply { setPadding(dp(20), dp(10), dp(20), dp(10)) }, obal(top = 10))

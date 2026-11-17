@@ -47,11 +47,14 @@ Podporu LG webOS a Příběhový režim napsal **Rudolf Nohal**.
 - [Výchozí audit větví, testů a měření](docs/P0-VYCHOZI-STAV.md)
 - [Reprodukovatelný OCR benchmark](tools/ocr/README.md)
 
-[Příběhový režim](docs/PRIBEHOVY-REZIM.md) je volitelný režim pro telefon/tablet (s LG přijímačem 0.2.1+, Samsung přijímačem 1.3.0+ nebo přímo na telefonu). Zapíná se na obrazovce překladu v telefonu/tabletu; výchozí Standardní režim zůstává zachovaný. Skládání rozdělených vět je zatím experimentální.
+[Příběhový režim](docs/PRIBEHOVY-REZIM.md) je volitelný režim pro telefon/tablet (s LG přijímačem 0.2.1+, Samsung přijímačem 1.3.0+, aktualizovaným Android TV přijímačem nebo přímo na telefonu). Zapíná se na obrazovce překladu v telefonu/tabletu; výchozí Standardní režim zůstává zachovaný. Skládání rozdělených vět je zatím experimentální.
 
-Story výstup do TV se používá až po potvrzení podpory přijímačem. Android TV přijímač
-v této verzi Story nepodporuje; odesílač pro něj použije Standardní titulky a omezení
-ukáže v telefonu. Uložená předvolba zůstane zachovaná pro místní nebo podporovaný výstup.
+Story výstup do TV se používá až po potvrzení podpory přijímačem. Pro Android TV
+v režimu „S telefonem“ je nutná aktualizace telefonu i TV na sestavení s touto
+podporou. Starší přijímač bez potvrzení dál dostává Standardní titulky. Nový Android
+přijímač stránkuje podle skutečného boxu a potvrzuje dočtení, nikoli jen příjem paketu.
+Rozšíření je zatím nevydané a čeká na fyzickou přejímku TCL. Režim „Jen televize“
+tím nový přepínač Story nezískává.
 
 ## Licence
 
@@ -78,6 +81,14 @@ Párovací klíč a údaj relace jsou uložené šifrovaně v Android zařízen�
 Passphrase se neukládají. Samotná instalace běží v místní síti, kontrola času
 potřebuje spojení přímo se službou LG. PlayCaption Developer Mode neprodlužuje.
 Externí Android správce a počítačový postup zůstávají záložními možnostmi.
+
+Po kontrole verze lze v LG průvodci samostatně ověřit běžící přijímač na konkrétní
+TV. Ohlášení musí odpovídat jejímu ID i IP. Výsledek s časem potvrzuje dostupnost
+přijímače v místní síti; neověřuje OCR, překlad ani viditelnost textu na obrazovce.
+Pro místní test zobrazení použij v LG nabídce OK / Zpět → Zkušební titulek.
+Pokud se LG neozve, samotný tento výsledek neurčuje příčinu ani nespouští reinstalaci.
+Kontrola je dostupná i v posledním kroku průvodce pro známou LG; nemění vybraný
+výstup, spárování ani nastavení. Souhrn kontroly je v nabídce Záznam telefonu.
 
 ## Sestavení Android APK s LG přijímačem
 

@@ -23,6 +23,9 @@ class RemotePlayUdaje(context: Context) {
         get() = prefs.getString("account_id", null)
         set(v) = prefs.edit().putString("account_id", v?.trim()).apply()
 
+    /** Přihlášení potvrdit až po zápisu na disk; volat mimo hlavní vlákno. */
+    fun ulozAccountId(id: String): Boolean = prefs.edit().putString("account_id", id).commit()
+
     var ipKonzole: String?
         get() = prefs.getString("ip", null)
         set(v) = prefs.edit().putString("ip", v).apply()

@@ -1,9 +1,6 @@
 package cz.titulky.tv
 
-/** Volba transportu pro jeden konkrétní výstup; nastavení režimu hráče nemění. */
+/** Story se zapne až po platném potvrzení konkrétního výstupu, v telefonu rovnou. */
 internal object PodporaPribehu {
-    fun pouzit(cilIp: String?, platforma: TvPlatforma, potvrzenaIp: String?): Boolean =
-        cilIp == null || (dotazovat(platforma) && cilIp == potvrzenaIp)
-
-    fun dotazovat(platforma: TvPlatforma): Boolean = platforma != TvPlatforma.ANDROID_TV
+    fun pouzit(cilIp: String?, potvrzenaIp: String?): Boolean = cilIp == null || cilIp == potvrzenaIp
 }

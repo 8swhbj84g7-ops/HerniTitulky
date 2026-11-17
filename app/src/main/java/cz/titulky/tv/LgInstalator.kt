@@ -17,6 +17,7 @@ import java.util.UUID
 
 internal enum class LgStavVerze { CHYBI, AKTUALNI, AKTUALIZACE, NOVEJSI }
 internal data class LgKontrola(val id: String, val verze: String?, val dostupna: String, val stav: LgStavVerze)
+/** spusteno potvrzuje přijetí launch požadavku TV, nikoli běžící síťový přijímač. */
 internal data class LgInstalaceVysledek(val verze: String, val spusteno: Boolean, val zmeneno: Boolean = true)
 
 internal class LgInstalator(
