@@ -1,17 +1,25 @@
 package cz.titulky.tv
 
 import android.app.Activity
-import android.app.AlertDialog
+import android.app.Dialog
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.StateListDrawable
+import android.view.Gravity
+import android.view.KeyEvent
+import android.view.View
+import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import java.io.File
 
-/** Okno se záznamem (pád, titulky.log, chiaki.log) – stačí vyfotit a poslat. */
+/** Diagnostika – záznam (pád, titulky.log, chiaki.log) přes celou obrazovku – stačí vyfotit a poslat. */
 object Zaznam {
-    fun ukaz(a: Activity, sVyvojem: Boolean = false) {
+    /** Celý text záznamu (pád, stav, titulky.log, xbox.log, chiaki.log). */
+    fun obsah(a: Activity): String {
         fun konec(jmeno: String, radku: Int): String = runCatching {
             val f = File(a.filesDir, jmeno)
             if (!f.exists()) "(soubor $jmeno neexistuje)"
@@ -55,23 +63,121 @@ object Zaznam {
             "\n\n=== titulky.log ===\n" + konec("titulky.log", 120) +
             "\n\n=== xbox.log ===\n" + konec("xbox.log", 15) +
             "\n\n=== chiaki.log ===\n" + chiaki()
+        return obsah
+    }
+
+    /** Diagnostika přes celou obrazovku: šipky ▲▼ posouvají záznam, ZPĚT zavře. */
+    fun ukaz(a: Activity, sVyvojem: Boolean = false) {
+        val obsah = obsah(a)
+        val jazyk = Nastaveni(a).jazykNeboCs
+        fun t(k: String) = Texty.t(jazyk, k)
         val d = a.resources.displayMetrics.density
-        val tv = TextView(a).apply {
-            text = obsah
-            textSize = 11f
-            typeface = Typeface.MONOSPACE
-            setTextColor(Color.BLACK)
-            setBackgroundColor(Color.WHITE)
-            setTextIsSelectable(true)
-            isFocusable = true
-            val p = (12 * d).toInt()
-            setPadding(p, p, p, p)
+        fun px(x: Int) = (x * d).toInt()
+        val telefon = Rezim.jeTelefon(a)
+        val dlg = Dialog(a, android.R.style.Theme_Black_NoTitleBar_Fullscreen)
+        val zluta = Color.parseColor("#FFC24B")
+        val seda = Color.parseColor("#A8A8B3")
+        fun kulate(barva: Int, ramecek: Int? = null) = GradientDrawable().apply {
+            setColor(barva); cornerRadius = 16f * d
+            if (ramecek != null) setStroke(px(3), ramecek)
         }
-        val b = AlertDialog.Builder(a)
-            .setTitle("Záznam")
-            .setView(ScrollView(a).apply { addView(tv) })
-            .setPositiveButton("OK", null)
-        if (sVyvojem) b.setNeutralButton("Vývoj") { _, _ -> a.startActivity(Intent(a, VyvojActivity::class.java)) }
-        b.show()
+        fun vyber(barva: Int) = StateListDrawable().apply {
+            addState(intArrayOf(android.R.attr.state_focused), kulate(barva, Color.WHITE))
+            addState(intArrayOf(), kulate(barva))
+        }
+
+        val pocetRadku = obsah.count { it == '\n' } + 1
+        val pozice = TextView(a).apply { textSize = 13f; setTextColor(seda) }
+        val zaznamText = TextView(a).apply {
+            this.text = obsah
+            textSize = if (telefon) 11f else 13f
+            typeface = Typeface.MONOSPACE
+            setTextColor(Color.parseColor("#D8D8E0"))
+            setLineSpacing(0f, 1.2f)
+            setPadding(px(16), px(12), px(16), px(12))
+        }
+        val posuv = ScrollView(a).apply {
+            isFocusable = true
+            isFocusableInTouchMode = false
+            isVerticalScrollBarEnabled = true
+            isScrollbarFadingEnabled = false
+            background = vyber(Color.parseColor("#111117"))
+            addView(zaznamText)
+        }
+        fun obnovPozici() {
+            val vyska = zaznamText.lineHeight.coerceAtLeast(1)
+            val prvni = posuv.scrollY / vyska + 1
+            val posledni = ((posuv.scrollY + posuv.height) / vyska).coerceAtMost(pocetRadku)
+            pozice.text = t("diagRadky").replace("{od}", prvni.toString()).replace("{do}", posledni.toString())
+                .replace("{z}", pocetRadku.toString())
+        }
+        posuv.viewTreeObserver.addOnScrollChangedListener { obnovPozici() }
+        posuv.setOnKeyListener { _, kod, ev ->
+            if (ev.action != KeyEvent.ACTION_DOWN) return@setOnKeyListener false
+            val krok = zaznamText.lineHeight * 3
+            when (kod) {
+                KeyEvent.KEYCODE_DPAD_DOWN -> {
+                    // na konci záznamu → šipka dolů přejde na tlačítka
+                    if (!posuv.canScrollVertically(1)) false else { posuv.smoothScrollBy(0, krok); true }
+                }
+                KeyEvent.KEYCODE_DPAD_UP -> { posuv.smoothScrollBy(0, -krok); true }
+                KeyEvent.KEYCODE_PAGE_DOWN, KeyEvent.KEYCODE_CHANNEL_DOWN -> { posuv.smoothScrollBy(0, posuv.height); true }
+                KeyEvent.KEYCODE_PAGE_UP, KeyEvent.KEYCODE_CHANNEL_UP -> { posuv.smoothScrollBy(0, -posuv.height); true }
+                else -> false
+            }
+        }
+
+        fun tlacitko(s: String, akce: () -> Unit) = TextView(a).apply {
+            this.text = s
+            textSize = 15f
+            setTextColor(Color.WHITE)
+            gravity = Gravity.CENTER
+            isFocusable = true
+            isClickable = true
+            background = vyber(Color.parseColor("#2A2B36"))
+            setPadding(px(20), px(10), px(20), px(10))
+            setOnClickListener { akce() }
+        }
+
+        val koren = LinearLayout(a).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Color.BLACK)
+            setPadding(px(if (telefon) 16 else 40), px(if (telefon) 24 else 28), px(if (telefon) 16 else 40), px(if (telefon) 16 else 24))
+        }
+        val hlava = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        val nadpisy = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL }
+        nadpisy.addView(TextView(a).apply {
+            this.text = t("diagNadpis"); textSize = if (telefon) 22f else 26f
+            typeface = Typeface.DEFAULT_BOLD; letterSpacing = 0.08f; setTextColor(Color.WHITE)
+        })
+        nadpisy.addView(TextView(a).apply { this.text = t("diagPopis"); textSize = 13f; setTextColor(seda) })
+        hlava.addView(nadpisy, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        if (!telefon) hlava.addView(pozice)
+        koren.addView(hlava)
+        koren.addView(posuv, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f).apply { topMargin = px(14) })
+
+        val pata = LinearLayout(a).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
+        pata.addView(TextView(a).apply {
+            this.text = if (telefon) t("diagOvladaniTel") else t("diagOvladani")
+            textSize = 15f; typeface = Typeface.DEFAULT_BOLD; setTextColor(zluta)
+        }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        val tlacitka = mutableListOf<View>()
+        tlacitka += tlacitko(t("diagZacatek")) { posuv.smoothScrollTo(0, 0); posuv.requestFocus() }
+        tlacitka += tlacitko(t("diagKonec")) { posuv.post { posuv.fullScroll(View.FOCUS_DOWN) } }
+        if (sVyvojem) tlacitka += tlacitko("Vývoj") { dlg.dismiss(); a.startActivity(Intent(a, VyvojActivity::class.java)) }
+        tlacitka += tlacitko(t("diagZavrit")) { dlg.dismiss() }
+        tlacitka.forEach { b ->
+            pata.addView(b, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { leftMargin = px(10) })
+        }
+        if (telefon) {
+            // telefon: nápověda nad tlačítky, ať se vejde
+            pata.orientation = LinearLayout.VERTICAL
+            pata.gravity = Gravity.END
+        }
+        koren.addView(pata, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = px(12) })
+
+        dlg.setContentView(koren)
+        dlg.show()
+        posuv.post { posuv.requestFocus(); obnovPozici() }
     }
 }

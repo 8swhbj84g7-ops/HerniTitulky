@@ -298,7 +298,7 @@ object Texty {
         "lgNadpis3" to listOf("Nainstaluj PlayCaption LG", "Nainštaluj PlayCaption LG"),
         "lgText3" to listOf("Záložní cesta z Android telefonu nebo tabletu:\n\n1. Tlačítkem „Uložit LG instalační soubor“ ulož přibalený IPK, třeba do Stažených souborů. Nemusíš ho stahovat z vydání PlayCaption.\n\n2. Z oficiálního vydání Aphanes stáhni Android soubor .apk a nainstaluj webOS Dev Mode Manager. Je to samostatná komunitní aplikace.\n\n3. V ní přidej TV podle IP a Passphrase z Developer Mode. Key Server musí být zapnutý.\n\n4. V seznamu aplikací použij instalaci místního .ipk a vyber uložený soubor PlayCaption. Po dokončení otevři PlayCaption LG na TV.\n\nPokud chceš instalovat z počítače, zvol možnost níže. Další tě posune k vyhledání přijímače; samo nic neinstaluje.", "Záložná cesta z Android telefónu alebo tabletu:\n\n1. Tlačidlom „Uložiť LG inštalačný súbor“ ulož pribalený IPK, napríklad do Stiahnutých súborov. Nemusíš ho sťahovať z vydaní PlayCaption.\n\n2. Z oficiálneho vydania Aphanes stiahni Android súbor .apk a nainštaluj webOS Dev Mode Manager. Je to samostatná komunitná aplikácia.\n\n3. V nej pridaj TV podľa IP a Passphrase z Developer Mode. Key Server musí byť zapnutý.\n\n4. V zozname aplikácií použi inštaláciu miestneho .ipk a vyber uložený súbor PlayCaption. Po dokončení otvor PlayCaption LG na TV.\n\nAk chceš inštalovať z počítača, zvoľ možnosť nižšie. Ďalej ťa posunie k vyhľadaniu prijímača; samo nič neinštaluje."),
         "lgNadpis4" to listOf("Spusť přijímač a vyber televizi", "Spusti prijímač a vyber televízor"),
-        "lgText4" to listOf("1. Na LG otevři PlayCaption LG a vyber HDMI, do kterého je zapojená konzole. Vstup vybírej uvnitř aplikace; přepnutí přes Home může překryv zavřít.\n\n2. Na obrazovce LG se objeví název přijímače a čekání na zařízení. Tlačítkem dole jej vyhledej a vyber stejný název.\n\n3. V Android PlayCaption připoj konzoli svým účtem a spusť hraní. Účet konzole se nepřebírá z LG. Pokud tvá verze nabízí Story, pro tento přijímač zvol Standardní režim.\n\nKdyž se TV nenajde, zkontroluj spuštěný přijímač a společnou síť bez izolace zařízení.\n\nKey Server můžeš po instalaci vypnout. Pro další instalaci z PlayCaption jej znovu zapni.", "1. Na LG otvor PlayCaption LG a vyber HDMI, do ktorého je zapojená konzola. Vstup vyberaj vnútri aplikácie; prepnutie cez Home môže prekrytie zavrieť.\n\n2. Na obrazovke LG sa objaví názov prijímača a čakanie na zariadenie. Tlačidlom dole ho vyhľadaj a vyber rovnaký názov.\n\n3. V Android PlayCaption pripoj konzolu svojím účtom a spusti hranie. Účet konzoly sa nepreberá z LG. Ak tvoja verzia ponúka Story, pre tento prijímač zvoľ Štandardný režim.\n\nAk sa TV nenájde, skontroluj spustený prijímač a spoločnú sieť bez izolácie zariadení.\n\nKey Server môžeš po inštalácii vypnúť. Pre ďalšiu inštaláciu z PlayCaption ho znova zapni."),
+        "lgText4" to listOf("1. Na LG otevři PlayCaption LG a vyber HDMI, do kterého je zapojená konzole. Vstup vybírej uvnitř aplikace; přepnutí přes Home může překryv zavřít.\n\n2. Na obrazovce LG se objeví název přijímače a čekání na zařízení. Tlačítkem dole jej vyhledej a vyber stejný název.\n\n3. V Android PlayCaption připoj konzoli svým účtem a spusť hraní. Účet konzole se nepřebírá z LG. Příběhový režim funguje i na LG.\n\nKdyž se TV nenajde, zkontroluj spuštěný přijímač a společnou síť bez izolace zařízení.\n\nKey Server můžeš po instalaci vypnout. Pro další instalaci z PlayCaption jej znovu zapni.", "1. Na LG otvor PlayCaption LG a vyber HDMI, do ktorého je zapojená konzola. Vstup vyberaj vnútri aplikácie; prepnutie cez Home môže prekrytie zavrieť.\n\n2. Na obrazovke LG sa objaví názov prijímača a čakanie na zariadenie. Tlačidlom dole ho vyhľadaj a vyber rovnaký názov.\n\n3. V Android PlayCaption pripoj konzolu svojím účtom a spusti hranie. Účet konzoly sa nepreberá z LG. Príbehový režim funguje aj na LG.\n\nAk sa TV nenájde, skontroluj spustený prijímač a spoločnú sieť bez izolácie zariadení.\n\nKey Server môžeš po inštalácii vypnúť. Pre ďalšiu inštaláciu z PlayCaption ho znova zapni."),
         "tvVystupNadpis" to listOf("Výstup titulků", "Výstup titulkov"),
         "tvZmenitKratce" to listOf("Změnit", "Zmeniť"),
         "tvJenZarizeni" to listOf("Toto zařízení", "Toto zariadenie"),
@@ -547,8 +547,77 @@ object Texty {
         "infoAktivni" to listOf("✔ PlayCaption: překlad aktivní", "✔ PlayCaption: preklad aktívny", "✔ PlayCaption: Übersetzung aktiv", "✔ PlayCaption: tłumaczenie aktywne", "✔ PlayCaption : traduction active", "✔ PlayCaption: traducción activa", "✔ PlayCaption: traduzione attiva")
     )
 
+
+    /**
+     * Zjednodušené texty 0.22 (cs, sk). Mají přednost před T; ostatní jazyky berou dál T.
+     * Jen popisky – funkce zůstávají stejné.
+     */
+    private val NOVE: Map<String, List<String>> = mapOf(
+        // hlavní obrazovka – nadpisy
+        "hlJazyk" to listOf("Jazyk", "Jazyk"),
+        "hlKonzole" to listOf("Konzole", "Konzoly"),
+        "hlStav" to listOf("Stav", "Stav"),
+        "coPrekladat" to listOf("Co překládat", "Čo prekladať"),
+        "hlTel1" to listOf("1. Na čem hraješ?", "1. Na čom hráš?"),
+        "hlTel2" to listOf("2. Do jakého jazyka?", "2. Do akého jazyka?"),
+        "hlTel3" to listOf("3. Kde chceš titulky?", "3. Kde chceš titulky?"),
+        "hlTel4" to listOf("4. Co překládat?", "4. Čo prekladať?"),
+        "zdrojKratce" to listOf("z angličtiny", "z angličtiny"),
+        // konzole
+        "konPripraveno" to listOf("Připraveno", "Pripravené"),
+        "konPripravuji" to listOf("připravuji…", "pripravujem…"),
+        "konChyba" to listOf("nejde spojení", "nejde spojenie"),
+        "konSparovano" to listOf("připojeno", "pripojené"),
+        "konNepripojeno" to listOf("nepřipojeno", "nepripojené"),
+        "konZnovu" to listOf("Znovu připojit", "Znovu pripojiť"),
+        "telRadek" to listOf("Telefon", "Telefón"),
+        "telZadny" to listOf("zatím žádný", "zatiaľ žiadny"),
+        "pridatTelefon" to listOf("+ Přidat telefon", "+ Pridať telefón"),
+        // stav (pruh nahoře)
+        "banOkPs" to listOf("PlayStation připravena", "PlayStation pripravená"),
+        "banOkXbox" to listOf("Xbox připraven", "Xbox pripravený"),
+        "banOkText" to listOf("Vše je nastavené – můžeš hrát.", "Všetko je nastavené – môžeš hrať."),
+        "banCekaPs" to listOf("PlayStation – připravuji spojení…", "PlayStation – pripravujem spojenie…"),
+        "banCekaXbox" to listOf("Xbox – připravuji spojení…", "Xbox – pripravujem spojenie…"),
+        "banChybaPs" to listOf("PlayStation – spojení nejde", "PlayStation – spojenie nejde"),
+        "banChybaXbox" to listOf("Xbox – spojení nejde", "Xbox – spojenie nejde"),
+        "stavPodrobnosti" to listOf("Podrobnosti najdeš v Diagnostice (logo PlayCaption).", "Podrobnosti nájdeš v Diagnostike (logo PlayCaption)."),
+        // co překládat
+        "dialogy" to listOf("Rozhovory ve hře", "Rozhovory v hre"),
+        "dialogyPopis" to listOf("Ve hře si zapni titulky.", "V hre si zapni titulky."),
+        "prekryvat" to listOf("Zakrýt anglické titulky", "Zakryť anglické titulky"),
+        "prekryvatPopis" to listOf("Překlad se ukáže přes původní titulky.", "Preklad sa ukáže cez pôvodné titulky."),
+        "napovedy" to listOf("Menu, úkoly, dopisy", "Menu, úlohy, listy"),
+        "napovedyJenMobil" to listOf("Přeložíš v telefonu žlutým rámečkem.", "Preložíš v telefóne žltým rámčekom."),
+        "napovedyTelefon" to listOf("Při hraní je přeložíš žlutým rámečkem.", "Pri hraní ich preložíš žltým rámčekom."),
+        // jak hrát
+        "hratVyberKratce" to listOf("Vyber šipkami a zmáčkni OK", "Vyber šípkami a stlač OK"),
+        "hratTelPopis" to listOf("👍 Doporučeno · rychlé a přesné titulky", "👍 Odporúčané · rýchle a presné titulky"),
+        "hratTvPopis" to listOf("Bez telefonu · může být pomalejší", "Bez telefónu · môže byť pomalší"),
+        "hratZmackni" to listOf("👇 Zmáčkni a jde se hrát", "👇 Stlač a ide sa hrať"),
+        "hratBtn" to listOf("▶ Hrát", "▶ Hrať"),
+        "tipPripojeni" to listOf("💡 Nejlépe funguje kabel nebo 5 GHz Wi-Fi.", "💡 Najlepšie funguje kábel alebo 5 GHz Wi-Fi."),
+        // povolení zobrazení (televize)
+        "povolitBtn" to listOf("Zmáčkni OK – Povolit zobrazení", "Stlač OK – Povoliť zobrazenie"),
+        "povolitChybi" to listOf("Bez povolení se titulky neukážou přes hru.", "Bez povolenia sa titulky neukážu cez hru."),
+        "povolitJak" to listOf("V nastavení zapni „Zobrazit přes jiné aplikace“ a vrať se zpátky.", "V nastaveniach zapni „Zobraziť cez iné aplikácie“ a vráť sa späť."),
+        "povolenoNadpis" to listOf("Zobrazení povoleno", "Zobrazenie povolené"),
+        "povolenoText" to listOf("Titulky se ukážou přes hru.", "Titulky sa ukážu cez hru."),
+        // diagnostika
+        "diagNadpis" to listOf("DIAGNOSTIKA", "DIAGNOSTIKA"),
+        "diagLogoOk" to listOf("Zmáčkni OK", "Stlač OK"),
+        "diagPopis" to listOf("Záznam toho, co aplikace dělá. Při potížích ho vyfoť a pošli vývojářům.", "Záznam toho, čo aplikácia robí. Pri problémoch ho odfoť a pošli vývojárom."),
+        "diagRadky" to listOf("řádek {od}–{do} z {z}", "riadok {od}–{do} z {z}"),
+        "diagOvladani" to listOf("▲ ▼ posouvej záznam  ·  ZPĚT zavře", "▲ ▼ posúvaj záznam  ·  SPÄŤ zavrie"),
+        "diagOvladaniTel" to listOf("Posouvej prstem nahoru a dolů", "Posúvaj prstom hore a dole"),
+        "diagZacatek" to listOf("Na začátek", "Na začiatok"),
+        "diagKonec" to listOf("Na konec", "Na koniec"),
+        "diagZavrit" to listOf("Zavřít", "Zavrieť")
+    )
+
     fun t(kod: String, klic: String): String {
         val i = KODY.indexOf(kod).coerceAtLeast(0)
+        NOVE[klic]?.getOrNull(i)?.let { return it }
         return T[klic]?.getOrNull(i) ?: T[klic]?.first() ?: klic
     }
 

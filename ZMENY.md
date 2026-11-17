@@ -6,6 +6,17 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
 
 ## Nevydané změny
 
+- Vzhled 0.22 (jen popisky a rozložení, funkce stejné): televize má hlavní obrazovku
+  v mřížce (Jazyk | Stav, Konzole | Co překládat, Podpora | Jak chceš hrát?).
+  Pruh Stav se při připojování plní průhledně zeleně a po připojení zezelená
+  („PlayStation připravena“ / „Xbox připraven“); rozsvítí se i řádek konzole.
+  Povolení zobrazení je velké tlačítko hned pod logem, po povolení zezelená.
+  „Překrývat původní titulky“ → „Zakrýt anglické titulky“ (Ano / Ne).
+  Telefon: očíslované kroky 1–4, nahoře jeden pruh stavu, „▶ Hrát“.
+- Diagnostika: najetí na logo ukáže „DIAGNOSTIKA – Zmáčkni OK“, záznam je přes celou
+  obrazovku a posouvá se šipkami ▲▼ (podržení OK dál přidá tlačítko Vývoj).
+- LG průvodce: odstraněna zastaralá věta, že na LG je potřeba Standardní režim.
+
 - PC-001: Android zachová kompletní víceřádkový text, když OCR na nezměněném
   obrazu opakovaně vynechá již přečtené řádky. Při skutečné změně snímku zůstává
   původní potvrzování kratšího textu a zmizení; opravy a doplňování jsou zachované.
