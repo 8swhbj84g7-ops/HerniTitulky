@@ -309,6 +309,8 @@ class MainActivity : Activity() {
     private var stavIkona: TextView? = null
     private var stavNacitani: View? = null
     private var stavVypln: View? = null
+    /** Televize: malá nápověda vpravo v pruhu Stav („Zmáčkni OK pro vypnutí“). */
+    private var stavOkNapoveda: TextView? = null
     private lateinit var stavKarta: FrameLayout
     private var stavUrovenPosledni: UrovenSpojeni? = null
     private var stavAnimace: android.animation.ValueAnimator? = null
@@ -466,6 +468,12 @@ class MainActivity : Activity() {
         stavTexty.addView(stavText.jedenRadek(), plnaSirka())
         stavTexty.addView(stavPodtext, odsazeni(top = 2))
         stavObsah.addView(stavTexty, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { leftMargin = dp(14) })
+        // televize: OK na pruhu překlad vypne / zapne – ať to lidi vědí
+        stavOkNapoveda = if (telefon) null else text("", 12.5f, ZLUTA, tucne = true).apply {
+            gravity = Gravity.END or Gravity.CENTER_VERTICAL
+            maxLines = 2
+            visibility = View.GONE
+        }.also { stavObsah.addView(it, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { leftMargin = dp(12) }) }
         stavKarta.addView(stavObsah, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER_VERTICAL))
         val stavRadek = vodorovne().apply { gravity = Gravity.CENTER_VERTICAL }
         stavRadek.addView(stavKarta, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f))
@@ -788,6 +796,12 @@ class MainActivity : Activity() {
             else -> t(spojeni.klic) to ""
         }
         stavText.text = nadpis
+        // nápověda: běží → „OK = vypnout“; vypnuto/pozastaveno už říká nadpis („zapni OK“)
+        stavOkNapoveda?.let { n ->
+            val bezi = nejakaKonzole && sluzba && !RemotePlayService.pozastaveno
+            n.text = t("stavOkVypnout")
+            n.visibility = if (bezi) View.VISIBLE else View.GONE
+        }
         stavPodtext?.text = podtext
         stavPodtext?.visibility = if (podtext.isBlank()) View.GONE else View.VISIBLE
 
