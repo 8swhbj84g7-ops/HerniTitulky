@@ -33,14 +33,14 @@ class PribehPodporaSitTest {
         assertTrue("Chybí platné potvrzení PCA1", sit.podporujePribeh)
     }
 
-    @Test fun lgASamsungPoPca1PrejdouZeStandardnihoNaStory() {
-        for (platforma in listOf(TvPlatforma.WEBOS, TvPlatforma.SAMSUNG)) {
+    @Test fun lgSamsungIAndroidPoPca1PrejdouZeStandardnihoNaStory() {
+        for (platforma in listOf(TvPlatforma.WEBOS, TvPlatforma.SAMSUNG, TvPlatforma.ANDROID_TV)) {
             DatagramSocket(Propojeni.PORT_TITULKY, InetAddress.getByName(ip)).use { tv ->
                 tv.soTimeout = 3000
                 PribehSpojeni(ip, cas = { System.nanoTime() / 1_000_000 }).use { sit ->
                     try {
                         Propojeni.Vysilac.nastavCil(ip, platforma.name)
-                        Propojeni.Vysilac.pribehRidi = PodporaPribehu.pouzit(ip, platforma, null)
+                        Propojeni.Vysilac.pribehRidi = PodporaPribehu.pouzit(ip, null)
                         sit.zprava = PribehProtokol.dotaz(token)
                         val dotaz = prijmi(tv, "PCQ1\t")
                         assertFalse(sit.podporujePribeh)
@@ -49,7 +49,7 @@ class PribehPodporaSitTest {
                         assertTrue(String(standard.data, 0, standard.length, Charsets.UTF_8).contains("Standardní během ověření"))
                         odpovez(tv, dotaz, "PCA1\t$token\tready")
                         pockejNaPodporu(sit)
-                        Propojeni.Vysilac.pribehRidi = PodporaPribehu.pouzit(ip, platforma, sit.ip)
+                        Propojeni.Vysilac.pribehRidi = PodporaPribehu.pouzit(ip, sit.ip)
                         TelefonTitulky.nastav("", 0)
                         assertTrue(Propojeni.Vysilac.pribehRidi)
                         sit.zprava = PribehProtokol.titulek(token, "Celá Story replika", false,
@@ -74,7 +74,7 @@ class PribehPodporaSitTest {
                     sit.zprava = PribehProtokol.dotaz(token)
                     repeat(2) { prijmi(tv, "PCQ1\t") }
                     assertFalse(sit.podporujePribeh)
-                    Propojeni.Vysilac.pribehRidi = PodporaPribehu.pouzit(ip, TvPlatforma.NEZNAMA, null)
+                    Propojeni.Vysilac.pribehRidi = PodporaPribehu.pouzit(ip, null)
                     Propojeni.Vysilac.zmena("Titulky se neztratí", 6000, "")
                     val p = prijmi(tv, "PCT1\t", "Titulky se neztratí")
                     assertTrue(String(p.data, 0, p.length, Charsets.UTF_8).contains("Titulky se neztratí"))

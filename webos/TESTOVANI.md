@@ -1,5 +1,29 @@
 # Kontrola LG přijímače před předáním
 
+## Přihlášení PSN v telefonu a zachování QR Android TV – 16. 11. 2026
+
+- Samostatná větev `codex/psn-login-confirmation` z `origin/master` (`bc5237d`).
+  Neobsahuje samostatnou opravu PC-001; nemění LG/Samsung protokol ani přijímače.
+- Regresní test původního HTTP serveru nejprve selhal: stránka hlásila uložený
+  účet hned po převzetí kódu, bez dokončeného ověření nebo zápisu.
+- Nový společný stav `PsnPokus` potvrzuje úspěch až po validaci osmibajtového
+  Account ID a úspěšném zápisu SharedPreferences na disk. Neúspěšné ověření
+  nepřepisuje původní účet. Zrušený pokus ignoruje opožděnou odpověď; opakovaný
+  kód se znovu nevyměňuje. Chyby nerozepisují autorizační kód ani token.
+- Web přesměruje přijatý kód na `/stav`, při ověřování obnovuje stav a při chybě
+  ponechá důvod i možnost vložit novou adresu. Server zůstává dostupný po návratu
+  aplikace na párování, aby se výsledek mohl zobrazit také v prohlížeči.
+- Prošlo 206 JVM testů, včetně 17 nových pro přihlášení. Síťové testy použily
+  skutečné HTTP sockety na loopbacku i místní IPv4 adrese: čekání, úspěch,
+  trvalá chyba, nový kód po odmítnutí, neplatný vstup, obsazený port a odlišné
+  potvrzení „v televizi“ pro QR cestu. Odpovědi Sony i zápis účtu jsou v JVM
+  testech nahrazené; testy se ke skutečnému PSN nepřihlašují.
+- Příkaz `bash gradlew :app:testDebugUnitTest :app:assembleDebug
+  :app:assembleDebugAndroidTest` sestavil aplikaci i instrumentační APK.
+  `PsnQrTest` dekóduje QR bitmapu zpět na původní adresu Android TV; bez
+  připojeného zařízení byl pouze sestaven, nikoli spuštěn. Živé přihlášení
+  Sony, kamera telefonu a ovládání skutečné Android TV ještě vyžadují přejímku.
+
 ## Krátké dialogy ve verzi 0.0.7 – 15. 11. 2026
 
 - Záznam z Redmi Pad Pro zachytil dvě chybné OCR varianty téže repliky v GTA V,

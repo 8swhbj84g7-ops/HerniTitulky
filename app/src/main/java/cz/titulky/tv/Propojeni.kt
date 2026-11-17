@@ -71,7 +71,7 @@ object Propojeni {
      * Televize: ohlašuje se do sítě a přijímá titulky z telefonu.
      * [priTitulku] dostane (text, doba v ms, nápověda) – volá se z vlákna sítě.
      */
-    class Prijimac(
+    internal class Prijimac(
         context: Context,
         private val priTitulku: (String, Long, String, FloatArray?, IntArray?) -> Unit,
         /** (české volby, která je vybraná (-1 = nevíme), oblast voleb, rámeček: 0 = ne, 1 = chvíli, 2 = trvale) */
@@ -79,7 +79,9 @@ object Propojeni {
         /** (oblast titulků, ukázat modrý rámeček) */
         private val priOblasti: ((FloatArray, Boolean) -> Unit)? = null,
         /** Kód pro převzetí spárování telefonem – ukázat na televizi ("" = schovat). */
-        private val priKoduSparovani: ((String) -> Unit)? = null
+        private val priKoduSparovani: ((String) -> Unit)? = null,
+        /** ACK až po zpracování překryvem, ne pouhým přijetím datagramu. */
+        private val priPribehu: ((PribehProtokol.Titulek, (String) -> Unit) -> Unit)? = null
     ) {
         @Volatile private var bezi = true
         private val c = context.applicationContext
@@ -89,6 +91,8 @@ object Propojeni {
 
         /** Kdy naposledy přišla zpráva od telefonu (0 = ještě nikdy). */
         @Volatile var posledniZprava = 0L
+            private set
+        @Volatile var chyba: String? = null
             private set
         private var posledniCislo = -1L
         private var posledniCisloVoleb = -1L
@@ -181,12 +185,21 @@ object Propojeni {
                         bind(InetSocketAddress(PORT_TITULKY))
                     }
                     socket = s
+                    val pribeh = PribehPrijem(priPribehu?.let { prijmi -> { titulek, ack ->
+                        if (bezi) prijmi(titulek) { stav -> if (bezi) ack(stav) }
+                    } }, { android.os.SystemClock.elapsedRealtime() })
                     val buf = ByteArray(8192)
                     while (bezi) {
+                        pribeh.odesliOdpovedi(s)
                         val p = DatagramPacket(buf, buf.size)
                         try { s.receive(p) } catch (e: SocketTimeoutException) { continue }
                         val casti = String(p.data, 0, p.length, Charsets.UTF_8).split("\t")
-                        if (casti.size >= 2 && casti[0] == SPAROVANI) {
+                        if (pribeh.zpracuj(p)) {
+                            pribeh.odesliOdpovedi(s)
+                            posledniZprava = System.currentTimeMillis()
+                            continue
+                        }
+                        if (casti.size >= 2 && casti[0] == SPAROVANI && casti[1] in listOf("ZADOST", "KOD")) {
                             runCatching { sparovani(s, p, casti) }
                             continue
                         }
@@ -230,7 +243,7 @@ object Propojeni {
                         }
                         priTitulku(odEscapuj(casti[3]), doba, odEscapuj(casti[4]), rozvrh, barvy)
                     }
-                }
+                }.onFailure { if (bezi) chyba = it.javaClass.simpleName }
                 runCatching { socket?.close() }
             }.apply { isDaemon = true }.start()
         }
@@ -339,6 +352,8 @@ object Propojeni {
      * Zapíná se výběrem televize v TelefonActivity; [cilIp] null = jen telefon.
      */
     object Vysilac {
+        private val prenos = StavPrenosu()
+        internal val stavPrenosu get() = prenos.stav
         @Volatile var pribehRidi = false
         fun rozvrhPribehu() = synchronized(zamek) { rozvrh?.copyOf() ?: floatArrayOf(0.5f, 0.91f, 0.8f, 1f) }
         fun aktivniVolby() = synchronized(zamek) { vybrana != -2 && volbyText.isNotBlank() }
@@ -439,6 +454,7 @@ object Propojeni {
                 if (ip == cilIp) { cilJmeno = jmeno; return }
                 val puvodni = cilIp
                 generace++
+                prenos.reset(generace)
                 cilIp = ip
                 cilJmeno = jmeno
                 text = ""; napoveda = ""; doba = 0L; barvy = null; ukazkaText = ""; upravaDo = 0L
@@ -504,39 +520,44 @@ object Propojeni {
                             }
                         }
                     }
-                }
+                }.onSuccess { prenos.vysledek(cil.second, null) }
+                    .onFailure { prenos.vysledek(cil.second, it) }
             }.apply { isDaemon = true }.start()
         }
 
         /** Každou sekundu aktuální stav; stará smyčka nesmí po změně cíle ožít. */
         private fun spustOpakovani(relace: Long) {
             Thread {
-                runCatching {
-                    DatagramSocket().use { s ->
-                        while (generace == relace) {
-                            val ip = cilIp ?: return@Thread
-                            val kam = InetAddress.getByName(ip)
-                            synchronized(zamek) {
-                                if (generace != relace) return@Thread
-                                if (!pribehRidi) {
-                                    val data = zprava()
-                                    runCatching { s.send(DatagramPacket(data, data.size, kam, PORT_TITULKY)) }
+                while (generace == relace) {
+                    runCatching {
+                        DatagramSocket().use { s ->
+                            while (generace == relace) {
+                                val ip = cilIp ?: return@Thread
+                                val kam = InetAddress.getByName(ip)
+                                synchronized(zamek) {
+                                    if (generace != relace) return@Thread
+                                    if (!pribehRidi) {
+                                        val data = zprava()
+                                        s.send(DatagramPacket(data, data.size, kam, PORT_TITULKY))
+                                    }
+                                    if (cisloVoleb > 0) {
+                                        val v = zpravaVoleb()
+                                        s.send(DatagramPacket(v, v.size, kam, PORT_TITULKY))
+                                    }
+                                    if (!pribehRidi || cisloVoleb > 0) prenos.vysledek(relace, null)
                                 }
-                                if (cisloVoleb > 0) {
-                                    val v = zpravaVoleb()
-                                    runCatching { s.send(DatagramPacket(v, v.size, kam, PORT_TITULKY)) }
-                                }
+                                Thread.sleep(1000)
                             }
-                            Thread.sleep(1000)
                         }
-                    }
+                    }.onFailure { prenos.vysledek(relace, it) }
+                    if (generace == relace) Thread.sleep(1000)
                 }
             }.apply { isDaemon = true }.start()
         }
     }
 
     private fun escapuj(s: String) = s.replace("\\", "\\\\").replace("\t", " ").replace("\n", "\\n")
-    private fun odEscapuj(s: String): String {
+    internal fun odEscapuj(s: String): String {
         val sb = StringBuilder()
         var i = 0
         while (i < s.length) {
