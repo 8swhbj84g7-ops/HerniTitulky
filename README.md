@@ -82,6 +82,14 @@ Passphrase se neukládají. Samotná instalace běží v místní síti, kontrol
 potřebuje spojení přímo se službou LG. PlayCaption Developer Mode neprodlužuje.
 Externí Android správce a počítačový postup zůstávají záložními možnostmi.
 
+Po kontrole verze lze v LG průvodci samostatně ověřit běžící přijímač na konkrétní
+TV. Ohlášení musí odpovídat jejímu ID i IP. Výsledek s časem potvrzuje dostupnost
+přijímače v místní síti; neověřuje OCR, překlad ani viditelnost textu na obrazovce.
+Pro místní test zobrazení použij v LG nabídce OK / Zpět → Zkušební titulek.
+Pokud se LG neozve, samotný tento výsledek neurčuje příčinu ani nespouští reinstalaci.
+Kontrola je dostupná i v posledním kroku průvodce pro známou LG; nemění vybraný
+výstup, spárování ani nastavení. Souhrn kontroly je v nabídce Záznam telefonu.
+
 ## Sestavení Android APK s LG přijímačem
 
 Vedle Android SDK a JDK potřebuješ Python 3.9+ a Node.js 20+ s npx.
