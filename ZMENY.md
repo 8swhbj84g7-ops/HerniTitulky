@@ -6,6 +6,9 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
 
 ## Nevydané změny
 
+- Samsung: oprava nestabilního testu potvrzení dočtené Story repliky. Simulovaný
+  čas ověřuje i případ, kdy 1 400 ms ještě nestačí kvůli fázi vykreslovacího tiku.
+  Časování přijímače ani doba zobrazení titulků se nemění.
 - Android TV v režimu „S telefonem“ nově umí Story: měří stránky podle boxu,
   zachovává čtecí čas při pauze, skrývá text mimo vstup a při volbách a potvrzuje
   dočtení poslední stránky. Opakované pakety čtení nerestartují; staré generace
