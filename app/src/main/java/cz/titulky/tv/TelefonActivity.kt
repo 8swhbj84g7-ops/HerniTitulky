@@ -43,6 +43,7 @@ class TelefonActivity : Activity() {
     private lateinit var horniPanel: View
     /** Tlačítko ⇄ Xbox / ⇄ PS5 (jen když jsou zapnuté obě konzole). */
     private var prepnoutKonzoli: TextView? = null
+    private var obnovRezimTlacitek: (() -> Unit)? = null
     /** Na šířku (jen titulky v telefonu): malá zelená tečka „Titulky aktivní“ v rohu. */
     private lateinit var sirkaZnacka: LinearLayout
     private lateinit var sirkaTecka: View
@@ -227,6 +228,7 @@ class TelefonActivity : Activity() {
 
     private fun obnovTvTlacitko() {
         RemotePlayService.obnovNapajeni(this)
+        obnovRezimTlacitek?.invoke()
         if (!::tvTlacitko.isInitialized) return
         // přepínač "Titulky: 📺 Televize | 📱 Telefon" – zeleně to, kde se titulky právě ukazují
         val naTv = Propojeni.Vysilac.cilIp != null
@@ -839,8 +841,16 @@ class TelefonActivity : Activity() {
             val pribehovy = android.widget.Button(this@TelefonActivity).apply { text = "Příběhový"; isAllCaps = false }
             val casObal = LinearLayout(this@TelefonActivity).apply { orientation = LinearLayout.VERTICAL }
             val casPopis = TextView(this@TelefonActivity).apply { textSize = 14f; setTextColor(Color.WHITE) }
+            val omezeniPribehu = TextView(this@TelefonActivity).apply {
+                text = "Tento Android TV přijímač podporuje Standardní režim. Příběhový režim zůstává dostupný v telefonu a na podporovaných TV."
+                textSize = 13f; setTextColor(Color.parseColor("#B6B6C2"))
+                setPadding(0, dp(8), 0, 0)
+            }
             fun obnovRezim() {
-                for ((button, vybrano) in listOf(standard to !nast.pribehovy, pribehovy to nast.pribehovy)) {
+                val platforma = TvProfily.aktivniId?.let { televize.platformaPrijimace(it) } ?: TvPlatforma.NEZNAMA
+                val muzePribeh = Propojeni.Vysilac.cilIp == null || PodporaPribehu.dotazovat(platforma)
+                val vybranPribeh = nast.pribehovy && muzePribeh
+                for ((button, vybrano) in listOf(standard to !vybranPribeh, pribehovy to vybranPribeh)) {
                     button.isSelected = vybrano
                     button.contentDescription = "${button.text} režim" + if (vybrano) ", vybráno" else ""
                     button.typeface = Typeface.DEFAULT_BOLD
@@ -851,7 +861,10 @@ class TelefonActivity : Activity() {
                     }
                     button.elevation = dp(2).toFloat()
                 }
-                casObal.visibility = if (nast.pribehovy) View.VISIBLE else View.GONE
+                pribehovy.isEnabled = muzePribeh
+                pribehovy.alpha = if (muzePribeh) 1f else 0.5f
+                omezeniPribehu.visibility = if (muzePribeh) View.GONE else View.VISIBLE
+                casObal.visibility = if (vybranPribeh) View.VISIBLE else View.GONE
             }
             standard.setOnClickListener { nast.pribehovy = false; obnovRezim() }
             pribehovy.setOnClickListener { nast.pribehovy = true; obnovRezim() }
@@ -877,7 +890,9 @@ class TelefonActivity : Activity() {
                 textSize = 12f; setTextColor(Color.parseColor("#B6B6C2"))
             })
             rezimy.addView(tlacitka)
+            rezimy.addView(omezeniPribehu)
             rezimy.addView(casObal)
+            obnovRezimTlacitek = ::obnovRezim
             obnovRezim()
             addView(rezimy, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
             addView(stavRadek, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))

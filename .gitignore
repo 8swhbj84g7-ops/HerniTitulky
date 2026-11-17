@@ -27,3 +27,6 @@ zaznam_*.txt
 
 # výstup podepsaného sestavení
 app/release/
+
+__pycache__/
+*.pyc

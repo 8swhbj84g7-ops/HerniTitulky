@@ -63,7 +63,11 @@ Podporu LG webOS a Příběhový režim napsal **Rudolf Nohal**.
 - [Výchozí audit větví, testů a měření](docs/P0-VYCHOZI-STAV.md)
 - [Reprodukovatelný OCR benchmark](tools/ocr/README.md)
 
-[Příběhový režim](docs/PRIBEHOVY-REZIM.md) je volitelný režim pro telefon/tablet (s LG přijímačem 0.2.1 nebo přímo na telefonu). Zapíná se na obrazovce překladu v telefonu/tabletu; výchozí Standardní režim zůstává zachovaný. Skládání rozdělených vět je zatím experimentální.
+[Příběhový režim](docs/PRIBEHOVY-REZIM.md) je volitelný režim pro telefon/tablet (s LG přijímačem 0.2.1+, Samsung přijímačem 1.3.0+ nebo přímo na telefonu). Zapíná se na obrazovce překladu v telefonu/tabletu; výchozí Standardní režim zůstává zachovaný. Skládání rozdělených vět je zatím experimentální.
+
+Story výstup do TV se používá až po potvrzení podpory přijímačem. Android TV přijímač
+v této verzi Story nepodporuje; odesílač pro něj použije Standardní titulky a omezení
+ukáže v telefonu. Uložená předvolba zůstane zachovaná pro místní nebo podporovaný výstup.
 
 ## Licence
 
