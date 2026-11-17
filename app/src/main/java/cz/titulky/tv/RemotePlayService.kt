@@ -77,7 +77,9 @@ class RemotePlayService : Service() {
     private val relaceCteni = java.util.concurrent.atomic.AtomicLong()
     private val pribehSession = java.util.UUID.randomUUID().toString().replace("-", "")
     private var pribehKontext = ""
-    private var pribehSpojeni: PribehSpojeni? = null
+    @Volatile private var pribehSpojeni: PribehSpojeni? = null
+    private var pribehBylAktivni = false
+    @Volatile private var pribehZacal = false
     private var pribehAktualni: CteciFronta.Stranka? = null
     private var pribehLokalni: CteciFronta.Token? = null
     private var pribehChyba = ""
@@ -86,42 +88,72 @@ class RemotePlayService : Service() {
         prelozVse(text, false, pribeh = true, chybaPribehu = chyba, hotovo = ok)
     }, { pribehChyba = it; zapis("[příběh: $it]") })
 
-    private fun chcePribeh() = telefon && nast.pribehovy && nast.dialogy
+    private val tvProfily by lazy { TvProfily(this) }
+    private fun platformaCile() = TvProfily.aktivniId?.let { tvProfily.platformaPrijimace(it) } ?: TvPlatforma.NEZNAMA
+    private fun pozadujePribeh() = telefon && nast.pribehovy && nast.dialogy
+    private fun chcePribeh() = pozadujePribeh() && PodporaPribehu.pouzit(
+        Propojeni.Vysilac.cilIp, platformaCile(), pribehSpojeni?.takeIf { it.podporujePribeh }?.ip)
     private fun pribehId(t: CteciFronta.Token) = "$pribehSession.${t.relace}.${t.poradi}.${t.revize}"
-    private fun zrusPribeh() {
+    private fun zrusPribeh(vycistitTelefon: Boolean = true) {
         pribeh.reset()
         pribehSpojeni?.let { sit ->
-            runCatching { sit.zrus(PribehProtokol.titulek("$pribehSession.${pribeh.generace}.0.0", "", true,
+            if (sit.podporujePribeh) runCatching { sit.zrus(PribehProtokol.titulek("$pribehSession.${pribeh.generace}.0.0", "", true,
                 Propojeni.Vysilac.rozvrhPribehu(), intArrayOf())) }
             sit.close()
         }
         pribehSpojeni = null; pribehAktualni = null; pribehLokalni = null; pribehChyba = ""
+        pribehZacal = false
         pribehPristiPokus = 0
         Propojeni.Vysilac.pribehRidi = false
-        TelefonTitulky.nastav("", 0)
-        ui.removeCallbacks(schovatCesky)
+        if (vycistitTelefon) {
+            TelefonTitulky.nastav("", 0)
+            ui.removeCallbacks(schovatCesky)
+        }
     }
     private fun kontextPribehu() {
-        val klic = "${chcePribeh()}:${bezi}:${relaceCteni.get()}:${nast.jazykNeboCs}:${rucniOblast()?.joinToString()}:${Propojeni.Vysilac.cilIp}:${TvProfily.aktivniId}"
-        if (klic != pribehKontext) {
-            val bylPribeh = pribehKontext.startsWith("true:")
-            if (bylPribeh || chcePribeh()) { zrusPribeh(); platnostPrekladu.zrus() }
+        val klic = "${pozadujePribeh()}:${bezi}:${relaceCteni.get()}:${nast.jazykNeboCs}:${rucniOblast()?.joinToString()}:${Propojeni.Vysilac.cilIp}:${TvProfily.aktivniId}:${platformaCile()}"
+        val zmena = klic != pribehKontext
+        if (zmena) {
+            zrusPribeh(vycistitTelefon = false)
             pribehKontext = klic
         }
+        val aktivni = chcePribeh() && bezi
+        if (aktivni != pribehBylAktivni || (zmena && pribehBylAktivni)) {
+            pribeh.reset(); pribehAktualni = null; pribehLokalni = null
+            pribehZacal = false
+            if (zmena || !aktivni) {
+                platnostPrekladu.zrus()
+                TelefonTitulky.nastav("", 0)
+                ui.removeCallbacks(schovatCesky)
+            }
+        }
+        pribehBylAktivni = aktivni
     }
     private val pribehHlidac = object : Runnable {
         override fun run() {
             kontextPribehu()
-            if (chcePribeh() && bezi) {
+            if (pozadujePribeh() && bezi) {
                 val ted = android.os.SystemClock.elapsedRealtime()
                 val ip = Propojeni.Vysilac.cilIp
-                pribehSpojeni?.chyba?.let { pribehChyba = "LG není dostupné: $it"; pribehSpojeni?.close(); pribehSpojeni = null; pribehPristiPokus = ted + 5000 }
-                if (ip != null && pribehSpojeni == null && ted >= pribehPristiPokus) {
+                pribehSpojeni?.chyba?.let { pribehChyba = "Přijímač není dostupný: $it"; pribehSpojeni?.close(); pribehSpojeni = null; pribehPristiPokus = ted + 5000 }
+                if (ip != null && PodporaPribehu.dotazovat(platformaCile()) && pribehSpojeni == null && ted >= pribehPristiPokus) {
                     pribehPristiPokus = ted + 5000
                     runCatching { PribehSpojeni(ip, cas = { android.os.SystemClock.elapsedRealtime() }) }
-                        .onSuccess { pribehSpojeni = it }.onFailure { pribehChyba = "LG není dostupné: ${it.javaClass.simpleName}" }
+                        .onSuccess { pribehSpojeni = it; pribehChyba = "" }.onFailure { pribehChyba = "Přijímač není dostupný: ${it.javaClass.simpleName}" }
                 }
                 val sit = pribehSpojeni
+                if (sit != null && !sit.podporujePribeh)
+                    sit.zprava = PribehProtokol.dotaz("$pribehSession.${pribeh.generace}.0.0")
+                // Potvrzení protokolu mění prezentaci, nikoli identitu právě ověřovaného spojení.
+                kontextPribehu()
+                if (!chcePribeh()) {
+                    Propojeni.Vysilac.pribehRidi = false
+                    pribehStav = if (platformaCile() == TvPlatforma.ANDROID_TV)
+                        "Příběh: Android TV zatím nepodporuje tento režim · posílám Standardní titulky."
+                    else "Příběh: přijímač zatím nepotvrdil podporu · posílám Standardní titulky."
+                    ui.postDelayed(this, 100)
+                    return
+                }
                 val ack = sit?.odpoved?.takeIf { ted - it.second < 2000 }?.first
                 val aktualni = pribehAktualni
                 if (aktualni != null && ack?.stav == "done" && ack.id == pribehId(aktualni.token)) {
@@ -136,16 +168,25 @@ class RemotePlayService : Service() {
                 val p = pribeh.krok(ted, ip != null, pauza)
                 if (!pauza) pribehAktualni = p
                 if (ip != null) {
-                    Propojeni.Vysilac.pribehRidi = true
                     val obsah = pribehAktualni
-                    sit?.zprava = if (obsah == null) PribehProtokol.dotaz("$pribehSession.${pribeh.generace}.0.0")
+                    val zprava = if (obsah == null) PribehProtokol.dotaz("$pribehSession.${pribeh.generace}.0.0")
                     else runCatching { PribehProtokol.titulek(pribehId(obsah.token), obsah.text, pauza,
                         Propojeni.Vysilac.rozvrhPribehu(), pribeh.barvy(obsah.token), casProcenta) }.getOrElse {
                         pribeh.chybaVystupu(obsah.token); pribehAktualni = null
                         PribehProtokol.dotaz("$pribehSession.${pribeh.generace}.0.0")
                     }
+                    // Rozpracovaný Standard může doběhnout až do první platné Story stránky.
+                    if (!pribehZacal && zprava.startsWith("PCS1\t")) {
+                        pribehZacal = true
+                        Propojeni.Vysilac.pribehRidi = true
+                        platnostPrekladu.zrus()
+                        TelefonTitulky.nastav("", 0)
+                        ui.removeCallbacks(schovatCesky)
+                    }
+                    Propojeni.Vysilac.pribehRidi = pribehZacal
+                    sit?.zprava = zprava
                     pribehStav = when { pribehChyba.isNotEmpty() -> pribehChyba
-                        ack == null -> "Příběh: čekám na LG přijímač s podporou Příběhového režimu…"
+                        ack == null -> "Příběh: čekám na potvrzení přijímače…"
                         pauza -> "Příběh: pozastaveno kvůli volbám · čeká ${pribeh.pocet}"
                         else -> "Příběh: čtecí fronta ${pribeh.pocet}$dohanel" }
                 } else {
@@ -2142,7 +2183,7 @@ class RemotePlayService : Service() {
     @Volatile private var sirkaXbox = 0
 
     private fun ukaz(text: String, doba: Long = 6000, box: FloatArray? = null, radku: Int = 1, barvyJmen: IntArray? = null) {
-        if (chcePribeh()) return
+        if (chcePribeh() && (Propojeni.Vysilac.cilIp == null || pribehZacal)) return
         if (telefon) { TelefonTitulky.nastav(text, doba, barvyJmen); return }
         val i = Intent(this, OverlayService::class.java)
             .setAction(OverlayService.ACTION_SET_TEXT)
