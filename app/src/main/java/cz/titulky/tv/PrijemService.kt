@@ -29,6 +29,18 @@ class PrijemService : Service() {
     private var volbyVidet = false
     private var volbyOd = 0L
     private var textVidet = false
+    private var diagnostikaVstupu: Boolean? = null
+    private var diagnostikaPrvniText = false
+
+    private fun zapisDiagnostiku(radek: String) {
+        android.util.Log.i("PlayCaptionDiag", radek)
+        runCatching {
+            val f = java.io.File(filesDir, "titulky.log")
+            if (f.length() > 300_000) f.writeText("")
+            val cas = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US).format(java.util.Date())
+            f.appendText("$cas $radek\n")
+        }
+    }
     private var skrytyMimoVstup = false
     private var kodSparovaniDo = 0L
 
@@ -90,6 +102,9 @@ class PrijemService : Service() {
         }
         if (prijimac == null) {
             bezi = true
+            diagnostikaVstupu = null
+            diagnostikaPrvniText = false
+            zapisDiagnostiku("[TV příjem] start S telefonem, RemotePlay aktivní=${RemotePlayService.aktivni}")
             // PS5 si bere telefon → vlastní čtení televizí vypnout (kdyby běželo)
             // zastavit jen když opravdu běží – jinak by se čtečka zbytečně spouštěla (slabou TV to shodí)
             if (RemotePlayService.aktivni) runCatching { startService(Intent(this, RemotePlayService::class.java).setAction(RemotePlayService.ACTION_STOP)) }
@@ -129,6 +144,11 @@ class PrijemService : Service() {
         // výjimka: právě upravuješ polohu v telefonu → ukázku s rámečkem ukázat vždy (i na hlavní obrazovce)
         val uprava = rozvrh != null && rozvrh.size >= 5 && rozvrh[4] == 1f
         val vstup = uprava || runCatching { popredi.jeVstupTv() }.getOrDefault(true)
+        if (diagnostikaVstupu != vstup || (!diagnostikaPrvniText && text.isNotEmpty())) {
+            diagnostikaVstupu = vstup
+            if (text.isNotEmpty()) diagnostikaPrvniText = true
+            zapisDiagnostiku("[TV příjem] PCT1 přijat, znaků=${text.length}, vstupTV=$vstup, oprávnění překryvu=${android.provider.Settings.canDrawOverlays(this)}")
+        }
         skrytyMimoVstup = !vstup
         posli(Intent(this, OverlayService::class.java)
             .setAction(OverlayService.ACTION_SET_TEXT)

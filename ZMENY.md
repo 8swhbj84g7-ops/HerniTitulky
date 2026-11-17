@@ -6,6 +6,36 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
 
 ## Nevydané změny
 
+- PS5: pomocný Remote Play stream na telefonu ani Android TV neotevírá zvukové
+  přehrávání a nepředává PCM do přehrávací fronty. Odstranění dvojitého zvuku
+  nemění HDMI, systémovou hlasitost ani opravu sessionFree; dekodér dál odčerpává
+  buffery a končí přes EOS. Nové nativní regrese ověřují obě přehrávací cesty.
+- PS5: nativní oprava zámku audio dekodéru. Po nedostupném vstupním bufferu
+  chybová větev nově odemkne mutex, na který jinak při ukončení čekal sessionFree.
+  Stejná oprava v ARM knihovnách TV i telefonu; šest regresí se skutečnými vlákny.
+  Časové limity, kodeky a síťové chování se nemění. Přejímka nových knihoven na TCL zbývá.
+- GL plocha i YUV ImageReader patří konkrétní PS5 Session a zavírají se až po
+  úspěšném dispose. Nový pokus ani konec služby výstup živého dekodéru nezavře;
+  při blokujícím či chybném úklidu zůstává držený. Obsluha YUV pokračuje do
+  dokončení posledního výstupu, aby starý dekodér mohl dokončit práci.
+- Telefon i TV ignorují události již ukončené PS5 relace. Po třech připojených
+  pokusech bez jediného snímku se opakování v procesu zastaví s návodem na
+  Vynutit ukončení, bez mazání dat. První skutečný snímek průběžnou řadu selhání
+  vyčistí; samotný handshake nikoli. Obsazení PS5 má samostatné počítadlo a log.
+- PS5 diagnostika zaznamená první dekódovaný snímek z GL/YUV/paměti i na telefonu
+  a velikost sdíleného nativního logu před/po vytvoření, po připojení a po úklidu.
+  Prázdný chiaki.log se neinterpretuje jako důkaz chybějících video paketů.
+- Diagnostika PS5 bez obrazu: ID relací, délky jednotlivých kroků ukončování,
+  upozornění se stackem při překročení pěti sekund a záznam hlídače/YUV/GL.
+  Adamův report z TCL potvrdil blokování `setSurface(null)` před `stop()`.
+  Ukončení nově používá `stop()` → `dispose(join/free)` bez samostatného
+  odpojování Surface. Nová oprava čeká na opakovanou přejímku stejné TCL.
+  První selhání GL a stav příjmu titulků z telefonu jsou viditelné
+  v Záznamu. Postup přejímky: `docs/PS5-BEZ-OBRAZU.md`.
+- Automatická volba obrazu TV se potvrzuje skutečným snímkem, ne časovačem.
+  Po doloženém YUV výpadek sám nepřepíná na GL; neověřený GL pokus bez snímků
+  vrací stávající hlídač na YUV. Stará volba GL se nejprve zachovává a ověřuje,
+  telefon, kodeky, časy připojení a spárování zůstávají. Přejímka TCL ještě zbývá.
 - PSN přihlášení: staré karty a formuláře prohlížeče už nemohou odeslat použitý
   kód do nového pokusu. Otevřená stránka, formulář i QR patří jednomu pokusu;
   skutečné chyby jeho ověření zůstávají viditelné.
