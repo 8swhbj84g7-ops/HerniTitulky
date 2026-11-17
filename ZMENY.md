@@ -6,6 +6,10 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
 
 ## Nevydané změny
 
+- PS5: nativní oprava zámku audio dekodéru. Po nedostupném vstupním bufferu
+  chybová větev nově odemkne mutex, na který jinak při ukončení čekal sessionFree.
+  Stejná oprava v ARM knihovnách TV i telefonu; šest regresí se skutečnými vlákny.
+  Časové limity, kodeky a síťové chování se nemění. Přejímka nových knihoven na TCL zbývá.
 - GL plocha i YUV ImageReader patří konkrétní PS5 Session a zavírají se až po
   úspěšném dispose. Nový pokus ani konec služby výstup živého dekodéru nezavře;
   při blokujícím či chybném úklidu zůstává držený. Obsluha YUV pokračuje do

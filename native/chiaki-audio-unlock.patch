@@ -1,0 +1,6 @@
+diff --git a/android/app/src/main/cpp/audio-decoder.c b/android/app/src/main/cpp/audio-decoder.c
+--- a/android/app/src/main/cpp/audio-decoder.c
++++ b/android/app/src/main/cpp/audio-decoder.c
+@@ -184 +184 @@ static void android_chiaki_audio_decoder_frame(uint8_t *buf, size_t buf_size, void *user)
+-			return;
++			goto beach;

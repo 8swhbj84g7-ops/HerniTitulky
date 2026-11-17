@@ -1,0 +1,15 @@
+{
+  "upstream": "f814cf69d636f149ad5a3cfffd19cb22da90beda",
+  "ndk": "21.4.7075529",
+  "patchSha256": "f4772fe08023d68fe5a45e88a884606916038a728ef158ecf1948078255db54a",
+  "libraries": {
+    "arm64-v8a": {
+      "libchiaki-jni.so": "b547735445285c000b5f0ab854251f9f8dae7ca1b052701a220497c17cf10770",
+      "libchiaki-pc.so": "0e40f7f6c316f088a2a1ac5484f5ac248f8cb87d530517e57dd0faf05e20bf53"
+    },
+    "armeabi-v7a": {
+      "libchiaki-jni.so": "4e0f29a4e76861414d36c28e86c58416661fb334f2d59ab23c4e1134c81046d5",
+      "libchiaki-pc.so": "d512d8d5c091cf9292d41a11c566715e660daa6a516db471449ed7e35d507e0b"
+    }
+  }
+}

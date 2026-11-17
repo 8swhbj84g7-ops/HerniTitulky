@@ -1,6 +1,43 @@
 # PS5 bez obrazu a příjem překladů z telefonu
 
-## Stav – 16. 11. 2026
+## Doplnění – 17. 11. 2026: nativní audio zámek
+
+Přejímka fa223f4 na TCL 65C805 + POCO F8 Pro nakonec zaznamenala 20/21
+dokončených ukončení. Relace TV #b2f2cd3 v 01:28:58 dokončila stop za 11 ms,
+ale zůstala v sessionFree; po video release chybělo audio EOS i dokončení JNI.
+PS5 se uvolnila, ale ps5-konec a NDK MediaCodec_ zůstaly v procesu. Není správné
+tento stav označit za úplnou opravu nebo za neškodný dlouhodobě.
+
+Kontrola upstream kódu a původních ARM binárek našla konkrétní chybu:
+audio frame při selhání dequeueInputBuffer vrací řízení bez odemčení
+codec_mutex. sessionFree pak v jiném vlákně čeká ještě před logem audio EOS.
+Video větev obdobnou chybu správně řeší přes společné odemčení. Jednořádkový
+patch mění stejným způsobem audio návrat; bez změny časových limitů a kodeků.
+
+Řízený nativní test na původním kódu chybu reprodukoval; po patchi prošlo šest
+scénářů včetně částečného rámce a rekurzivní inicializace. Test používá upstream
+audio-decoder.c i skutečná pthread vlákna, ale řízený MediaCodec, nikoli TCL.
+Report neobsahuje celý nativní stack ani řádek předchozího selhání audio bufferu;
+shoda této prokázané chyby s konkrétní relací #b2f2cd3 musí být potvrzena novou
+přejímkou. Jiné chyby uvnitř systémového dekodéru nelze tímto testem vyloučit.
+
+ARM knihovny TV i telefonu vznikají ze stejné připnuté verze Chiaki-TV s tímto
+jediným zdrojovým patchem. Postup, testy a omezení: [native/README.md](../native/README.md).
+Pořadí stop → dispose → uvolnění výstupu a ochrany fa223f4 zůstávají.
+Nová přejímka musí zahrnout více opakování původního přechodu TCL z „Jen televize“
+na „S telefonem“, celá ukončení i kontrolu vláken a paměti po přechodech. Test
+zavření telefonu před ConnectedEvent zůstává podle dodaného hlášení neověřený.
+PR #15 zůstává draft, bez release, tagu a změny verze.
+
+Lokální ověření tohoto doplnění: šest nativních scénářů prošlo také s ASan/UBSan;
+na původním kódu zámková regrese selže. Prošlo 242 JVM testů a sestavení debug
+i instrumentačního APK. V APK byly porovnány SHA-256 všech čtyř nových ARM knihoven
+s native/chiaki-build.json, JNI názvy a sdílené závislosti jsou shodné s původními.
+Prošlo šest webOS sad a Samsung renderer (test z již sloučeného #21 nad Samsung
+zdroji této větve, protože její původní test stále používá reálné čekání).
+ADB nevidí zařízení; instrumentační testy ani nová fyzická přejímka se zde nespustily.
+
+## Předchozí stav – 16. 11. 2026
 
 ### Dodatečná oprava životnosti plochy
 
