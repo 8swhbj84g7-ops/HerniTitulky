@@ -145,13 +145,13 @@ object Texty {
             "💡 La rapidez y precisión de los subtítulos dependen sobre todo de la velocidad de tu conexión a internet y de la potencia de tu dispositivo. Mejor con cable de red o Wi-Fi de 5 GHz.",
             "💡 Velocità e precisione dei sottotitoli dipendono soprattutto dalla velocità della connessione internet e dalle prestazioni del dispositivo. Meglio con cavo di rete o Wi-Fi a 5 GHz."),
         "zasluhy" to listOf(
-            "PlayCaption © 2026 Adam Růžička. Spojení s PS5 a přenos obrazu zajišťuje open-source projekt Chiaki / chiaki-ng (licence AGPLv3) – velké díky jeho autorům. Spojení s Xboxem vychází z projektů xbox-xcloud-player (MIT) a XStreaming (AGPLv3) a knihovny WebRTC. PlayCaption je také open-source pod AGPLv3: github.com/AdamRuzick4/PlayCaption-app",
-            "PlayCaption © 2026 Adam Růžička. Spojenie s PS5 a prenos obrazu zabezpečuje open-source projekt Chiaki / chiaki-ng (licencia AGPLv3) – veľká vďaka jeho autorom. Spojenie s Xboxom vychádza z projektov xbox-xcloud-player (MIT) a XStreaming (AGPLv3) a knižnice WebRTC. PlayCaption je tiež open-source pod AGPLv3: github.com/AdamRuzick4/PlayCaption-app",
-            "PlayCaption © 2026 Adam Růžička. Die Verbindung zur PS5 und die Bildübertragung übernimmt das Open-Source-Projekt Chiaki / chiaki-ng (AGPLv3) – großer Dank an seine Autoren. PlayCaption ist ebenfalls Open Source (AGPLv3): github.com/AdamRuzick4/PlayCaption-app",
-            "PlayCaption © 2026 Adam Růžička. Połączenie z PS5 i przesyłanie obrazu zapewnia projekt open-source Chiaki / chiaki-ng (AGPLv3) – wielkie dzięki jego autorom. PlayCaption jest również open-source (AGPLv3): github.com/AdamRuzick4/PlayCaption-app",
-            "PlayCaption © 2026 Adam Růžička. La connexion à la PS5 et le flux vidéo reposent sur le projet open source Chiaki / chiaki-ng (AGPLv3) – un grand merci à ses auteurs. PlayCaption est aussi open source (AGPLv3) : github.com/AdamRuzick4/PlayCaption-app",
-            "PlayCaption © 2026 Adam Růžička. La conexión con la PS5 y la transmisión de imagen las proporciona el proyecto de código abierto Chiaki / chiaki-ng (AGPLv3) – muchas gracias a sus autores. PlayCaption también es de código abierto (AGPLv3): github.com/AdamRuzick4/PlayCaption-app",
-            "PlayCaption © 2026 Adam Růžička. La connessione alla PS5 e lo streaming sono forniti dal progetto open source Chiaki / chiaki-ng (AGPLv3) – grazie mille ai suoi autori. Anche PlayCaption è open source (AGPLv3): github.com/AdamRuzick4/PlayCaption-app"),
+            "PlayCaption © 2026 Adam Růžička. Na vývoji se podíleli Rudolf Nohal (LG televize, opravy chyb a vývoj celé aplikace) a Michael Šubák (Samsung televize) – díky, kluci! Spojení s PS5 a přenos obrazu zajišťuje open-source projekt Chiaki / chiaki-ng (licence AGPLv3) – velké díky jeho autorům. Spojení s Xboxem vychází z projektů xbox-xcloud-player (MIT) a XStreaming (AGPLv3) a knihovny WebRTC. PlayCaption je také open-source pod AGPLv3: github.com/AdamRuzick4/PlayCaption-app",
+            "PlayCaption © 2026 Adam Růžička. Na vývoji sa podieľali Rudolf Nohal (LG televízory, opravy chýb a vývoj celej aplikácie) a Michael Šubák (Samsung televízory) – vďaka, chalani! Spojenie s PS5 a prenos obrazu zabezpečuje open-source projekt Chiaki / chiaki-ng (licencia AGPLv3) – veľká vďaka jeho autorom. Spojenie s Xboxom vychádza z projektov xbox-xcloud-player (MIT) a XStreaming (AGPLv3) a knižnice WebRTC. PlayCaption je tiež open-source pod AGPLv3: github.com/AdamRuzick4/PlayCaption-app",
+            "PlayCaption © 2026 Adam Růžička. Mitentwickelt von Rudolf Nohal (LG-Fernseher, Fehlerbehebungen und Entwicklung der gesamten App) und Michael Šubák (Samsung-Fernseher) – danke! Die Verbindung zur PS5 und die Bildübertragung übernimmt das Open-Source-Projekt Chiaki / chiaki-ng (AGPLv3) – großer Dank an seine Autoren. PlayCaption ist ebenfalls Open Source (AGPLv3): github.com/AdamRuzick4/PlayCaption-app",
+            "PlayCaption © 2026 Adam Růžička. Współtwórcy: Rudolf Nohal (telewizory LG, poprawki błędów i rozwój całej aplikacji) i Michael Šubák (telewizory Samsung) – dzięki! Połączenie z PS5 i przesyłanie obrazu zapewnia projekt open-source Chiaki / chiaki-ng (AGPLv3) – wielkie dzięki jego autorom. PlayCaption jest również open-source (AGPLv3): github.com/AdamRuzick4/PlayCaption-app",
+            "PlayCaption © 2026 Adam Růžička. Avec la participation de Rudolf Nohal (TV LG, corrections de bugs et développement de toute l'application) et Michael Šubák (TV Samsung) – merci ! La connexion à la PS5 et le flux vidéo reposent sur le projet open source Chiaki / chiaki-ng (AGPLv3) – un grand merci à ses auteurs. PlayCaption est aussi open source (AGPLv3) : github.com/AdamRuzick4/PlayCaption-app",
+            "PlayCaption © 2026 Adam Růžička. Con la colaboración de Rudolf Nohal (TV LG, corrección de errores y desarrollo de toda la aplicación) y Michael Šubák (TV Samsung): ¡gracias! La conexión con la PS5 y la transmisión de imagen las proporciona el proyecto de código abierto Chiaki / chiaki-ng (AGPLv3) – muchas gracias a sus autores. PlayCaption también es de código abierto (AGPLv3): github.com/AdamRuzick4/PlayCaption-app",
+            "PlayCaption © 2026 Adam Růžička. Con la collaborazione di Rudolf Nohal (TV LG, correzione di bug e sviluppo dell'intera app) e Michael Šubák (TV Samsung) – grazie! La connessione alla PS5 e lo streaming sono forniti dal progetto open source Chiaki / chiaki-ng (AGPLv3) – grazie mille ai suoi autori. Anche PlayCaption è open source (AGPLv3): github.com/AdamRuzick4/PlayCaption-app"),
         "brzy" to listOf("připravujeme", "pripravujeme", "in Vorbereitung", "wkrótce", "bientôt", "próximamente", "in arrivo"),
         "prijemTlacitko" to listOf("📱  Titulky čte telefon (rychlejší)", "📱  Titulky číta telefón (rýchlejšie)"),
         "prijemNadpis" to listOf("Titulky z telefonu", "Titulky z telefónu"),
@@ -298,7 +298,7 @@ object Texty {
         "lgNadpis3" to listOf("Nainstaluj PlayCaption LG", "Nainštaluj PlayCaption LG"),
         "lgText3" to listOf("Záložní cesta z Android telefonu nebo tabletu:\n\n1. Tlačítkem „Uložit LG instalační soubor“ ulož přibalený IPK, třeba do Stažených souborů. Nemusíš ho stahovat z vydání PlayCaption.\n\n2. Z oficiálního vydání Aphanes stáhni Android soubor .apk a nainstaluj webOS Dev Mode Manager. Je to samostatná komunitní aplikace.\n\n3. V ní přidej TV podle IP a Passphrase z Developer Mode. Key Server musí být zapnutý.\n\n4. V seznamu aplikací použij instalaci místního .ipk a vyber uložený soubor PlayCaption. Po dokončení otevři PlayCaption LG na TV.\n\nPokud chceš instalovat z počítače, zvol možnost níže. Další tě posune k vyhledání přijímače; samo nic neinstaluje.", "Záložná cesta z Android telefónu alebo tabletu:\n\n1. Tlačidlom „Uložiť LG inštalačný súbor“ ulož pribalený IPK, napríklad do Stiahnutých súborov. Nemusíš ho sťahovať z vydaní PlayCaption.\n\n2. Z oficiálneho vydania Aphanes stiahni Android súbor .apk a nainštaluj webOS Dev Mode Manager. Je to samostatná komunitná aplikácia.\n\n3. V nej pridaj TV podľa IP a Passphrase z Developer Mode. Key Server musí byť zapnutý.\n\n4. V zozname aplikácií použi inštaláciu miestneho .ipk a vyber uložený súbor PlayCaption. Po dokončení otvor PlayCaption LG na TV.\n\nAk chceš inštalovať z počítača, zvoľ možnosť nižšie. Ďalej ťa posunie k vyhľadaniu prijímača; samo nič neinštaluje."),
         "lgNadpis4" to listOf("Spusť přijímač a vyber televizi", "Spusti prijímač a vyber televízor"),
-        "lgText4" to listOf("1. Na LG otevři PlayCaption LG a vyber HDMI, do kterého je zapojená konzole. Vstup vybírej uvnitř aplikace; přepnutí přes Home může překryv zavřít.\n\n2. Na obrazovce LG se objeví název přijímače a čekání na zařízení. Tlačítkem dole jej vyhledej a vyber stejný název.\n\n3. V Android PlayCaption připoj konzoli svým účtem a spusť hraní. Účet konzole se nepřebírá z LG. Pokud tvá verze nabízí Story, pro tento přijímač zvol Standardní režim.\n\nKdyž se TV nenajde, zkontroluj spuštěný přijímač a společnou síť bez izolace zařízení.\n\nKey Server můžeš po instalaci vypnout. Pro další instalaci z PlayCaption jej znovu zapni.", "1. Na LG otvor PlayCaption LG a vyber HDMI, do ktorého je zapojená konzola. Vstup vyberaj vnútri aplikácie; prepnutie cez Home môže prekrytie zavrieť.\n\n2. Na obrazovke LG sa objaví názov prijímača a čakanie na zariadenie. Tlačidlom dole ho vyhľadaj a vyber rovnaký názov.\n\n3. V Android PlayCaption pripoj konzolu svojím účtom a spusti hranie. Účet konzoly sa nepreberá z LG. Ak tvoja verzia ponúka Story, pre tento prijímač zvoľ Štandardný režim.\n\nAk sa TV nenájde, skontroluj spustený prijímač a spoločnú sieť bez izolácie zariadení.\n\nKey Server môžeš po inštalácii vypnúť. Pre ďalšiu inštaláciu z PlayCaption ho znova zapni."),
+        "lgText4" to listOf("1. Na LG otevři PlayCaption LG a vyber HDMI, do kterého je zapojená konzole. Vstup vybírej uvnitř aplikace; přepnutí přes Home může překryv zavřít.\n\n2. Na obrazovce LG se objeví název přijímače a čekání na zařízení. Tlačítkem dole jej vyhledej a vyber stejný název.\n\n3. V Android PlayCaption připoj konzoli svým účtem a spusť hraní. Účet konzole se nepřebírá z LG. Příběhový režim funguje i na LG.\n\nKdyž se TV nenajde, zkontroluj spuštěný přijímač a společnou síť bez izolace zařízení.\n\nKey Server můžeš po instalaci vypnout. Pro další instalaci z PlayCaption jej znovu zapni.", "1. Na LG otvor PlayCaption LG a vyber HDMI, do ktorého je zapojená konzola. Vstup vyberaj vnútri aplikácie; prepnutie cez Home môže prekrytie zavrieť.\n\n2. Na obrazovke LG sa objaví názov prijímača a čakanie na zariadenie. Tlačidlom dole ho vyhľadaj a vyber rovnaký názov.\n\n3. V Android PlayCaption pripoj konzolu svojím účtom a spusti hranie. Účet konzoly sa nepreberá z LG. Príbehový režim funguje aj na LG.\n\nAk sa TV nenájde, skontroluj spustený prijímač a spoločnú sieť bez izolácie zariadení.\n\nKey Server môžeš po inštalácii vypnúť. Pre ďalšiu inštaláciu z PlayCaption ho znova zapni."),
         "tvVystupNadpis" to listOf("Výstup titulků", "Výstup titulkov"),
         "tvZmenitKratce" to listOf("Změnit", "Zmeniť"),
         "tvJenZarizeni" to listOf("Toto zařízení", "Toto zariadenie"),
@@ -547,8 +547,79 @@ object Texty {
         "infoAktivni" to listOf("✔ PlayCaption: překlad aktivní", "✔ PlayCaption: preklad aktívny", "✔ PlayCaption: Übersetzung aktiv", "✔ PlayCaption: tłumaczenie aktywne", "✔ PlayCaption : traduction active", "✔ PlayCaption: traducción activa", "✔ PlayCaption: traduzione attiva")
     )
 
+
+    /**
+     * Zjednodušené texty 0.22 (cs, sk). Mají přednost před T; ostatní jazyky berou dál T.
+     * Jen popisky – funkce zůstávají stejné.
+     */
+    private val NOVE: Map<String, List<String>> = mapOf(
+        // hlavní obrazovka – nadpisy
+        "hlJazyk" to listOf("Jazyk", "Jazyk"),
+        "hlKonzole" to listOf("Konzole", "Konzoly"),
+        "hlStav" to listOf("Stav", "Stav"),
+        "coPrekladat" to listOf("Co překládat", "Čo prekladať"),
+        "hlTel1" to listOf("1. Na čem hraješ?", "1. Na čom hráš?"),
+        "hlTel2" to listOf("2. Do jakého jazyka?", "2. Do akého jazyka?"),
+        "hlTel3" to listOf("3. Kde chceš titulky?", "3. Kde chceš titulky?"),
+        "hlTel4" to listOf("4. Co překládat?", "4. Čo prekladať?"),
+        "zdrojKratce" to listOf("z angličtiny", "z angličtiny"),
+        // konzole
+        "konPripraveno" to listOf("Připraveno", "Pripravené"),
+        "konPripravuji" to listOf("připravuji…", "pripravujem…"),
+        "konChyba" to listOf("nejde spojení", "nejde spojenie"),
+        "konSparovano" to listOf("připojeno", "pripojené"),
+        "konNepripojeno" to listOf("nepřipojeno", "nepripojené"),
+        "konZnovu" to listOf("Znovu připojit", "Znovu pripojiť"),
+        "telRadek" to listOf("Telefon", "Telefón"),
+        "telZadny" to listOf("zatím žádný", "zatiaľ žiadny"),
+        "pridatTelefon" to listOf("+ Přidat telefon", "+ Pridať telefón"),
+        // stav (pruh nahoře)
+        "banOkPs" to listOf("PlayStation připravena", "PlayStation pripravená"),
+        "banOkXbox" to listOf("Xbox připraven", "Xbox pripravený"),
+        "banOkText" to listOf("Vše je nastavené – můžeš hrát.", "Všetko je nastavené – môžeš hrať."),
+        "banCekaPs" to listOf("PlayStation – připravuji spojení…", "PlayStation – pripravujem spojenie…"),
+        "banCekaXbox" to listOf("Xbox – připravuji spojení…", "Xbox – pripravujem spojenie…"),
+        "banChybaPs" to listOf("PlayStation – spojení nejde", "PlayStation – spojenie nejde"),
+        "banChybaXbox" to listOf("Xbox – spojení nejde", "Xbox – spojenie nejde"),
+        "stavPodrobnosti" to listOf("Podrobnosti najdeš v Diagnostice (logo PlayCaption).", "Podrobnosti nájdeš v Diagnostike (logo PlayCaption)."),
+        // co překládat
+        "dialogy" to listOf("Rozhovory ve hře", "Rozhovory v hre"),
+        "dialogyPopis" to listOf("Ve hře si zapni titulky.", "V hre si zapni titulky."),
+        "prekryvat" to listOf("Zakrýt anglické titulky", "Zakryť anglické titulky"),
+        "prekryvatPopis" to listOf("Překlad se ukáže přes původní titulky.", "Preklad sa ukáže cez pôvodné titulky."),
+        "napovedy" to listOf("Menu, úkoly, dopisy", "Menu, úlohy, listy"),
+        "napovedyJenMobil" to listOf("Přeložíš v telefonu žlutým rámečkem.", "Preložíš v telefóne žltým rámčekom."),
+        "napovedyTelefon" to listOf("Při hraní je přeložíš žlutým rámečkem.", "Pri hraní ich preložíš žltým rámčekom."),
+        // jak hrát
+        "hratVyberKratce" to listOf("Vyber šipkami a zmáčkni OK", "Vyber šípkami a stlač OK"),
+        "hratTelPopis" to listOf("👍 Doporučeno · rychlé a přesné titulky", "👍 Odporúčané · rýchle a presné titulky"),
+        "hratTvPopis" to listOf("Bez telefonu · může být pomalejší", "Bez telefónu · môže byť pomalší"),
+        "hratTelDoporuceno" to listOf("👍 Doporučeno · rychlé a přesné titulky", "👍 Odporúčané · rýchle a presné titulky"),
+        "hratTvSlaba" to listOf("⚠ Slabší televize · může být pomalé", "⚠ Slabší televízor · môže byť pomalé"),
+        "hratZmackni" to listOf("👇 Zmáčkni a jde se hrát", "👇 Stlač a ide sa hrať"),
+        "hratBtn" to listOf("▶ Hrát", "▶ Hrať"),
+        "tipPripojeni" to listOf("💡 Nejlépe funguje kabel nebo 5 GHz Wi-Fi.", "💡 Najlepšie funguje kábel alebo 5 GHz Wi-Fi."),
+        // povolení zobrazení (televize)
+        "povolitBtn" to listOf("Zmáčkni OK – Povolit zobrazení", "Stlač OK – Povoliť zobrazenie"),
+        "povolitChybi" to listOf("Bez povolení se titulky neukážou přes hru.", "Bez povolenia sa titulky neukážu cez hru."),
+        "povolitJak" to listOf("V nastavení zapni „Zobrazit přes jiné aplikace“ a vrať se zpátky.", "V nastaveniach zapni „Zobraziť cez iné aplikácie“ a vráť sa späť."),
+        "povolenoNadpis" to listOf("Zobrazení povoleno", "Zobrazenie povolené"),
+        "povolenoText" to listOf("Titulky se ukážou přes hru.", "Titulky sa ukážu cez hru."),
+        // diagnostika
+        "diagNadpis" to listOf("DIAGNOSTIKA", "DIAGNOSTIKA"),
+        "diagLogoOk" to listOf("Zmáčkni OK", "Stlač OK"),
+        "diagPopis" to listOf("Záznam toho, co aplikace dělá. Při potížích ho vyfoť a pošli vývojářům.", "Záznam toho, čo aplikácia robí. Pri problémoch ho odfoť a pošli vývojárom."),
+        "diagRadky" to listOf("řádek {od}–{do} z {z}", "riadok {od}–{do} z {z}"),
+        "diagOvladani" to listOf("▲ ▼ posouvej záznam  ·  ZPĚT zavře", "▲ ▼ posúvaj záznam  ·  SPÄŤ zavrie"),
+        "diagOvladaniTel" to listOf("Posouvej prstem nahoru a dolů", "Posúvaj prstom hore a dole"),
+        "diagZacatek" to listOf("Na začátek", "Na začiatok"),
+        "diagKonec" to listOf("Na konec", "Na koniec"),
+        "diagZavrit" to listOf("Zavřít", "Zavrieť")
+    )
+
     fun t(kod: String, klic: String): String {
         val i = KODY.indexOf(kod).coerceAtLeast(0)
+        NOVE[klic]?.getOrNull(i)?.let { return it }
         return T[klic]?.getOrNull(i) ?: T[klic]?.first() ?: klic
     }
 

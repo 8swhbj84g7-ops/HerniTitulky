@@ -6,6 +6,42 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
 
 ## Nevydané změny
 
+(zatím nic)
+
+## 0.22 (versionCode 35)
+
+Co je nového pro hráče:
+- **Nový, jednodušší vzhled.** Televize má všechno na jedné obrazovce: Jazyk, Stav, Konzole,
+  Co překládat a velkou volbu „Jak chceš hrát?“. Telefon vede krok za krokem (1–4) až k tlačítku
+  „▶ Hrát“. Stav spojení se při připojování plní zeleně a po připojení ukáže
+  „PlayStation připravena“ / „Xbox připraven“.
+- **Povolení zobrazení na TV** je velké pulzující tlačítko hned pod logem – stačí zmáčknout OK.
+- **Diagnostika:** najeď ovladačem na logo PlayCaption a zmáčkni OK – záznam se ukáže přes celou
+  obrazovku a posouvá se šipkami. Při potížích ho vyfoť a pošli.
+- **PS5 se už nezasekne** při opakovaném připojování (dřív pomohl jen restart konzole)
+  a na TV zmizel **dvojitý zvuk / ozvěna**.
+- **Příběhový režim i na Android TV** v režimu „S telefonem“.
+- **Víceřádkové titulky** se už neztrácejí a stav konzole ukazuje, co se opravdu děje
+  (připojuji / čekám na obraz / obraz chodí).
+- **Spolehlivější přihlášení PlayStation** přes telefon.
+- **LG televize:** přijímač 0.2.3 (lepší vyhledání TV, instalace i na webOS 5).
+  Aktualizace: v telefonu otevři průvodce LG, **krok 4** – ukáže, jestli máš aktuální verzi,
+  nebo nabídne instalaci novější.
+- Díky Rudolfu Nohalovi (LG, opravy chyb a vývoj celé aplikace) a Michaelu Šubákovi (Samsung).
+
+Technické podrobnosti:
+- Vzhled 0.22 (jen popisky a rozložení, funkce stejné): televize má hlavní obrazovku
+  v mřížce (Jazyk | Stav, Konzole | Co překládat, Podpora | Jak chceš hrát?).
+  Pruh Stav se při připojování plní průhledně zeleně a po připojení zezelená
+  („PlayStation připravena“ / „Xbox připraven“); rozsvítí se i řádek konzole.
+  Povolení zobrazení je velké tlačítko hned pod logem, po povolení zezelená.
+  „Překrývat původní titulky“ → „Zakrýt anglické titulky“ (Ano / Ne).
+  Telefon: očíslované kroky 1–4, nahoře jeden pruh stavu, „▶ Hrát“.
+- Diagnostika: najetí na logo ukáže „DIAGNOSTIKA – Zmáčkni OK“, záznam je přes celou
+  obrazovku a posouvá se šipkami ▲▼ (podržení OK dál přidá tlačítko Vývoj).
+- LG průvodce: odstraněna zastaralá věta, že na LG je potřeba Standardní režim.
+- Poděkování v aplikaci: Rudolf Nohal (LG, opravy chyb a vývoj celé aplikace) a Michael Šubák (Samsung).
+
 - PC-001: Android zachová kompletní víceřádkový text, když OCR na nezměněném
   obrazu opakovaně vynechá již přečtené řádky. Při skutečné změně snímku zůstává
   původní potvrzování kratšího textu a zmizení; opravy a doplňování jsou zachované.

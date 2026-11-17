@@ -47,7 +47,7 @@ PlayCaption stojí na práci jiných open-source projektů:
 
 Část PlayCaption (čtení titulků z obrazu, překlad, zobrazení přes HDMI, rozhraní pro TV a telefon) vzniká s pomocí AI a hodně testování na skutečných televizích a hrách.
 
-Podporu LG webOS a Příběhový režim napsal **Rudolf Nohal**.
+Podporu LG webOS a Příběhový režim napsal **Rudolf Nohal**, který se podílí i na opravách chyb a vývoji celé aplikace. Podporu Samsung (Tizen) napsal **Michael Šubák**.
 
 ## Zdrojový kód a převzaté části
 

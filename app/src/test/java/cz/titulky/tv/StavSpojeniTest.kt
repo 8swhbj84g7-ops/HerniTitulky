@@ -136,7 +136,7 @@ class StavSpojeniTest {
         assertTrue(ui.length < 400)
         assertTrue(ui.lines().size <= 3)
         assertFalse(ui.contains("native.function"))
-        assertTrue(ui.contains("Záznam"))
+        assertTrue(ui.contains("Diagnostice"))
         assertTrue(Texty.spojeni("cs", state, podrobne = true).endsWith(trace))
     }
 
