@@ -8,6 +8,30 @@ import java.net.InetAddress
 import java.net.SocketTimeoutException
 
 class VysilacTest {
+    @Test fun sendFailureIsVisibleAndSelectingWorkingReceiverRecoversWithoutAck() {
+        fun await(condition: () -> Boolean) {
+            val end = System.nanoTime() + 3_000_000_000L
+            while (!condition() && System.nanoTime() < end) Thread.sleep(10)
+            assertTrue(condition())
+        }
+        try {
+            Propojeni.Vysilac.nastavCil("256.256.256.256", "Nedostupná TV")
+            Propojeni.Vysilac.zmena("Test", 6000, "")
+            await { Propojeni.Vysilac.stavPrenosu.chyba != null }
+            assertEquals("UnknownHostException", Propojeni.Vysilac.stavPrenosu.chyba)
+            DatagramSocket(Propojeni.PORT_TITULKY, InetAddress.getByName("127.0.0.1")).use { tv ->
+                tv.soTimeout = 2000
+                Propojeni.Vysilac.nastavCil("127.0.0.1", "Přijímač bez ACK")
+                Propojeni.Vysilac.zmena("Celá česká replika", 6000, "")
+                val packet = DatagramPacket(ByteArray(8192), 8192)
+                do { tv.receive(packet) } while (!String(packet.data, 0, packet.length).contains("Celá česká replika"))
+                await { Propojeni.Vysilac.stavPrenosu.odeslano }
+                assertNull(Propojeni.Vysilac.stavPrenosu.chyba)
+                assertEquals("tvOdesilanoNeovereno", Propojeni.Vysilac.stavPrenosu.klic)
+            }
+        } finally { Propojeni.Vysilac.nastavCil(null, "") }
+    }
+
     @Test fun prvniStoryVymazeStaryStandardAleZachovaVolbyANapovedu() {
         DatagramSocket(Propojeni.PORT_TITULKY, InetAddress.getByName("127.0.0.1")).use { tv ->
             tv.soTimeout = 100

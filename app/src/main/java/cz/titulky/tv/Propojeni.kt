@@ -90,6 +90,8 @@ object Propojeni {
         /** Kdy naposledy přišla zpráva od telefonu (0 = ještě nikdy). */
         @Volatile var posledniZprava = 0L
             private set
+        @Volatile var chyba: String? = null
+            private set
         private var posledniCislo = -1L
         private var posledniCisloVoleb = -1L
         // převzetí spárování telefonem
@@ -230,7 +232,7 @@ object Propojeni {
                         }
                         priTitulku(odEscapuj(casti[3]), doba, odEscapuj(casti[4]), rozvrh, barvy)
                     }
-                }
+                }.onFailure { if (bezi) chyba = it.javaClass.simpleName }
                 runCatching { socket?.close() }
             }.apply { isDaemon = true }.start()
         }
@@ -339,6 +341,8 @@ object Propojeni {
      * Zapíná se výběrem televize v TelefonActivity; [cilIp] null = jen telefon.
      */
     object Vysilac {
+        private val prenos = StavPrenosu()
+        internal val stavPrenosu get() = prenos.stav
         @Volatile var pribehRidi = false
         fun rozvrhPribehu() = synchronized(zamek) { rozvrh?.copyOf() ?: floatArrayOf(0.5f, 0.91f, 0.8f, 1f) }
         fun aktivniVolby() = synchronized(zamek) { vybrana != -2 && volbyText.isNotBlank() }
@@ -439,6 +443,7 @@ object Propojeni {
                 if (ip == cilIp) { cilJmeno = jmeno; return }
                 val puvodni = cilIp
                 generace++
+                prenos.reset(generace)
                 cilIp = ip
                 cilJmeno = jmeno
                 text = ""; napoveda = ""; doba = 0L; barvy = null; ukazkaText = ""; upravaDo = 0L
@@ -504,32 +509,37 @@ object Propojeni {
                             }
                         }
                     }
-                }
+                }.onSuccess { prenos.vysledek(cil.second, null) }
+                    .onFailure { prenos.vysledek(cil.second, it) }
             }.apply { isDaemon = true }.start()
         }
 
         /** Každou sekundu aktuální stav; stará smyčka nesmí po změně cíle ožít. */
         private fun spustOpakovani(relace: Long) {
             Thread {
-                runCatching {
-                    DatagramSocket().use { s ->
-                        while (generace == relace) {
-                            val ip = cilIp ?: return@Thread
-                            val kam = InetAddress.getByName(ip)
-                            synchronized(zamek) {
-                                if (generace != relace) return@Thread
-                                if (!pribehRidi) {
-                                    val data = zprava()
-                                    runCatching { s.send(DatagramPacket(data, data.size, kam, PORT_TITULKY)) }
+                while (generace == relace) {
+                    runCatching {
+                        DatagramSocket().use { s ->
+                            while (generace == relace) {
+                                val ip = cilIp ?: return@Thread
+                                val kam = InetAddress.getByName(ip)
+                                synchronized(zamek) {
+                                    if (generace != relace) return@Thread
+                                    if (!pribehRidi) {
+                                        val data = zprava()
+                                        s.send(DatagramPacket(data, data.size, kam, PORT_TITULKY))
+                                    }
+                                    if (cisloVoleb > 0) {
+                                        val v = zpravaVoleb()
+                                        s.send(DatagramPacket(v, v.size, kam, PORT_TITULKY))
+                                    }
+                                    if (!pribehRidi || cisloVoleb > 0) prenos.vysledek(relace, null)
                                 }
-                                if (cisloVoleb > 0) {
-                                    val v = zpravaVoleb()
-                                    runCatching { s.send(DatagramPacket(v, v.size, kam, PORT_TITULKY)) }
-                                }
+                                Thread.sleep(1000)
                             }
-                            Thread.sleep(1000)
                         }
-                    }
+                    }.onFailure { prenos.vysledek(relace, it) }
+                    if (generace == relace) Thread.sleep(1000)
                 }
             }.apply { isDaemon = true }.start()
         }

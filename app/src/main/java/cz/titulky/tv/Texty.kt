@@ -39,6 +39,28 @@ object Texty {
             "Connexion à la console via Lecture à distance, association par PIN.", "Conexión con la consola mediante Juego remoto y vinculación con PIN.",
             "Connessione alla console tramite Riproduzione remota e associazione con PIN."),
         "sparovano" to listOf("Spárováno", "Spárované", "Gekoppelt", "Sparowano", "Associée", "Vinculada", "Associata"),
+        "stavNavazuji" to listOf("Navazuji spojení s konzolí…", "Nadväzujem spojenie s konzolou…"),
+        "stavUkoncenoChybou" to listOf("Spojení ukončeno kvůli chybě", "Spojenie ukončené pre chybu"),
+        "stavPodrobnosti" to listOf("Podrobnosti jsou v nabídce Záznam.", "Podrobnosti sú v ponuke Záznam."),
+        "stavPozastaveno" to listOf("Překlad pozastavený", "Preklad pozastavený"),
+        "stavCekaObraz" to listOf("Konzole připojena – čekám na první snímek", "Konzola pripojená – čakám na prvú snímku"),
+        "stavBezObrazu" to listOf("Konzole připojena, ale zatím nepřišel žádný obraz", "Konzola pripojená, ale zatiaľ neprišiel žiadny obraz"),
+        "stavObrazUstal" to listOf("Z konzole už přes 30 s nepřišel obraz", "Z konzoly už vyše 30 s neprišiel obraz"),
+        "stavChybaObrazu" to listOf("Chyba zpracování obrazu", "Chyba spracovania obrazu"),
+        "stavObrazChodi" to listOf("Obraz z konzole přijat", "Obraz z konzoly prijatý"),
+        "stavStariSnimku" to listOf("Poslední snímek před {sekundy} s", "Posledná snímka pred {sekundy} s"),
+        "tvVybranaNeoverena" to listOf("TV vybrána – příjem ani zobrazení zatím neověřeny", "TV vybraná – príjem ani zobrazenie zatiaľ neoverené"),
+        "tvOdesilanoNeovereno" to listOf("Data odesílána do TV · příjem a zobrazení nejsou potvrzené", "Dáta odosielané do TV · príjem a zobrazenie nie sú potvrdené"),
+        "tvChybaOdesilani" to listOf("Odesílání do TV selhalo", "Odosielanie do TV zlyhalo"),
+        "sitAdresa" to listOf("Adresu TV nelze přeložit. Zkontroluj vybranou TV a její IP.", "Adresu TV nemožno preložiť. Skontroluj vybranú TV a jej IP."),
+        "sitOpravneni" to listOf("Systém zamítl přístup k síti.", "Systém zamietol prístup k sieti."),
+        "sitOdeslani" to listOf("Chyba síťového soketu. Zkontroluj síť a vybranou TV.", "Chyba sieťového soketu. Skontroluj sieť a vybranú TV."),
+        "prijemChyba" to listOf("Chyba příjmu z telefonu", "Chyba príjmu z telefónu"),
+        "prijemSkryty" to listOf("Data přicházejí · titulky skryté mimo TV vstup", "Dáta prichádzajú · titulky skryté mimo TV vstupu"),
+        "prekryvPovoleni" to listOf("Chybí povolení Zobrazovat přes jiné aplikace", "Chýba povolenie Zobrazovať cez iné aplikácie"),
+        "prekryvOkno" to listOf("Nelze vytvořit nebo aktualizovat okno titulků", "Nemožno vytvoriť alebo aktualizovať okno titulkov"),
+        "prekryvSluzba" to listOf("Nelze spustit službu překryvu", "Nemožno spustiť službu prekryvu"),
+        "prekryvCeka" to listOf("Data přicházejí · čekám na službu překryvu", "Dáta prichádzajú · čakám na službu prekryvu"),
         "stavPripojeno" to listOf("Připojeno – překlad běží", "Pripojené – preklad beží", "Verbunden – Übersetzung läuft", "Połączono – tłumaczenie działa", "Connecté – traduction active", "Conectado – traducción activa", "Connesso – traduzione attiva"),
         "stavCekam" to listOf("Čekám na zapnutí PS5…", "Čakám na zapnutie PS5…", "Warte auf die PS5…", "Czekam na włączenie PS5…", "En attente de la PS5…", "Esperando a la PS5…", "In attesa della PS5…"),
         "stavPripojuji" to listOf("Připojuji k PS5… může to trvat až 2 min", "Pripájam k PS5… môže to trvať až 2 min", "Verbinde mit PS5… kann bis zu 2 Min. dauern", "Łączę z PS5… może to potrwać do 2 min", "Connexion à la PS5… cela peut prendre jusqu'à 2 min", "Conectando con la PS5… puede tardar hasta 2 min", "Connessione alla PS5… può richiedere fino a 2 min"),
@@ -108,7 +130,7 @@ object Texty {
         "prijemTlacitko" to listOf("📱  Titulky čte telefon (rychlejší)", "📱  Titulky číta telefón (rýchlejšie)"),
         "prijemNadpis" to listOf("Titulky z telefonu", "Titulky z telefónu"),
         "prijemCekam" to listOf("Čekám na telefon…", "Čakám na telefón…"),
-        "prijemPripojen" to listOf("✔ Telefon připojen – titulky chodí", "✔ Telefón pripojený – titulky chodia"),
+        "prijemPripojen" to listOf("Data z telefonu přicházejí · překryv připraven", "Dáta z telefónu prichádzajú · prekryv pripravený"),
         "prijemPopis" to listOf(
             "Televize se teď k PS5 nepřipojuje – titulky čte a překládá telefon, televize je jen ukazuje. Je to rychlejší a hodí se i pro slabší televize.\n\n1. V Android telefonu otevři PlayCaption.\n2. Jen poprvé klepni na „Vyhledat televizi“ a vyber tuhle televizi ({tv}). Telefon si přihlášení vezme z televize. Kdo je v telefonu už přihlášený sám, tenhle krok přeskočí.\n3. Pak už jen zmáčkni „Hotovo – hrát“ – telefon se k televizi připojí sám.\n4. Telefon nech ležet s otevřenou aplikací (ideálně na nabíječce).\n\nTelefon i televize musí být na stejné Wi-Fi.",
             "Televízor sa teraz k PS5 nepripája – titulky číta a prekladá telefón, televízor ich len ukazuje. Je to rýchlejšie a hodí sa aj pre slabšie televízory.\n\n1. V Android telefóne otvor PlayCaption.\n2. Len prvýkrát klepni na „Vyhľadať televízor“ a vyber tento televízor ({tv}). Telefón si prihlásenie vezme z televízora. Kto je v telefóne už prihlásený sám, tento krok preskočí.\n3. Potom už len stlač „Hotovo – hrať“ – telefón sa k televízoru pripojí sám.\n4. Telefón nechaj ležať s otvorenou aplikáciou (ideálne na nabíjačke).\n\nTelefón aj televízor musia byť na rovnakej Wi-Fi."),
@@ -496,4 +518,23 @@ object Texty {
     }
 
     fun t(context: Context, klic: String) = t(Nastaveni(context).jazykNeboCs, klic)
+
+    internal fun spojeni(jazyk: String, stav: PrehledSpojeni, podrobne: Boolean = false): String {
+        val detail = when {
+            podrobne || stav.detail.isBlank() -> stav.detail
+            stav.klic != "stavNavazuji" && stav.klic != "stavUkoncenoChybou" -> t(jazyk, "stavPodrobnosti")
+            else -> {
+                val radek = stav.detail.lineSequence().firstOrNull { it.isNotBlank() }?.trim().orEmpty()
+                if (radek.length > 220 || radek != stav.detail.trim())
+                    radek.take(220) + "…\n" + t(jazyk, "stavPodrobnosti") else radek
+            }
+        }
+        return t(jazyk, stav.klic) + detail.takeIf { it.isNotBlank() }?.let { "\n$it" }.orEmpty() +
+            stav.stariSnimkuMs?.let { "\n" + t(jazyk, "stavStariSnimku").replace("{sekundy}", (it / 1000).toString()) }.orEmpty()
+    }
+
+    internal fun prenos(jazyk: String, stav: PrehledPrenosu, podrobne: Boolean = false) =
+        t(jazyk, stav.klic) + stav.chyba?.let {
+            "\n${t(jazyk, stav.duvodKlic)}" + if (podrobne) " ($it)" else "\n" + t(jazyk, "stavPodrobnosti")
+        }.orEmpty()
 }

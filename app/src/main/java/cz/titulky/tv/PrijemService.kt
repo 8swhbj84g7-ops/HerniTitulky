@@ -29,6 +29,7 @@ class PrijemService : Service() {
     private var volbyVidet = false
     private var volbyOd = 0L
     private var textVidet = false
+    private var skrytyMimoVstup = false
 
     /**
      * Hlídač "zamrznutí": každé 2 s zkontroluje, jestli něco nevisí na televizi zbytečně.
@@ -118,6 +119,7 @@ class PrijemService : Service() {
         // výjimka: právě upravuješ polohu v telefonu → ukázku s rámečkem ukázat vždy (i na hlavní obrazovce)
         val uprava = rozvrh != null && rozvrh.size >= 5 && rozvrh[4] == 1f
         val vstup = uprava || runCatching { popredi.jeVstupTv() }.getOrDefault(true)
+        skrytyMimoVstup = !vstup
         posli(Intent(this, OverlayService::class.java)
             .setAction(OverlayService.ACTION_SET_TEXT)
             .putExtra(OverlayService.EXTRA_TEXT, if (vstup) text else "")
@@ -158,7 +160,7 @@ class PrijemService : Service() {
     }
 
     private fun posli(i: Intent) {
-        runCatching { startService(i) }.onFailure { runCatching { startForegroundService(i) } }
+        OverlayService.posli(this, i)
     }
 
     private fun zastav() {
@@ -210,10 +212,16 @@ class PrijemService : Service() {
             it.posledniZprava > 0 && System.currentTimeMillis() - it.posledniZprava < 5000
         } ?: false
 
+        internal fun prehled() = prehledPrijmu(telefonPripojen(), chybaSpusteni ?: instance?.prijimac?.chyba,
+            OverlayService.chyba, OverlayService.pripravena, instance?.skrytyMimoVstup == true)
+
         @Volatile private var instance: PrijemService? = null
+        @Volatile private var chybaSpusteni: String? = null
 
         fun spust(c: Context) {
             runCatching { c.startForegroundService(Intent(c, PrijemService::class.java)) }
+                .onSuccess { chybaSpusteni = null }
+                .onFailure { chybaSpusteni = it.javaClass.simpleName }
         }
 
         fun zastav(c: Context) {

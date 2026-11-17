@@ -221,10 +221,12 @@ class RemotePlayService : Service() {
                 automat = false
                 aktivni = false
                 ui.removeCallbacks(hlidac)
+                obrazStav.zacni()
                 zastav("Remote Play zastaveno.")
                 stopSelf()
             }
             else -> {
+                if (!aktivni) obrazStav.zacni()
                 automat = true
                 aktivni = true
                 if (posluchac == null) posluchac = Predavani.Posluchac(this) { ui.post { prevzaloJine() } }
@@ -530,6 +532,7 @@ class RemotePlayService : Service() {
         }
         posledniHlaska = ""
         snimkuCelkem = 0
+        obrazStav.zacni()
         naXboxu = false
         bezi = true
         logDelka = -1L; poskozenoKdy = 0L
@@ -670,6 +673,7 @@ class RemotePlayService : Service() {
 
     private fun volnaCteckaProSnimek(): Int? {
         snimkuCelkem++
+        obrazStav.snimek(android.os.SystemClock.elapsedRealtime())
         val ted = System.currentTimeMillis()
         posledniSnimekKdy = ted
         // PS5: poškozený obraz (kostičky) nečíst
@@ -708,6 +712,7 @@ class RemotePlayService : Service() {
 
     /** Chyba při čtení obrazu → nespadnout, jen zapsat (jednou). */
     private fun chybaObrazu(e: Throwable) {
+        obrazStav.chyba(e.javaClass.simpleName)
         if (chybaObrazu) return
         chybaObrazu = true
         val zprava = "[CHYBA obrazu: ${e.javaClass.simpleName}: ${e.message}]"
@@ -1094,7 +1099,7 @@ class RemotePlayService : Service() {
             .setAction(OverlayService.ACTION_SET_NAPOVEDA)
             .putExtra(OverlayService.EXTRA_TEXT, text)
         if (box != null) i.putExtra(OverlayService.EXTRA_BOX, box)
-        runCatching { startService(i) }
+        OverlayService.posli(this, i)
     }
 
     private var posledniZapis = ""
@@ -1928,6 +1933,7 @@ class RemotePlayService : Service() {
     private fun spustXbox(id: String) {
         posledniHlaska = ""
         snimkuCelkem = 0
+        obrazStav.zacni()
         naXboxu = true
         bezi = false
         stav = "Navazuji spojení s Xboxem…"
@@ -1948,6 +1954,7 @@ class RemotePlayService : Service() {
                         spojeno = true
                         zapis("[PŘIPOJENO k Xboxu]")
                         bezi = true
+                        obrazStav.pripojeno(android.os.SystemClock.elapsedRealtime())
                         pripojenoKdy = System.currentTimeMillis()
                         posledniSnimekKdy = pripojenoKdy
                         stav = "Připojeno k Xboxu ✔ – čtu titulky"
@@ -2045,6 +2052,7 @@ class RemotePlayService : Service() {
     private fun onUdalost(udalost: Event) {
         when (udalost) {
             is ConnectedEvent -> {
+                obrazStav.pripojeno(android.os.SystemClock.elapsedRealtime())
                 zapis("[PŘIPOJENO k PS5]")
                 posledniSnimekKdy = System.currentTimeMillis()
                 pripojenoKdy = posledniSnimekKdy
@@ -2072,7 +2080,9 @@ class RemotePlayService : Service() {
             }
             is LoginPinRequestEvent -> {
                 automat = false
-                zastav("PS5 chce PIN pro přihlášení – zatím nepodporováno ✘")
+                val duvod = "PS5 chce PIN pro přihlášení – zatím nepodporováno ✘"
+                zastav(duvod)
+                obrazStav.ukonciChybou(duvod)
                 stopSelf()
             }
             is QuitEvent -> {
@@ -2111,6 +2121,8 @@ class RemotePlayService : Service() {
     }
 
     private fun zastav(zprava: String, ukazat: Boolean = true) {
+        // Fatální důvod smaže jen nový pokus (pripoj/start) nebo ruční zastavení, ne opožděná událost staré relace.
+        obrazStav.zastaveno()
         relaceCteni.incrementAndGet()
         platnostPrekladu.zrus()
         stabilitaTitulku.reset()
@@ -2185,7 +2197,7 @@ class RemotePlayService : Service() {
         }
         if (barvyJmen != null) i.putExtra(OverlayService.EXTRA_BARVY_JMEN, barvyJmen)
         // overlay většinou už běží → stačí startService; když ne, zkusit jako foreground službu
-        runCatching { startService(i) }.onFailure { runCatching { startForegroundService(i) } }
+        OverlayService.posli(this, i)
     }
 
     private fun startAsForeground() {
@@ -2267,7 +2279,7 @@ class RemotePlayService : Service() {
         fun spustVse(context: android.content.Context, prevzit: Boolean = false) {
             // na telefonu se přes obraz nekreslí – overlay nespouštět
             if (!Rezim.jeTelefon(context))
-                runCatching { context.startForegroundService(Intent(context, OverlayService::class.java)) }
+                OverlayService.spust(context)
             runCatching { context.startForegroundService(Intent(context, RemotePlayService::class.java).putExtra(EXTRA_PREVZIT, prevzit)) }
         }
         const val SIRKA = 960
@@ -2313,6 +2325,8 @@ class RemotePlayService : Service() {
         const val DOLNI_HRANICE = 0.97f
 
         @Volatile var bezi = false
+        private val obrazStav = StavObrazu()
+        internal fun prehledSpojeni() = obrazStav.prehled(android.os.SystemClock.elapsedRealtime(), aktivni, pozastaveno, stav)
         /** Zapnuté jsou PS5 i Xbox (→ v aplikaci tlačítko ⇄). */
         @Volatile var obeZapnute = false
         /** Právě se hraje / připojuje na Xboxu (jinak PS5). */

@@ -29,6 +29,7 @@ internal class PribehSpojeni(val ip: String, port: Int = 41989, private val cas:
                     if (text.isEmpty()) { Thread.sleep(50); continue }
                     val data = text.toByteArray(Charsets.UTF_8)
                     runCatching { sit.send(DatagramPacket(data, data.size)) }
+                        .onFailure { if (bezi) chyba = it.javaClass.simpleName }
                     val incoming = DatagramPacket(buffer, buffer.size)
                     runCatching {
                         sit.receive(incoming)
@@ -37,7 +38,7 @@ internal class PribehSpojeni(val ip: String, port: Int = 41989, private val cas:
                             odpoved = ack to cas()
                             podporujePribeh = true
                         }
-                    }
+                    }.onFailure { if (bezi && it !is java.net.SocketTimeoutException) chyba = it.javaClass.simpleName }
                     // Odpověď nesmí změnit heartbeat na těsnou smyčku.
                     Thread.sleep(250)
                 }
