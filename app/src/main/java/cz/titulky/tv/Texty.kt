@@ -594,6 +594,8 @@ object Texty {
         "hratVyberKratce" to listOf("Vyber šipkami a zmáčkni OK", "Vyber šípkami a stlač OK"),
         "hratTelPopis" to listOf("👍 Doporučeno · rychlé a přesné titulky", "👍 Odporúčané · rýchle a presné titulky"),
         "hratTvPopis" to listOf("Bez telefonu · může být pomalejší", "Bez telefónu · môže byť pomalší"),
+        "hratTelDoporuceno" to listOf("👍 Doporučeno · rychlé a přesné titulky", "👍 Odporúčané · rýchle a presné titulky"),
+        "hratTvSlaba" to listOf("⚠ Slabší televize · může být pomalé", "⚠ Slabší televízor · môže byť pomalé"),
         "hratZmackni" to listOf("👇 Zmáčkni a jde se hrát", "👇 Stlač a ide sa hrať"),
         "hratBtn" to listOf("▶ Hrát", "▶ Hrať"),
         "tipPripojeni" to listOf("💡 Nejlépe funguje kabel nebo 5 GHz Wi-Fi.", "💡 Najlepšie funguje kábel alebo 5 GHz Wi-Fi."),
