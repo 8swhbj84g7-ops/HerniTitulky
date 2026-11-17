@@ -1254,10 +1254,10 @@ class MainActivity : Activity() {
         val pokus = pripravPsnPokus()
         obrazovka = "psnqr"
         val cesky = nast.jazykNeboCs in listOf("cs", "sk")
-        server = PrihlaseniTelefonem(cesky, pokus)
-            .also { it.spust() }
-        val adresa = if (telefon) "http://127.0.0.1:${PrihlaseniTelefonem.PORT}"
-            else "http://${PrihlaseniTelefonem.mojeIp(this) ?: "?"}:${PrihlaseniTelefonem.PORT}"
+        val stranka = PrihlaseniTelefonem(cesky, pokus)
+        server = stranka.also { it.spust() }
+        val host = if (telefon) "127.0.0.1" else PrihlaseniTelefonem.mojeIp(this) ?: "?"
+        val adresa = "http://$host:${PrihlaseniTelefonem.PORT}${stranka.cesta}"
 
         val sloupec = svisle()
         sloupec.addView(nadpisLogo())

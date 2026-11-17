@@ -20,6 +20,8 @@ import java.net.URLDecoder
  */
 internal class PrihlaseniTelefonem(private val cesky: Boolean, private val pokus: PsnPokus) {
 
+    private val relace = java.util.UUID.randomUUID().toString()
+    val cesta = "/?p=$relace"
     @Volatile private var bezi = true
     @Volatile private var server: ServerSocket? = null
 
@@ -55,7 +57,9 @@ internal class PrihlaseniTelefonem(private val cesky: Boolean, private val pokus
                 val cesta = prvni.split(" ").getOrNull(1) ?: "/"
                 while (true) { val h = r.readLine() ?: break; if (h.isEmpty()) break }
 
-                val html = if (cesta.startsWith("/kod")) {
+                // Obnovená karta nebo formulář minulého pokusu nesmí znovu poslat starý Sony kód.
+                val aktualni = Regex("[?&]p=([^&]*)").find(cesta)?.groupValues?.get(1) == relace
+                val html = if (cesta.substringBefore('?') == "/kod" && aktualni) {
                     val kod = runCatching {
                         val vlozeno = Regex("[?&]u=([^&]*)").find(cesta)?.groupValues?.get(1)
                             ?.let { URLDecoder.decode(it, "UTF-8") }?.trim() ?: ""
@@ -65,7 +69,7 @@ internal class PrihlaseniTelefonem(private val cesky: Boolean, private val pokus
                     if (!kod.isNullOrBlank()) {
                         pokus.prihlas(kod)
                         c.getOutputStream().apply {
-                            write("HTTP/1.1 303 See Other\r\nLocation: /stav\r\nCache-Control: no-store\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".toByteArray())
+                            write("HTTP/1.1 303 See Other\r\nLocation: /stav?p=$relace\r\nCache-Control: no-store\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".toByteArray())
                             flush()
                         }
                         return
@@ -118,6 +122,7 @@ internal class PrihlaseniTelefonem(private val cesky: Boolean, private val pokus
                 <h2>3.</h2>
                 <p>${T[9]}</p>
                 <form id=f action="/kod" method="get">
+                  <input type="hidden" name="p" value="$relace">
                   <textarea id=u name="u" rows="4" placeholder="${T[10]}"></textarea>
                   <button class=btn type="submit">${T[5]}</button>
                 </form>
@@ -129,7 +134,7 @@ internal class PrihlaseniTelefonem(private val cesky: Boolean, private val pokus
         }
         return """<!DOCTYPE html><html><head><meta charset="utf-8">
             <meta name="viewport" content="width=device-width,initial-scale=1">
-            ${if (stav == PsnPokus.Stav.OVERUJE) "<meta http-equiv=refresh content=\"1;url=/stav\">" else ""}
+            ${if (stav == PsnPokus.Stav.OVERUJE) "<meta http-equiv=refresh content=\"1;url=/stav?p=$relace\">" else ""}
             <title>PlayCaption</title><style>
             body{background:#111;color:#eee;font-family:sans-serif;margin:0;padding:20px;max-width:560px}
             h1{color:#e5091a;margin:0 0 6px}h2{margin:22px 0 4px;color:#e5091a}

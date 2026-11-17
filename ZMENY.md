@@ -6,6 +6,9 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
 
 ## Nevydané změny
 
+- PSN přihlášení: staré karty a formuláře prohlížeče už nemohou odeslat použitý
+  kód do nového pokusu. Otevřená stránka, formulář i QR patří jednomu pokusu;
+  skutečné chyby jeho ověření zůstávají viditelné.
 - PSN přihlášení: prohlížeč potvrzuje uložený účet až po ověření u Sony, kontrole
   Account ID a úspěšném zápisu na zařízení. Během ověřování ukazuje průběh;
   konkrétní chyba zůstává viditelná v aplikaci i na webové stránce.

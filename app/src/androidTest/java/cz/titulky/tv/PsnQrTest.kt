@@ -12,7 +12,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class PsnQrTest {
     @Test fun qrKodAndroidTvLzePrecistAZachovaCelouAdresu() {
-        val adresa = "http://192.0.2.10:${PrihlaseniTelefonem.PORT}"
+        val adresa = "http://192.0.2.10:${PrihlaseniTelefonem.PORT}/?p=qr-test-pokus"
         val bitmapa = PrihlaseniTelefonem.qr(adresa, 512)
         try {
             val pixely = IntArray(bitmapa.width * bitmapa.height)

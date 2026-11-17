@@ -16,9 +16,11 @@ class PrihlaseniTelefonemTest {
     private val id = "AQIDBAUGBwg="
     private val spoustec = Executor { ulohy.add(it) }
     private fun dokonci() = requireNotNull(ulohy.poll(2, TimeUnit.SECONDS)).run()
-    private fun cesta(kod: String) = "/kod?u=" + URLEncoder.encode("${PsnPrihlaseni.PRESMEROVANI}?code=$kod", "UTF-8")
+    private fun cesta(kod: String, server: PrihlaseniTelefonem? = null) =
+        "/kod?" + (server?.let { it.cesta.substringAfter('?') + "&" } ?: "") + "u=" + URLEncoder.encode("${PsnPrihlaseni.PRESMEROVANI}?code=$kod", "UTF-8")
 
-    private fun nacti(cesta: String, host: String = "127.0.0.1"): String {
+    private fun nacti(cesta: String, host: String = "127.0.0.1",
+        presmeruje: Boolean = cesta.contains("code%3D") && cesta.contains("p=")): String {
         val doKdy = System.nanoTime() + 2_000_000_000L
         while (true) {
             try {
@@ -27,7 +29,10 @@ class PrihlaseniTelefonemTest {
                 try {
                     val telo = c.inputStream.bufferedReader().use { it.readText() }
                     assertEquals("no-store", c.getHeaderField("Cache-Control"))
-                    if (cesta.contains("code%3D")) assertEquals("/stav", c.url.path)
+                    if (presmeruje) {
+                        assertEquals("/stav", c.url.path)
+                        assertFalse(c.url.query.contains("code"))
+                    }
                     return telo
                 }
                 finally { c.disconnect() }
@@ -44,7 +49,7 @@ class PrihlaseniTelefonemTest {
         val server = PrihlaseniTelefonem(true, pokus)
         try {
             server.spust()
-            val html = nacti(cesta("test-code"))
+            val html = nacti(cesta("test-code", server))
             assertFalse("Před uložením nesmí být potvrzený účet", html.contains("Účet je uložený"))
             assertTrue(html.contains("Ověřuji přihlášení"))
             assertTrue(html.contains("http-equiv=refresh"))
@@ -53,7 +58,65 @@ class PrihlaseniTelefonemTest {
             assertTrue(ulozeno)
             assertTrue(nacti("/stav").contains("Účet je uložený"))
             assertFalse(nacti("/stav").contains("http-equiv=refresh"))
-            nacti(cesta("test-code"))
+            nacti(cesta("test-code", server))
+            assertTrue(ulohy.isEmpty())
+        } finally { server.zastav() }
+    }
+
+    @Test fun obnovenaAdresaSeStarymKodemNezahajiNovePrihlaseni() {
+        val pokus = PsnPokus({ throw PsnHttpChyba("token", 400) }, { true }, spoustec)
+        val server = PrihlaseniTelefonem(true, pokus)
+        try {
+            server.spust()
+            nacti(cesta("stary-kod-z-historie"))
+            assertEquals(PsnPokus.Stav.CEKA, pokus.stav)
+            assertTrue(ulohy.isEmpty())
+            val html = nacti("/stav")
+            assertFalse(html.contains("Sony odmítlo"))
+            assertFalse(html.contains("HTTP 400"))
+            assertTrue(html.contains("<form"))
+        } finally { server.zastav() }
+    }
+
+    @Test fun formularJinehoPokusuNeodesleKodANeovlivniAktualniPrihlaseni() {
+        val stary = PrihlaseniTelefonem(true, PsnPokus({ id }, { true }, spoustec))
+        val pokus = PsnPokus({ id }, { true }, spoustec)
+        val server = PrihlaseniTelefonem(true, pokus)
+        assertNotEquals(stary.cesta, server.cesta)
+        try {
+            server.spust()
+            val html = nacti(server.cesta)
+            assertTrue(html.contains("name=\"p\" value=\"${server.cesta.substringAfter("p=")}\""))
+            nacti(cesta("stary-kod", stary), presmeruje = false)
+            assertEquals(PsnPokus.Stav.CEKA, pokus.stav)
+            assertTrue(ulohy.isEmpty())
+            nacti(cesta("novy-kod", server))
+            assertEquals(PsnPokus.Stav.OVERUJE, pokus.stav)
+            dokonci()
+            assertEquals(PsnPokus.Stav.HOTOVO, pokus.stav)
+            nacti(cesta("stary-kod", stary), presmeruje = false)
+            assertEquals(PsnPokus.Stav.HOTOVO, pokus.stav)
+            assertTrue(ulohy.isEmpty())
+        } finally { server.zastav() }
+    }
+
+    @Test fun novaStrankaNeprevezmeChybuPredchozihoPokusu() {
+        val staryPokus = PsnPokus({ throw PsnHttpChyba("token", 400) }, { true }, spoustec)
+        val stary = PrihlaseniTelefonem(true, staryPokus)
+        staryPokus.prihlas("prosly-kod"); dokonci()
+        assertTrue(stary.stranka(true).contains("HTTP 400"))
+        val pokus = PsnPokus({ id }, { true }, spoustec)
+        val server = PrihlaseniTelefonem(true, pokus)
+        try {
+            server.spust()
+            nacti(cesta("prosly-kod", stary), presmeruje = false)
+            for (cesta in listOf(server.cesta, "/stav?${stary.cesta.substringAfter('?')}")) {
+                val html = nacti(cesta)
+                assertTrue(html.contains("<form"))
+                assertFalse(html.contains("HTTP 400"))
+                assertFalse(html.contains("Sony odmítlo"))
+            }
+            assertEquals(PsnPokus.Stav.CEKA, pokus.stav)
             assertTrue(ulohy.isEmpty())
         } finally { server.zastav() }
     }
@@ -63,7 +126,7 @@ class PrihlaseniTelefonemTest {
         val server = PrihlaseniTelefonem(true, pokus)
         try {
             server.spust()
-            nacti(cesta("stary")); dokonci()
+            nacti(cesta("stary", server)); dokonci()
             repeat(2) {
                 val html = nacti("/stav")
                 assertTrue(html.contains("Sony odmítlo přihlašovací kód"))
@@ -71,7 +134,7 @@ class PrihlaseniTelefonemTest {
                 assertTrue(html.contains("<form"))
                 assertFalse(html.contains("Hotovo!"))
             }
-            assertTrue(nacti(cesta("novy")).contains("Ověřuji"))
+            assertTrue(nacti(cesta("novy", server)).contains("Ověřuji"))
             dokonci()
             assertTrue(nacti("/stav").contains("Účet je uložený"))
         } finally { server.zastav() }
@@ -81,9 +144,9 @@ class PrihlaseniTelefonemTest {
         val server = PrihlaseniTelefonem(true, PsnPokus({ id }, { true }, spoustec))
         try {
             server.spust()
-            val html = nacti("/kod?u=neplatny-vstup")
+            val html = nacti("/kod?${server.cesta.substringAfter('?')}&u=neplatny-vstup")
             assertTrue(html.contains("V adrese jsem nenašel kód"))
-            assertTrue(nacti("/kod?u=%zz").contains("V adrese jsem nenašel kód"))
+            assertTrue(nacti("/kod?${server.cesta.substringAfter('?')}&u=%zz").contains("V adrese jsem nenašel kód"))
             assertTrue(ulohy.isEmpty())
         } finally { server.zastav() }
     }
@@ -111,7 +174,7 @@ class PrihlaseniTelefonemTest {
         val server = PrihlaseniTelefonem(true, PsnPokus({ id }, { true }, spoustec))
         try {
             server.spust()
-            assertTrue(nacti(cesta("kod-z-qr"), ip!!).contains("Ověřuji přihlášení"))
+            assertTrue(nacti(cesta("kod-z-qr", server), ip!!).contains("Ověřuji přihlášení"))
             dokonci()
             assertTrue(nacti("/stav", ip).contains("Účet je v televizi"))
         } finally { server.zastav() }
