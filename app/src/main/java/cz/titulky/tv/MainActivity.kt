@@ -385,16 +385,20 @@ class MainActivity : Activity() {
                 addView(txt, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { leftMargin = dp(20) })
             }
         } else {
-            vodorovne().apply {
+            // povoleno → jen malá zelená značka vpravo vedle loga (ať se celá obrazovka vejde)
+            val znacka = vodorovne().apply {
                 gravity = Gravity.CENTER_VERTICAL
-                background = zaobleni(ZELENA_TMAVA, 18f, ZELENA_RAMECEK)
-                setPadding(dp(16), dp(12), dp(18), dp(12))
+                background = zaobleni(ZELENA_TMAVA, 999f, ZELENA_RAMECEK)
+                setPadding(dp(8), dp(6), dp(18), dp(6))
                 addView(kolecko("✓", ZELENA_SVETLA, ZELENA_TMAVA))
-                val txt = svisle()
-                txt.addView(text(t("povolenoNadpis"), 16.5f, ZELENA_SVETLA, tucne = true))
-                txt.addView(text(t("povolenoText"), 12.5f, Color.parseColor("#D8D8E0")), odsazeni(top = 3))
-                addView(txt, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { leftMargin = dp(16) })
+                addView(text(t("povolenoNadpis"), 14f, ZELENA_SVETLA, tucne = true),
+                    LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { leftMargin = dp(10) })
+                addView(text("  ·  " + t("povolenoText"), 12.5f, Color.parseColor("#D8D8E0")))
             }
+            logoRadek.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
+            // dole v řádku loga – nahoře vpravo je značka BETA
+            logoRadek.addView(znacka, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { gravity = Gravity.BOTTOM })
+            null
         }
 
         // ---------- jazyk
@@ -545,10 +549,10 @@ class MainActivity : Activity() {
             obnovTvKartu()
         } else {
             // televize: mřížka – levý a pravý sloupec mají v každém řádku stejnou výšku, vše v jedné rovině
-            obsah.addView(logoRadek, odsazeni(bottom = 10))
-            povoleni?.let { obsah.addView(it, odsazeni(bottom = 16)) }
+            obsah.addView(logoRadek, odsazeni(bottom = 6))
+            povoleni?.let { obsah.addView(it, odsazeni(bottom = 12)) }
             obsah.addView(radekMrizky(bunka(t("hlJazyk"), jazykKarta), bunka(t("hlStav"), stavRadek)))
-            obsah.addView(radekMrizky(bunka(t("hlKonzole"), konzole), bunka(t("coPrekladat"), co)), odsazeni(top = 18))
+            obsah.addView(radekMrizky(bunka(t("hlKonzole"), konzole), bunka(t("coPrekladat"), co)), odsazeni(top = 12))
 
             // podpora – QR Platba
             val podpora: View = if (PODPORA_QR.isNotEmpty()) {
@@ -587,7 +591,7 @@ class MainActivity : Activity() {
             val hrat = svisle().apply { clipChildren = false; clipToPadding = false }
             hrat.addView(hlavaHrat)
             hrat.addView(volby, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f).apply { leftMargin = -dp(6); rightMargin = -dp(6) })
-            obsah.addView(radekMrizky(podpora, hrat), odsazeni(top = 18))
+            obsah.addView(radekMrizky(podpora, hrat), odsazeni(top = 12))
             obsah.clipChildren = false
 
             obsah.addView(tip, odsazeni(top = 26))
@@ -1831,15 +1835,15 @@ class MainActivity : Activity() {
         if (!podpis.isNullOrBlank()) texty.addView(text(podpis, pismo(12f, 14f), TEXT2), odsazeni(top = 2))
         radek.addView(texty, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { rightMargin = dp(12) })
         val velikost = pismo(13.5f, 18f)
-        val anoTxt = text(zap, velikost, Color.WHITE).apply { gravity = Gravity.CENTER; setPadding(dp(16), dp(7), dp(16), dp(7)) }
-        val neTxt = text(vyp, velikost, Color.WHITE).apply { gravity = Gravity.CENTER; setPadding(dp(16), dp(7), dp(16), dp(7)) }
+        val anoTxt = text(zap, velikost, Color.WHITE).apply { gravity = Gravity.CENTER; maxLines = 1; minWidth = dp(64); setPadding(dp(16), dp(7), dp(16), dp(7)) }
+        val neTxt = text(vyp, velikost, Color.WHITE).apply { gravity = Gravity.CENTER; maxLines = 1; minWidth = dp(64); setPadding(dp(16), dp(7), dp(16), dp(7)) }
         val pill = vodorovne().apply {
             isFocusable = true
             isClickable = true
             background = vyber(Color.parseColor("#2A2B36"), radius = 999f)
             setPadding(dp(3), dp(3), dp(3), dp(3))
-            addView(anoTxt, LinearLayout.LayoutParams(dp(56), ViewGroup.LayoutParams.WRAP_CONTENT))
-            addView(neTxt, LinearLayout.LayoutParams(dp(56), ViewGroup.LayoutParams.WRAP_CONTENT))
+            addView(anoTxt, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+            addView(neTxt, ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         }
         fun obnov() {
             val ano = cti()
