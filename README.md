@@ -6,12 +6,28 @@
 
 > Spojení s PS5 zajišťuje otevřená knihovna **[Chiaki](https://git.sr.ht/~thestr4ng3r/chiaki)** (Florian Märkl a přispěvatelé, AGPLv3). Čtení titulků, překlad a zobrazení na televizi jsou vlastní práce PlayCaption, vyvíjená s pomocí AI. Podrobně v části [Poděkování](#poděkování-a-použitý-software).
 
-PlayCaption čte anglické titulky ze hry, překládá je a zobrazuje česky přes obraz z HDMI. Hra běží normálně z konzole přes HDMI (plné rozlišení, HDR, zvuk). PlayCaption se ke konzoli připojuje přes Remote Play jen na pozadí, aby z obrazu mohl přečíst titulky. Na obrazovce z Remote Play nic není.
+PlayCaption čte anglické titulky ze hry, překládá je a zobrazuje česky přes obraz z HDMI. Hru dál sleduješ přes HDMI v rozlišení a obrazovém režimu konzole. Pomocný Remote Play stream slouží ke čtení textu; nenahrazuje HDMI obraz a PlayCaption na jeho nižší rozlišení HDMI obraz nepřevádí.
+
+Na [předvedené sestavě](https://www.youtube.com/watch?v=N_jr-jix7TE) funguje souběžně Remote Play i HDR. Ukázka není měřením interního rozlišení hry ani přesného počtu vykreslených snímků. Podporu dalších kombinací HDR/VRR a dopad souběžného Remote Play na výkon je potřeba ověřit na konkrétní sestavě.
 
 - Android aplikace funguje na **Android TV / Google TV** a na Android telefonech/tabletech.
 - Pro **LG webOS** je dostupný experimentální přijímač titulků z Android telefonu/tabletu: [návod pro LG](webos/NAVOD-LG.md). Vyžaduje Developer Mode; ověřený model je LG C5. Samostatný překlad přímo v LG bez Android zařízení tato verze neumí.
 - Pro **Samsung (Tizen)** je dostupný experimentální přijímač titulků z Android telefonu/tabletu: [návod pro Samsung](tizen/NAVOD-SAMSUNG.md). Vyžaduje Developer Mode a účet Samsung; instalaci zatím provádí externí nástroj, protože Samsung vyžaduje podpis pro konkrétní televizi.
 - Projekt je ve stavu **beta**, sledujte [Releases](https://github.com/AdamRuzick4/PlayCaption-app/releases).
+
+Příběhový režim používá stejný hlavní překladač jako Standardní režim. Přidává
+čtecí frontu a omezené skládání některých nedokončených anglických vět. Větší
+kontext může pomoci překladu, ale nejde o jiný překladový model ani o záruku
+vyšší kvality. Zpoždění závisí na OCR, síti, skládání vět a délce fronty;
+pevné zpoždění 1–2 sekundy negarantujeme.
+
+Při online překladu se rozpoznaný text odesílá externím překladovým službám.
+Hlavní online překlad používá neoficiální rozhraní Google, jehož dostupnost ani
+limity nemáme pod kontrolou. Lokální záloha potřebuje stažený jazykový model.
+
+Údaj Hz/FPS nebo rozlišení v informacích televize popisuje vstupní HDMI signál,
+nikoli automaticky interní rozlišení a počet unikátních snímků vykreslených hrou.
+Samotná fotografie tohoto údaje neprokazuje vliv Remote Play na výkon hry.
 
 ## Stažení
 
