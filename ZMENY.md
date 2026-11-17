@@ -6,6 +6,18 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
 
 ## Nevydané změny
 
+- PSN přihlášení: staré karty a formuláře prohlížeče už nemohou odeslat použitý
+  kód do nového pokusu. Otevřená stránka, formulář i QR patří jednomu pokusu;
+  skutečné chyby jeho ověření zůstávají viditelné.
+- PSN přihlášení: prohlížeč potvrzuje uložený účet až po ověření u Sony, kontrole
+  Account ID a úspěšném zápisu na zařízení. Během ověřování ukazuje průběh;
+  konkrétní chyba zůstává viditelná v aplikaci i na webové stránce.
+- Opakované odeslání stejného kódu nespouští další výměnu. Zrušený pokus nesmí
+  později přepsat účet; PIN párování čeká na dokončené přihlášení.
+- Instrukce rozlišují telefon/tablet a Android TV. Telefon u LG/Samsungu zadává
+  PIN z PS5 přímo, bez návratu přes Home na TV. Android TV zachovává přihlášení
+  telefonem přes QR a místní síť. Verze APK ani TV přijímačů se tímto krokem nemění.
+
 - Samsung: oprava nestabilního testu potvrzení dočtené Story repliky. Simulovaný
   čas ověřuje i případ, kdy 1 400 ms ještě nestačí kvůli fázi vykreslovacího tiku.
   Časování přijímače ani doba zobrazení titulků se nemění.

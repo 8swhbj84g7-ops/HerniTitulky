@@ -42,18 +42,24 @@ object PsnPrihlaseni {
         s1.connectTimeout = 8000; s1.readTimeout = 8000
         s1.setRequestProperty("Authorization", basic)
         s1.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
-        val telo = "grant_type=authorization_code&code=" + URLEncoder.encode(kod, "UTF-8") + "&redirect_uri=$PRESMEROVANI&"
-        s1.outputStream.use { it.write(telo.toByteArray()) }
-        if (s1.responseCode != 200) error("token ${s1.responseCode}")
-        val token = JSONObject(s1.inputStream.bufferedReader().readText()).getString("access_token")
+        val token = try {
+            val telo = "grant_type=authorization_code&code=" + URLEncoder.encode(kod, "UTF-8") + "&redirect_uri=$PRESMEROVANI&"
+            s1.outputStream.use { it.write(telo.toByteArray()) }
+            if (s1.responseCode != 200) throw PsnHttpChyba("token", s1.responseCode)
+            JSONObject(s1.inputStream.bufferedReader().use { it.readText() }).getString("access_token")
+                .also { require(it.isNotBlank()) }
+        } finally { s1.disconnect() }
 
         val s2 = URL(TOKEN + "/" + URLEncoder.encode(token, "UTF-8")).openConnection() as HttpURLConnection
         s2.connectTimeout = 8000; s2.readTimeout = 8000
         s2.setRequestProperty("Authorization", basic)
-        if (s2.responseCode != 200) error("info ${s2.responseCode}")
-        val userId = JSONObject(s2.inputStream.bufferedReader().readText()).getString("user_id")
+        val userId = try {
+            if (s2.responseCode != 200) throw PsnHttpChyba("info", s2.responseCode)
+            BigInteger(JSONObject(s2.inputStream.bufferedReader().use { it.readText() }).getString("user_id"))
+                .also { require(it.signum() >= 0 && it.bitLength() <= 64) }
+        } finally { s2.disconnect() }
 
-        val bajty = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putLong(BigInteger(userId).toLong()).array()
+        val bajty = ByteBuffer.allocate(8).order(ByteOrder.LITTLE_ENDIAN).putLong(userId.toLong()).array()
         return Base64.encodeToString(bajty, Base64.NO_WRAP)
     }
 }
