@@ -36,6 +36,10 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
   Po doloženém YUV výpadek sám nepřepíná na GL; neověřený GL pokus bez snímků
   vrací stávající hlídač na YUV. Stará volba GL se nejprve zachovává a ověřuje,
   telefon, kodeky, časy připojení a spárování zůstávají. Přejímka TCL ještě zbývá.
+
+- Samsung: oprava nestabilního testu potvrzení dočtené Story repliky. Simulovaný
+  čas ověřuje i případ, kdy 1 400 ms ještě nestačí kvůli fázi vykreslovacího tiku.
+  Časování přijímače ani doba zobrazení titulků se nemění.
 - Oprava ztracených titulků při zapnutém Story a výstupu do Android TV: tento
   přijímač používá Standardní PCT1, protože jeho PCS1 slouží předávání spárování.
   Příběhový režim na Android TV přijímači tím není implementován. Telefon ukazuje

@@ -76,6 +76,9 @@ const cakaj = (ms) => new Promise((r) => setTimeout(r, ms));
     }
     const prehliadac = await chromium.launch();
     const strana = await prehliadac.newPage({ viewport: { width: 1920, height: 1080 } });
+    // Hodiny musia byť zastavené ešte pred registráciou 250 ms intervalu v apke.
+    await strana.clock.install({ time: 0 });
+    await strana.clock.pauseAt(Date.UTC(2026, 0, 1));
     await strana.addInitScript(() => {
         window.preSluzbu = [];
         window.tizen = {
@@ -98,7 +101,7 @@ const cakaj = (ms) => new Promise((r) => setTimeout(r, ms));
     assert.strictEqual(await strana.evaluate(() => window.spustenaSluzba), "PCaption01.Prijimac");
     const jePribeh = (d) => { const s = JSON.parse(d[0].value); return s.t === "paket" && s.paket.kind === "story"; };
     for (const d of spravy.filter((d) => !jePribeh(d))) await strana.evaluate((x) => window.odSluzby(x), d);
-    await cakaj(400);
+    await strana.clock.runFor(500);
     const stav = await strana.evaluate(() => ({
         titulok: document.getElementById("subtitle").textContent,
         skryty: document.getElementById("subtitle").hidden,
@@ -124,18 +127,44 @@ const cakaj = (ms) => new Promise((r) => setTimeout(r, ms));
     await strana.screenshot({ path: process.argv[2] || path.resolve(__dirname, "nahlad.png") });
 
     // Príbeh: replika sa ukáže, apka hlási "reading" a po dočítaní "done"; bežný titulok ju medzitým neprepíše.
-    const pribeh = spravy.filter(jePribeh)[0];
-    await strana.evaluate((x) => window.odSluzby(x), pribeh);
-    await strana.evaluate((x) => window.odSluzby(x), spravy.filter((d) => JSON.parse(d[0].value).t === "paket")[0]);
-    assert.strictEqual(await strana.evaluate(() => document.getElementById("subtitle").textContent), "Marek: Ideme.");
-    await cakaj(1400);
-    await strana.evaluate((x) => window.odSluzby(x), pribeh);
-    const hlasenia = await strana.evaluate(() => window.preSluzbu);
-    assert.deepStrictEqual(hlasenia[0], ["PCaption01.Prijimac", "PLAYCAPTION_SLUZBA", { t: "pribehStav", id: koren + ".1.1.0", stav: "reading" }]);
-    assert.strictEqual(hlasenia[hlasenia.length - 1][2].stav, "done", "dočítaná replika sa má potvrdiť");
-    assert.strictEqual(await strana.evaluate(() => document.getElementById("subtitle").hidden), true);
+    for (const [index, faza] of [50, 51].entries()) {
+        const teraz = await strana.evaluate(() => Date.now());
+        await strana.clock.runFor((faza - teraz % 250 + 250) % 250);
+        const sprava = JSON.parse(spravy.find(jePribeh)[0].value);
+        sprava.paket.id = koren + ".1." + (index + 1) + ".0";
+        const pribeh = [{ key: "d", value: JSON.stringify(sprava) }];
+        const overStav = async (ocakavany) => {
+            const hlasenia = await strana.evaluate((x) => {
+                const pocet = window.preSluzbu.length;
+                window.odSluzby(x);
+                return window.preSluzbu.slice(pocet);
+            }, pribeh);
+            assert.deepStrictEqual(hlasenia, [["PCaption01.Prijimac", "PLAYCAPTION_SLUZBA", {
+                t: "pribehStav", id: sprava.paket.id, stav: ocakavany
+            }]], "stav aktuálnej repliky, fáza " + faza);
+            assert.strictEqual(await strana.evaluate(() => document.getElementById("subtitle").hidden), ocakavany === "done");
+        };
+        await overStav("reading");
+        await strana.evaluate((x) => window.odSluzby(x), spravy.filter((d) => JSON.parse(d[0].value).t === "paket")[0]);
+        assert.strictEqual(await strana.evaluate(() => document.getElementById("subtitle").textContent), "Marek: Ideme.");
+        // Táto krátka replika pri D:100 trvá 1200 ms; koniec sa spracuje na najbližšom tiku.
+        await strana.clock.runFor(1199);
+        await overStav("reading");
+        await strana.clock.runFor(1);
+        await overStav(faza === 50 ? "done" : "reading");
+        await strana.clock.runFor(200);
+        await overStav(faza === 50 ? "done" : "reading"); // Pôvodných 1400 ms ešte nemusí stačiť.
+        if (faza === 51) {
+            await strana.clock.runFor(48);
+            await overStav("reading");
+            await strana.clock.runFor(1);
+        }
+        await overStav("done");
+        await strana.clock.runFor(250);
+        await overStav("done"); // Opakovanie paketu nesmie znovu zobraziť dočítanú repliku.
+    }
 
-    await cakaj(5600);
+    await strana.clock.runFor(5600);
     assert.strictEqual(await strana.evaluate(() => document.getElementById("subtitle").hidden), true, "po výpadku má titulok zmiznúť");
     assert.ok(/prerušené/.test(await strana.evaluate(() => document.getElementById("stav").textContent)));
 
