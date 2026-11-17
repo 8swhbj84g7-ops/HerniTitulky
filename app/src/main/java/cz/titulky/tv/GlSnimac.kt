@@ -23,7 +23,11 @@ import java.util.concurrent.CountDownLatch
  *
  * [priSnimku] se volá na vlákně GL po každém novém snímku; uvnitř lze zavolat [precti].
  */
-class GlSnimac(val sirka: Int, val vyska: Int, private val priSnimku: (GlSnimac) -> Unit) {
+class GlSnimac(
+    val sirka: Int, val vyska: Int,
+    private val priChybe: (Throwable) -> Unit = {},
+    private val priSnimku: (GlSnimac) -> Unit
+) {
 
     private val vlakno = HandlerThread("gl-snimac").apply { start() }
     private val h = Handler(vlakno.looper)
@@ -39,6 +43,7 @@ class GlSnimac(val sirka: Int, val vyska: Int, private val priSnimku: (GlSnimac)
     private var program = 0
     private val matice = FloatArray(16)
     @Volatile private var konec = false
+    private var chybaZapsana = false
 
     private val vrcholy: FloatBuffer = ByteBuffer.allocateDirect(16 * 4).order(ByteOrder.nativeOrder()).asFloatBuffer().apply {
         // x, y, u, v – celý obdélník
@@ -111,7 +116,7 @@ class GlSnimac(val sirka: Int, val vyska: Int, private val priSnimku: (GlSnimac)
             st.getTransformMatrix(matice)
             kresli()
             priSnimku(this)
-        }
+        }.onFailure { if (!konec && !chybaZapsana) { chybaZapsana = true; priChybe(it) } }
     }
 
     private fun kresli() {

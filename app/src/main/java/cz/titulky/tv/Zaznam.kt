@@ -21,6 +21,7 @@ object Zaznam {
         fun chiaki(): String = runCatching {
             val f = File(a.filesDir, "chiaki.log")
             if (!f.exists()) return@runCatching "(soubor chiaki.log neexistuje)"
+            if (f.length() == 0L) return@runCatching "(0 B; nativní zápis může být bufferovaný nebo přepsaný novou Session. Nula řádků nedokazuje absenci video paketů. Diagnostika dekódovaných snímků je v části PS5 / obraz; nativní logcat má tag Chiaki.)"
             val radky = f.readLines().takeLast(3000)
             val znovu = radky.count { it.contains("re-sending") }
             "(posledních ${radky.size} řádků, z toho opakované odeslání: $znovu×)\n" +
@@ -31,12 +32,26 @@ object Zaznam {
             val f = File(a.filesDir, "titulky.log")
             if (!f.exists()) return@runCatching "(nic)"
             val klice = listOf("připojuji", "PŘIPOJENO", "UKONČENO", "žádný obraz", "převz", "odpoj", "Hotovo – hrát",
-                "Xbox:", "staré spojení", "kodek", "obraz: ", "jiné zařízení", "ukončeno v aplikaci")
+                "Xbox:", "staré spojení", "kodek", "obraz: ", "jiné zařízení", "ukončeno v aplikaci", "[LG příjem]")
             f.readLines().filter { r -> klice.any { it in r } }.takeLast(30).joinToString("\n").ifBlank { "(nic)" }
         }.getOrDefault("(nejde přečíst)")
+        fun diagnostikaPs5(): String = runCatching {
+            val f = File(a.filesDir, "titulky.log")
+            if (!f.exists()) "(nic)" else f.readLines()
+                .filter { "[PS5 " in it || "[obraz:" in it || "[TV příjem]" in it }
+                .takeLast(100).joinToString("\n").ifBlank { "(nic)" }
+        }.getOrDefault("(nejde přečíst)")
         val verze = runCatching { a.packageManager.getPackageInfo(a.packageName, 0).versionName }.getOrNull()
-        val obsah = "Verze: $verze   Stav: ${RemotePlayService.stav}\n\n=== pád ===\n" + konec("pad.txt", 25) +
+        val jazyk = Nastaveni(a).jazykNeboCs
+        val prijem = PrijemService.prehled()
+        val stavy = "\nObraz: " + Texty.spojeni(jazyk, RemotePlayService.prehledSpojeni(), podrobne = true) +
+            "\nVýstup: " + (if (Propojeni.Vysilac.cilIp == null) "toto zařízení" else
+                Propojeni.Vysilac.cilJmeno + " · " + Texty.prenos(jazyk, Propojeni.Vysilac.stavPrenosu, podrobne = true)) +
+            (if (PrijemService.bezi || prijem.uroven == UrovenSpojeni.CHYBA) "\nTV příjem: " + Texty.spojeni(jazyk, prijem, podrobne = true) else "") +
+            OverlayService.chyba?.let { "\nPřekryv: " + Texty.spojeni(jazyk, it, podrobne = true) }.orEmpty()
+        val obsah = "Verze: $verze   Stav: ${RemotePlayService.stav}" + stavy + "\n\n=== pád ===\n" + konec("pad.txt", 25) +
             "\n\n=== spojení (připojení / odpojení) ===\n" + spojeni() +
+            "\n\n=== PS5 / obraz / příjem z telefonu ===\n" + diagnostikaPs5() +
             "\n\n=== titulky.log ===\n" + konec("titulky.log", 120) +
             "\n\n=== xbox.log ===\n" + konec("xbox.log", 15) +
             "\n\n=== chiaki.log ===\n" + chiaki()

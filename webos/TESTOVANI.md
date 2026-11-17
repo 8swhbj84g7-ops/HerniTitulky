@@ -21,6 +21,30 @@
   Alan Wake 2, výkon na Android TV ani chování na měnícím se pozadí. Při další
   herní přejímce použít postup a nové diagnostické počty řádků z `BACKLOG.md` PC-001.
 
+## Přihlášení PSN v telefonu a zachování QR Android TV – 16. 11. 2026
+
+- Samostatná větev `codex/psn-login-confirmation` z `origin/master` (`bc5237d`).
+  Neobsahuje samostatnou opravu PC-001; nemění LG/Samsung protokol ani přijímače.
+- Regresní test původního HTTP serveru nejprve selhal: stránka hlásila uložený
+  účet hned po převzetí kódu, bez dokončeného ověření nebo zápisu.
+- Nový společný stav `PsnPokus` potvrzuje úspěch až po validaci osmibajtového
+  Account ID a úspěšném zápisu SharedPreferences na disk. Neúspěšné ověření
+  nepřepisuje původní účet. Zrušený pokus ignoruje opožděnou odpověď; opakovaný
+  kód se znovu nevyměňuje. Chyby nerozepisují autorizační kód ani token.
+- Web přesměruje přijatý kód na `/stav`, při ověřování obnovuje stav a při chybě
+  ponechá důvod i možnost vložit novou adresu. Server zůstává dostupný po návratu
+  aplikace na párování, aby se výsledek mohl zobrazit také v prohlížeči.
+- Prošlo 206 JVM testů, včetně 17 nových pro přihlášení. Síťové testy použily
+  skutečné HTTP sockety na loopbacku i místní IPv4 adrese: čekání, úspěch,
+  trvalá chyba, nový kód po odmítnutí, neplatný vstup, obsazený port a odlišné
+  potvrzení „v televizi“ pro QR cestu. Odpovědi Sony i zápis účtu jsou v JVM
+  testech nahrazené; testy se ke skutečnému PSN nepřihlašují.
+- Příkaz `bash gradlew :app:testDebugUnitTest :app:assembleDebug
+  :app:assembleDebugAndroidTest` sestavil aplikaci i instrumentační APK.
+  `PsnQrTest` dekóduje QR bitmapu zpět na původní adresu Android TV; bez
+  připojeného zařízení byl pouze sestaven, nikoli spuštěn. Živé přihlášení
+  Sony, kamera telefonu a ovládání skutečné Android TV ještě vyžadují přejímku.
+
 ## Krátké dialogy ve verzi 0.0.7 – 15. 11. 2026
 
 - Záznam z Redmi Pad Pro zachytil dvě chybné OCR varianty téže repliky v GTA V,
@@ -331,3 +355,27 @@ stránkuje aktuální repliku a potvrzuje její dočtení.
   skutečné odpojení/obnovení domácí sítě. Simulace není důkaz příčiny hlášené B4.
 - Přímý dotaz je doplněk: nová TV nebo TV s jinou IP musí být nejdřív nalezena
   broadcastem. Neobchází se izolace klientů ani síťová pravidla routeru.
+
+
+## Android odesílač pro LG při zhasnutém displeji
+
+Větev `codex/lg-screen-off` ruší minutové ukončení pouze pro aktivní LG výstup
+s konkrétní IP a profilem webOS. CPU zámek vlastní RemotePlayService; změna
+výstupu, zastavení spojení i zánik služby ho uvolňují. Původní Android TV,
+Samsung, místní výstup a neznámá platforma mají původní pravidla.
+
+JVM `TelefonPozadiTest` ověřuje rozhodnutí pro LG, ostatní platformy a změnu
+výstupu/stavu. Neověřuje skutečné chování Android napájení.
+
+Fyzická přejímka zatím neproběhla (tablet není dostupný). Při nejbližším testu:
+
+1. Připojit konzoli a vybrat LG; ověřit pohyb snímků, OCR a titulky na TV.
+2. Ručně zamknout Android zařízení na alespoň dvě minuty. Ze záznamu ověřit,
+   že snímky/OCR i odesílání pokračují; samostatně Standardní a Story.
+3. Odemknout, změnit výstup na místní/Android TV a ověřit původní předávání.
+4. Po Zastavit ověřit v `adb shell dumpsys power`, že nezůstává zámek
+   `playcaption:lg-stream`. Prověřit i ukončení služby a opětovné připojení.
+
+CPU zámek a foreground služba nejsou důkaz funkčnosti při všech úsporách energie,
+Doze a zásazích výrobce telefonu. Bez fyzického testu netvrdit podporu zamčeného
+telefonu za potvrzenou; nepřidávat kvůli tomu automaticky další oprávnění.

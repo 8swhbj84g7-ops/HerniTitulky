@@ -56,12 +56,16 @@ class LgPruvodce(private val activity: Activity, private val vyhledej: () -> Uni
     private var detailChyby: String? = null
     private var instalator: LgInstalator? = null
     private var stavInstalace: TextView? = null
+    private val overeniPrijmu = LgOvereniPrijimace()
+    private var stavPrijmu: TextView? = null
+    private var tlacitkoPrijmu: TextView? = null
     private var zadanaIp = TvProfily(activity).let { p -> p.posledniId?.let { p.najdi(it) } }
         ?.takeIf { it.platforma == TvPlatforma.WEBOS }?.ip.orEmpty()
     private val dialog = object : Dialog(activity, android.R.style.Theme_DeviceDefault_NoActionBar) {
         @Deprecated("Deprecated in Java")
         override fun onBackPressed() {
             if (bezi) { instalator?.zrus(); return }
+            overeniPrijmu.zrus()
             if (stav.zpet()) vykresli() else @Suppress("DEPRECATION") super.onBackPressed()
         }
     }
@@ -72,7 +76,7 @@ class LgPruvodce(private val activity: Activity, private val vyhledej: () -> Uni
         if (activity.isFinishing || activity.isDestroyed) return
         dialog.setOwnerActivity(activity)
         dialog.setOnCancelListener { uloz() }
-        dialog.setOnDismissListener { instalator?.zrus() }
+        dialog.setOnDismissListener { instalator?.zrus(); overeniPrijmu.zrus() }
         vykresli()
         dialog.show()
         dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
@@ -111,6 +115,7 @@ class LgPruvodce(private val activity: Activity, private val vyhledej: () -> Uni
 
     private fun vykresli() {
         uloz()
+        stavPrijmu = null; tlacitkoPrijmu = null
         val koren = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
             keepScreenOn = true
@@ -158,15 +163,20 @@ class LgPruvodce(private val activity: Activity, private val vyhledej: () -> Uni
                 }
                 odkaz("lgCelyNavod", "https://github.com/AdamRuzick4/PlayCaption-app/blob/master/webos/NAVOD-LG.md")
             }
-            4 -> odkaz("lgOficialniNavod", "https://webostv.developer.lge.com/develop/getting-started/developer-mode-app")
+            4 -> {
+                cilKontroly()?.let { cil -> pridejKontroluPrijmu(obsah, cil) { overPrijimac(cil) } }
+                    ?: obsah.addView(text(t("lgOvereniNejdriv"), 16f))
+                odkaz("lgOficialniNavod", "https://webostv.developer.lge.com/develop/getting-started/developer-mode-app")
+            }
         }
         koren.addView(ScrollView(activity).apply { isFillViewport = true; addView(obsah) },
             LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
         val navigace = LinearLayout(activity).apply { gravity = Gravity.CENTER_VERTICAL }
         navigace.addView(tlacitko(t("zpet")) {
-            if (!bezi) { if (stav.zpet()) vykresli() else dialog.dismiss() }
+            if (!bezi) { overeniPrijmu.zrus(); if (stav.zpet()) vykresli() else dialog.dismiss() }
         }.apply { isEnabled = !bezi; alpha = if (bezi) 0.4f else 1f }, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { rightMargin = dp(12) })
         navigace.addView(tlacitko(t(if (stav.krok == LgPruvodceStav.POSLEDNI) "lgHledat" else "lgDalsi"), hlavni = true) {
+            overeniPrijmu.zrus()
             if (stav.dalsi()) vykresli() else {
                 dialog.dismiss()
                 vyhledej()
@@ -210,6 +220,13 @@ class LgPruvodce(private val activity: Activity, private val vyhledej: () -> Uni
             prijimac != null -> t("lgVerze" + prijimac!!.stav.name).replace("{tv}", prijimac!!.verze.orEmpty()).replace("{apk}", prijimac!!.dostupna)
             else -> t("lgPripravenoInstalace")
         }, 17f, Color.parseColor(when { chyba != null -> "#FF9191"; vysledek != null -> "#3CFF6E"; else -> "#B2B3BF" })).also { it.setTextIsSelectable(true); radek(it) }
+        cilKontroly()?.let { cil ->
+            pridejKontroluPrijmu(obsah, cil) {
+                if (ip.text.toString().trim() != cil.ip) {
+                    Toast.makeText(activity, t("lgOvereniNejdriv"), Toast.LENGTH_LONG).show()
+                } else overPrijimac(cil)
+            }
+        }
         if (bezi) {
             radek(ProgressBar(activity))
             radek(tlacitko(t("lgZrusitInstalaci")) { instalator?.zrus() })
@@ -250,6 +267,7 @@ class LgPruvodce(private val activity: Activity, private val vyhledej: () -> Uni
 
     private fun spustInstalaci(heslo: CharArray, jenKontrola: Boolean) {
         if (bezi) { heslo.fill('\u0000'); return }
+        overeniPrijmu.zrus()
         bezi = true; chyba = null; detailChyby = null; vysledek = null; faze = LgFaze.BALICEK
         val ipOperace = zadanaIp
         val profiles = TvProfily(activity)
@@ -289,6 +307,50 @@ class LgPruvodce(private val activity: Activity, private val vyhledej: () -> Uni
                 } }
             } finally { heslo.fill('\u0000') }
         }.apply { isDaemon = true }.start()
+    }
+
+    private fun cilKontroly(): Propojeni.Televize? {
+        val profily = TvProfily(activity)
+        return LgOvereniPrijimace.cil(prijimac, overenaIp, zadanaIp, profily.seznam(), profily.posledniId)
+    }
+
+    private fun pridejKontroluPrijmu(obsah: LinearLayout, cil: Propojeni.Televize, overit: () -> Unit) {
+        obsah.addView(text(t("lgPrijemCil").replace("{tv}", cil.jmeno).replace("{ip}", cil.ip), 17f)
+            .apply { setPadding(0, dp(18), 0, dp(8)) })
+        stavPrijmu = text("", 16f).also { it.setTextIsSelectable(true); obsah.addView(it) }
+        tlacitkoPrijmu = tlacitko(t("lgOveritPrijem"), akce = overit).also { obsah.addView(it) }
+        obsah.addView(text(t("lgPrijemRozsah"), 16f).apply { setPadding(0, dp(8), 0, dp(12)) })
+        obnovPrijem()
+    }
+
+    private fun obnovPrijem() {
+        val vysledek = overeniPrijmu.vysledek
+        stavPrijmu?.text = t(when {
+            overeniPrijmu.bezi -> "lgPrijemHledam"
+            vysledek == null -> "lgPrijemNeovereno"
+            vysledek.nalezen -> "lgPrijemOdpoved"
+            else -> "lgPrijemBezOdpovedi"
+        }) + vysledek?.let {
+            "\n" + t("lgPrijemCas").replace("{cas}", java.text.DateFormat.getTimeInstance().format(java.util.Date(it.overenoKdy)))
+        }.orEmpty()
+        stavPrijmu?.setTextColor(Color.parseColor(if (vysledek?.nalezen == true) "#3CFF6E" else "#FFC978"))
+        tlacitkoPrijmu?.apply { isEnabled = !bezi && !overeniPrijmu.bezi; alpha = if (isEnabled) 1f else 0.4f }
+    }
+
+    private fun overPrijimac(cil: Propojeni.Televize) {
+        if (bezi || overeniPrijmu.bezi) return
+        val pokus = overeniPrijmu.zacni(cil)
+        obnovPrijem()
+        Propojeni.hledej(activity) { nalezene -> ui.post {
+            if (dialog.isShowing && !activity.isDestroyed && overeniPrijmu.dokonci(pokus, nalezene, System.currentTimeMillis())) {
+                obnovPrijem()
+                runCatching {
+                    val cas = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.ROOT).format(java.util.Date())
+                    java.io.File(activity.filesDir, "titulky.log").appendText(
+                        "$cas [LG příjem] kontrola TV ${cil.ip}: ${if (overeniPrijmu.vysledek?.nalezen == true) "přijímač se ozval" else "bez odpovědi"}\n")
+                }
+            }
+        } }
     }
 
 }

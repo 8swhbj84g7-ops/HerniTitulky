@@ -39,6 +39,28 @@ object Texty {
             "Connexion à la console via Lecture à distance, association par PIN.", "Conexión con la consola mediante Juego remoto y vinculación con PIN.",
             "Connessione alla console tramite Riproduzione remota e associazione con PIN."),
         "sparovano" to listOf("Spárováno", "Spárované", "Gekoppelt", "Sparowano", "Associée", "Vinculada", "Associata"),
+        "stavNavazuji" to listOf("Navazuji spojení s konzolí…", "Nadväzujem spojenie s konzolou…"),
+        "stavUkoncenoChybou" to listOf("Spojení ukončeno kvůli chybě", "Spojenie ukončené pre chybu"),
+        "stavPodrobnosti" to listOf("Podrobnosti jsou v nabídce Záznam.", "Podrobnosti sú v ponuke Záznam."),
+        "stavPozastaveno" to listOf("Překlad pozastavený", "Preklad pozastavený"),
+        "stavCekaObraz" to listOf("Konzole připojena – čekám na první snímek", "Konzola pripojená – čakám na prvú snímku"),
+        "stavBezObrazu" to listOf("Konzole připojena, ale zatím nepřišel žádný obraz", "Konzola pripojená, ale zatiaľ neprišiel žiadny obraz"),
+        "stavObrazUstal" to listOf("Z konzole už přes 30 s nepřišel obraz", "Z konzoly už vyše 30 s neprišiel obraz"),
+        "stavChybaObrazu" to listOf("Chyba zpracování obrazu", "Chyba spracovania obrazu"),
+        "stavObrazChodi" to listOf("Obraz z konzole přijat", "Obraz z konzoly prijatý"),
+        "stavStariSnimku" to listOf("Poslední snímek před {sekundy} s", "Posledná snímka pred {sekundy} s"),
+        "tvVybranaNeoverena" to listOf("TV vybrána – příjem ani zobrazení zatím neověřeny", "TV vybraná – príjem ani zobrazenie zatiaľ neoverené"),
+        "tvOdesilanoNeovereno" to listOf("Data odesílána do TV · příjem a zobrazení nejsou potvrzené", "Dáta odosielané do TV · príjem a zobrazenie nie sú potvrdené"),
+        "tvChybaOdesilani" to listOf("Odesílání do TV selhalo", "Odosielanie do TV zlyhalo"),
+        "sitAdresa" to listOf("Adresu TV nelze přeložit. Zkontroluj vybranou TV a její IP.", "Adresu TV nemožno preložiť. Skontroluj vybranú TV a jej IP."),
+        "sitOpravneni" to listOf("Systém zamítl přístup k síti.", "Systém zamietol prístup k sieti."),
+        "sitOdeslani" to listOf("Chyba síťového soketu. Zkontroluj síť a vybranou TV.", "Chyba sieťového soketu. Skontroluj sieť a vybranú TV."),
+        "prijemChyba" to listOf("Chyba příjmu z telefonu", "Chyba príjmu z telefónu"),
+        "prijemSkryty" to listOf("Data přicházejí · titulky skryté mimo TV vstup", "Dáta prichádzajú · titulky skryté mimo TV vstupu"),
+        "prekryvPovoleni" to listOf("Chybí povolení Zobrazovat přes jiné aplikace", "Chýba povolenie Zobrazovať cez iné aplikácie"),
+        "prekryvOkno" to listOf("Nelze vytvořit nebo aktualizovat okno titulků", "Nemožno vytvoriť alebo aktualizovať okno titulkov"),
+        "prekryvSluzba" to listOf("Nelze spustit službu překryvu", "Nemožno spustiť službu prekryvu"),
+        "prekryvCeka" to listOf("Data přicházejí · čekám na službu překryvu", "Dáta prichádzajú · čakám na službu prekryvu"),
         "stavPripojeno" to listOf("Připojeno – překlad běží", "Pripojené – preklad beží", "Verbunden – Übersetzung läuft", "Połączono – tłumaczenie działa", "Connecté – traduction active", "Conectado – traducción activa", "Connesso – traduzione attiva"),
         "stavCekam" to listOf("Čekám na zapnutí PS5…", "Čakám na zapnutie PS5…", "Warte auf die PS5…", "Czekam na włączenie PS5…", "En attente de la PS5…", "Esperando a la PS5…", "In attesa della PS5…"),
         "stavPripojuji" to listOf("Připojuji k PS5… může to trvat až 2 min", "Pripájam k PS5… môže to trvať až 2 min", "Verbinde mit PS5… kann bis zu 2 Min. dauern", "Łączę z PS5… może to potrwać do 2 min", "Connexion à la PS5… cela peut prendre jusqu'à 2 min", "Conectando con la PS5… puede tardar hasta 2 min", "Connessione alla PS5… può richiedere fino a 2 min"),
@@ -75,7 +97,33 @@ object Texty {
             "Sony non consente l'accesso nell'app. Apri l'accesso nel browser e segui la pagina."),
         "qrOtevrit" to listOf("Otevřít v prohlížeči", "Otvoriť v prehliadači", "Im Browser öffnen", "Otwórz w przeglądarce", "Ouvrir dans le navigateur", "Abrir en el navegador", "Apri nel browser"),
         "qrCekam" to listOf("Čekám na přihlášení z telefonu…", "Čakám na prihlásenie z telefónu…", "Warte auf die Anmeldung vom Handy…", "Czekam na logowanie z telefonu…", "En attente de la connexion depuis le téléphone…", "Esperando el inicio de sesión desde el móvil…", "In attesa dell'accesso dal telefono…"),
-        "qrVTelevizi" to listOf("Zkusit přihlášení přímo v televizi", "Skúsiť prihlásenie priamo v televízore", "Anmeldung direkt am Fernseher versuchen", "Spróbuj zalogować się na telewizorze", "Essayer la connexion sur la TV", "Probar a iniciar sesión en la TV", "Prova l'accesso sulla TV"),
+        "qrVProhlizeci" to listOf("Zkusit přihlášení uvnitř aplikace", "Skúsiť prihlásenie v aplikácii", "Anmeldung in der App versuchen", "Spróbuj zalogować się w aplikacji", "Essayer la connexion dans l'application", "Probar a iniciar sesión dentro de la app", "Prova l'accesso nell'app"),
+        "psnOveruji" to listOf("Ověřuji přihlášení u PlayStation…", "Overujem prihlásenie v PlayStation…", "PlayStation-Anmeldung wird geprüft…", "Sprawdzanie logowania PlayStation…", "Vérification de la connexion PlayStation…", "Verificando el inicio de sesión de PlayStation…", "Verifica dell'accesso PlayStation…"),
+        "psnKod" to listOf("Sony odmítlo přihlašovací kód. Přihlas se znovu a vlož novou adresu.", "Sony odmietlo prihlasovací kód. Prihlás sa znova a vlož novú adresu.", "Sony hat den Anmeldecode abgelehnt. Melde dich erneut an und füge die neue Adresse ein.", "Sony odrzuciło kod logowania. Zaloguj się ponownie i wklej nowy adres.", "Sony a refusé le code de connexion. Reconnecte-toi et colle la nouvelle adresse.", "Sony rechazó el código. Inicia sesión de nuevo y pega la nueva dirección.", "Sony ha rifiutato il codice. Accedi di nuovo e incolla il nuovo indirizzo."),
+        "psnSony" to listOf("Sony odmítlo ověření účtu. Zkus přihlášení znovu později.", "Sony odmietlo overenie účtu. Skús prihlásenie znova neskôr.", "Sony hat die Kontoprüfung abgelehnt. Versuche es später erneut.", "Sony odrzuciło weryfikację konta. Spróbuj ponownie później.", "Sony a refusé la vérification du compte. Réessaie plus tard.", "Sony rechazó la verificación de la cuenta. Inténtalo más tarde.", "Sony ha rifiutato la verifica dell'account. Riprova più tardi."),
+        "psnLimit" to listOf("Sony obdrželo příliš mnoho požadavků. Před dalším přihlášením chvíli počkej.", "Sony dostalo priveľa požiadaviek. Pred ďalším prihlásením chvíľu počkaj.", "Sony hat zu viele Anfragen erhalten. Warte vor der nächsten Anmeldung kurz.", "Sony otrzymało zbyt wiele żądań. Poczekaj przed kolejnym logowaniem.", "Sony a reçu trop de demandes. Attends avant de te reconnecter.", "Sony recibió demasiadas solicitudes. Espera antes de iniciar sesión otra vez.", "Sony ha ricevuto troppe richieste. Attendi prima di accedere di nuovo."),
+        "psnCas" to listOf("Sony neodpovědělo včas. Zkontroluj internet a přihlas se znovu.", "Sony neodpovedalo včas. Skontroluj internet a prihlás sa znova.", "Sony hat nicht rechtzeitig geantwortet. Prüfe die Internetverbindung und melde dich erneut an.", "Sony nie odpowiedziało na czas. Sprawdź internet i zaloguj się ponownie.", "Sony n'a pas répondu à temps. Vérifie Internet et reconnecte-toi.", "Sony no respondió a tiempo. Comprueba internet e inicia sesión de nuevo.", "Sony non ha risposto in tempo. Controlla Internet e accedi di nuovo."),
+        "psnSit" to listOf("Spojení se Sony se nepodařilo. Zkontroluj internet na zařízení s PlayCaption.", "Spojenie so Sony sa nepodarilo. Skontroluj internet na zariadení s PlayCaption.", "Keine Verbindung zu Sony. Prüfe Internet auf dem Gerät mit PlayCaption.", "Nie udało się połączyć z Sony. Sprawdź internet na urządzeniu z PlayCaption.", "Connexion à Sony impossible. Vérifie Internet sur l'appareil avec PlayCaption.", "No se pudo conectar con Sony. Comprueba internet en el dispositivo con PlayCaption.", "Impossibile connettersi a Sony. Controlla Internet sul dispositivo con PlayCaption."),
+        "psnOdpoved" to listOf("Sony vrátilo neplatné údaje účtu. Účet nebyl uložen; přihlas se znovu.", "Sony vrátilo neplatné údaje účtu. Účet nebol uložený; prihlás sa znova.", "Sony hat ungültige Kontodaten geliefert. Das Konto wurde nicht gespeichert; melde dich erneut an.", "Sony zwróciło nieprawidłowe dane konta. Konto nie zostało zapisane; zaloguj się ponownie.", "Sony a renvoyé des données de compte invalides. Le compte n'a pas été enregistré ; reconnecte-toi.", "Sony devolvió datos de cuenta no válidos. La cuenta no se guardó; inicia sesión de nuevo.", "Sony ha restituito dati dell'account non validi. L'account non è stato salvato; accedi di nuovo."),
+        "psnUlozeni" to listOf("Účet se nepodařilo uložit na zařízení s PlayCaption. Zkus to znovu.", "Účet sa nepodarilo uložiť na zariadení s PlayCaption. Skús to znova.", "Das Konto konnte auf dem Gerät mit PlayCaption nicht gespeichert werden. Versuche es erneut.", "Nie udało się zapisać konta na urządzeniu z PlayCaption. Spróbuj ponownie.", "Impossible d'enregistrer le compte sur l'appareil avec PlayCaption. Réessaie.", "No se pudo guardar la cuenta en el dispositivo con PlayCaption. Inténtalo de nuevo.", "Impossibile salvare l'account sul dispositivo con PlayCaption. Riprova."),
+        "psnStranka" to listOf("Přihlašovací stránku se nepodařilo spustit. Zavři ostatní instance PlayCaption a otevři přihlášení znovu.", "Prihlasovaciu stránku sa nepodarilo spustiť. Zatvor ostatné inštancie PlayCaption a otvor prihlásenie znova.", "Die Anmeldeseite konnte nicht gestartet werden. Schließe andere PlayCaption-Instanzen und öffne die Anmeldung erneut.", "Nie udało się uruchomić strony logowania. Zamknij inne instancje PlayCaption i otwórz logowanie ponownie.", "Impossible de démarrer la page de connexion. Ferme les autres instances de PlayCaption et rouvre la connexion.", "No se pudo abrir la página de inicio de sesión. Cierra otras instancias de PlayCaption y vuelve a abrirla.", "Impossibile avviare la pagina di accesso. Chiudi le altre istanze di PlayCaption e riapri l'accesso."),
+        "predemTelefon" to listOf(
+            "Potřebuješ na PS5 druhý účet – přes něj se připojí tento telefon nebo tablet. Hrát budeš dál na hlavním.\nNemáš ho? Na PS5: tlačítko PS → profil → Přepnout uživatele → Přidat uživatele.",
+            "Potrebuješ na PS5 druhý účet – cez neho sa pripojí tento telefón alebo tablet. Hrať budeš ďalej na hlavnom.\nNemáš ho? Na PS5: tlačidlo PS → profil → Prepnúť používateľa → Pridať používateľa.",
+            "Du brauchst ein zweites PS5-Konto für die Verbindung mit diesem Handy oder Tablet. Du spielst weiter mit dem Hauptkonto.\nPS5: PS-Taste → Profil → Benutzer wechseln → Benutzer hinzufügen.",
+            "Potrzebujesz drugiego konta PS5 do połączenia tego telefonu lub tabletu. Grasz dalej na głównym.\nPS5: przycisk PS → profil → Przełącz użytkownika → Dodaj użytkownika.",
+            "Il te faut un deuxième compte PS5 pour connecter ce téléphone ou cette tablette. Tu joues sur le principal.\nPS5 : bouton PS → profil → Changer d'utilisateur → Ajouter un utilisateur.",
+            "Necesitas una segunda cuenta PS5 para conectar este móvil o tableta. Juegas con la principal.\nPS5: botón PS → perfil → Cambiar de usuario → Añadir usuario.",
+            "Serve un secondo account PS5 per collegare questo telefono o tablet. Giochi con il principale.\nPS5: tasto PS → profilo → Cambia utente → Aggiungi utente."),
+        "krok1Telefon" to listOf("1. Přihlas se zde DRUHÝM účtem z PS5. U LG a Samsungu se přihlášení i párování PS5 ukládá do telefonu, televize přijímá titulky.", "1. Prihlás sa tu DRUHÝM účtom z PS5. Pri LG a Samsungu sa prihlásenie aj párovanie PS5 ukladá do telefónu, televízor prijíma titulky.", "1. Melde dich hier mit dem ZWEITEN PS5-Konto an. Bei LG und Samsung werden Anmeldung und PS5-Kopplung auf dem Handy gespeichert; der TV empfängt Untertitel.", "1. Zaloguj się tutaj DRUGIM kontem PS5. Przy LG i Samsungu logowanie i parowanie PS5 zapisują się w telefonie; TV odbiera napisy.", "1. Connecte-toi ici avec le DEUXIÈME compte PS5. Pour LG et Samsung, la connexion et l'association PS5 sont enregistrées sur le téléphone ; la TV reçoit les sous-titres.", "1. Inicia sesión aquí con la SEGUNDA cuenta PS5. Con LG y Samsung, la sesión y la vinculación PS5 se guardan en el móvil; la TV recibe subtítulos.", "1. Accedi qui con il SECONDO account PS5. Con LG e Samsung, accesso e associazione PS5 sono salvati sul telefono; la TV riceve i sottotitoli."),
+        "krok3Telefon" to listOf(
+            "3. Na PS5 zapni Nastavení → Systém → Aplikace Remote Play → Povolit aplikaci Remote Play na OBOU účtech.\nPřepni se na DRUHÝ účet a otevři Aplikace Remote Play → Spárovat zařízení. Obrazovku s kódem nech na PS5 otevřenou a osm číslic zadej sem do telefonu nebo tabletu.\nNa ovladači TV nemusíš mačkat Domů. Po vypršení kódu vytvoř na PS5 nový.",
+            "3. Na PS5 zapni Nastavenia → Systém → Aplikácia Remote Play → Povoliť aplikáciu Remote Play na OBOCH účtoch.\nPrepni sa na DRUHÝ účet a otvor Aplikácia Remote Play → Spárovať zariadenie. Obrazovku s kódom nechaj na PS5 otvorenú a osem číslic zadaj sem do telefónu alebo tabletu.\nNa ovládači TV nemusíš stláčať Domov. Po vypršaní kódu vytvor na PS5 nový.",
+            "3. Aktiviere Remote Play auf BEIDEN PS5-Konten: Einstellungen → System → Remote Play-App.\nWechsle zum ZWEITEN Konto und wähle Gerät verbinden. Lass den Code auf der PS5 geöffnet und gib die acht Ziffern hier auf dem Handy oder Tablet ein.\nDu musst auf der TV-Fernbedienung nicht Home drücken. Erzeuge bei Ablauf einen neuen Code.",
+            "3. Włącz Remote Play na OBU kontach PS5: Ustawienia → System → Aplikacja Remote Play.\nPrzełącz się na DRUGIE konto i wybierz Połącz urządzenie. Pozostaw kod na PS5 i wpisz osiem cyfr tutaj w telefonie lub tablecie.\nNie musisz naciskać Home na pilocie TV. Po wygaśnięciu wygeneruj nowy kod.",
+            "3. Active Lecture à distance sur les DEUX comptes PS5 : Paramètres → Système → Application Lecture à distance.\nPasse au DEUXIÈME compte et choisis Associer un appareil. Laisse le code affiché sur la PS5 et saisis ses huit chiffres ici sur le téléphone ou la tablette.\nInutile d'appuyer sur Accueil de la télécommande TV. Si le code expire, génères-en un nouveau.",
+            "3. Activa Juego remoto en AMBAS cuentas PS5: Ajustes → Sistema → App Juego remoto.\nCambia a la SEGUNDA cuenta y elige Vincular dispositivo. Deja el código abierto en PS5 e introduce sus ocho cifras aquí en el móvil o tableta.\nNo necesitas pulsar Inicio en el mando de TV. Si caduca, genera un código nuevo.",
+            "3. Attiva Riproduzione remota su ENTRAMBI gli account PS5: Impostazioni → Sistema → App Riproduzione remota.\nPassa al SECONDO account e scegli Collega dispositivo. Lascia il codice aperto sulla PS5 e inserisci le otto cifre qui sul telefono o tablet.\nNon serve premere Home sul telecomando TV. Se scade, genera un nuovo codice."),
         "betaNadpis" to listOf("Ahoj a vítej v PlayCaption! 👋", "Ahoj a vitaj v PlayCaption! 👋", "Hallo und willkommen bei PlayCaption! 👋", "Cześć, witaj w PlayCaption! 👋", "Salut et bienvenue dans PlayCaption ! 👋", "¡Hola y bienvenido a PlayCaption! 👋", "Ciao e benvenuto in PlayCaption! 👋"),
         "betaText" to listOf(
             "Aplikace je zdarma a zatím ve vývoji (beta), takže občas něco nemusí fungovat.\nBudeme rádi za každou zpětnou vazbu i hlášení problémů ve Facebook skupině PlayCaption – snažíme se je řešit co nejdřív.",
@@ -108,7 +156,7 @@ object Texty {
         "prijemTlacitko" to listOf("📱  Titulky čte telefon (rychlejší)", "📱  Titulky číta telefón (rýchlejšie)"),
         "prijemNadpis" to listOf("Titulky z telefonu", "Titulky z telefónu"),
         "prijemCekam" to listOf("Čekám na telefon…", "Čakám na telefón…"),
-        "prijemPripojen" to listOf("✔ Telefon připojen – titulky chodí", "✔ Telefón pripojený – titulky chodia"),
+        "prijemPripojen" to listOf("Data z telefonu přicházejí · překryv připraven", "Dáta z telefónu prichádzajú · prekryv pripravený"),
         "prijemPopis" to listOf(
             "Televize se teď k PS5 nepřipojuje – titulky čte a překládá telefon, televize je jen ukazuje. Je to rychlejší a hodí se i pro slabší televize.\n\n1. V Android telefonu otevři PlayCaption.\n2. Jen poprvé klepni na „Vyhledat televizi“ a vyber tuhle televizi ({tv}). Telefon si přihlášení vezme z televize. Kdo je v telefonu už přihlášený sám, tenhle krok přeskočí.\n3. Pak už jen zmáčkni „Hotovo – hrát“ – telefon se k televizi připojí sám.\n4. Telefon nech ležet s otevřenou aplikací (ideálně na nabíječce).\n\nTelefon i televize musí být na stejné Wi-Fi.",
             "Televízor sa teraz k PS5 nepripája – titulky číta a prekladá telefón, televízor ich len ukazuje. Je to rýchlejšie a hodí sa aj pre slabšie televízory.\n\n1. V Android telefóne otvor PlayCaption.\n2. Len prvýkrát klepni na „Vyhľadať televízor“ a vyber tento televízor ({tv}). Telefón si prihlásenie vezme z televízora. Kto je v telefóne už prihlásený sám, tento krok preskočí.\n3. Potom už len stlač „Hotovo – hrať“ – telefón sa k televízoru pripojí sám.\n4. Telefón nechaj ležať s otvorenou aplikáciou (ideálne na nabíjačke).\n\nTelefón aj televízor musia byť na rovnakej Wi-Fi."),
@@ -183,8 +231,17 @@ object Texty {
         "lgChybaOVERENI" to listOf("Nainstalovanou verzi se nepodařilo ověřit. Spusť PlayCaption LG na TV nebo zkus ruční postup.", "Nainštalovanú verziu sa nepodarilo overiť. Spusť PlayCaption LG na TV alebo skús ručný postup."),
         "lgChybaCAS" to listOf("TV neodpověděla včas. Zkontroluj síť a Developer Mode. Pokud instalace už začala, ověř přijímač na TV před opakováním.", "TV neodpovedala včas. Skontroluj sieť a Developer Mode. Ak inštalácia už začala, over prijímač na TV pred opakovaním."),
         "lgChybaZRUSENO" to listOf("Čekání bylo zrušeno. Již zahájená instalace na TV může doběhnout; zkontroluj domovskou nabídku LG.", "Čakanie bolo zrušené. Už spustená inštalácia na TV môže dobehnúť; skontroluj domovskú ponuku LG."),
-        "lgOvereno" to listOf("Nainstalováno a ověřeno · verze {verze}", "Nainštalované a overené · verzia {verze}"),
-        "lgSpusteno" to listOf("Přijímač je spuštěný. Na TV vyber HDMI konzole, potom pokračuj vyhledáním televize.", "Prijímač je spustený. Na TV vyber HDMI konzoly, potom pokračuj vyhľadaním televízora."),
+        "lgOvereno" to listOf("Instalace dokončena · verze {verze}", "Inštalácia dokončená · verzia {verze}"),
+        "lgSpusteno" to listOf("TV přijala požadavek na spuštění. Na TV vyber HDMI konzole a ověř běžící přijímač níže.", "TV prijala požiadavku na spustenie. Na TV vyber HDMI konzoly a over bežiaci prijímač nižšie."),
+        "lgOvereniNejdriv" to listOf("Nejprve v kroku nastavení ověř TV a verzi přijímače pro tuto IP adresu.", "Najprv v kroku nastavenia over TV a verziu prijímača pre túto IP adresu."),
+        "lgPrijemCil" to listOf("Kontrola příjmu: {tv} · {ip}", "Kontrola príjmu: {tv} · {ip}"),
+        "lgOveritPrijem" to listOf("Ověřit běžící LG přijímač", "Overiť bežiaci LG prijímač"),
+        "lgPrijemHledam" to listOf("Čekám na ohlášení této LG v místní síti…", "Čakám na ohlásenie tejto LG v miestnej sieti…"),
+        "lgPrijemNeovereno" to listOf("Běh přijímače zatím není ověřený.", "Beh prijímača zatiaľ nie je overený."),
+        "lgPrijemOdpoved" to listOf("Přijímač se při této kontrole ozval ze správné TV.", "Prijímač sa pri tejto kontrole ozval zo správnej TV."),
+        "lgPrijemBezOdpovedi" to listOf("LG se neozvala. Otevři PlayCaption LG na TV, ověř stejnou místní síť a zkus to znovu. Příčina zatím není známá.", "LG sa neozvala. Otvor PlayCaption LG na TV, over rovnakú miestnu sieť a skús to znova. Príčina zatiaľ nie je známa."),
+        "lgPrijemCas" to listOf("Čas kontroly: {cas}", "Čas kontroly: {cas}"),
+        "lgPrijemRozsah" to listOf("Ověřuje jen síťové spojení. Zobrazení: na LG OK / Zpět → Zkušební titulek. Výsledek je v Záznamu telefonu.", "Overuje len sieťové spojenie. Zobrazenie: na LG OK / Späť → Skúšobný titulok. Výsledok je v Zázname telefónu."),
         "lgSpustRucne" to listOf("Instalace je dokončená. Spusť PlayCaption LG ovladačem a vyber HDMI konzole.", "Inštalácia je dokončená. Spusť PlayCaption LG ovládačom a vyber HDMI konzoly."),
         "lgInstalovat" to listOf("Nainstalovat / aktualizovat", "Nainštalovať / aktualizovať"),
         "lgZrusitInstalaci" to listOf("Zrušit čekání", "Zrušiť čakanie"),
@@ -347,9 +404,9 @@ object Texty {
         "pridatAdresaText" to listOf("Adresu najdeš v okně „Přidat Android zařízení“ na televizi (např. 192.168.1.20).", "Adresu nájdeš v okne „Pridať Android zariadenie“ na televízore (napr. 192.168.1.20)."),
         "pridatZarizeni" to listOf("Android zařízení", "Android zariadenie"),
         "pridatZadne" to listOf("– zatím žádné", "– zatiaľ žiadne"),
-        "maTvNadpis" to listOf("📺 Máš PlayCaption už přihlášenou v televizi?", "📺 Máš PlayCaption už prihlásenú v televízore?"),
-        "maTv" to listOf("Nepřihlašuj se znovu. V televizi dej „+ Přidat Android zařízení“ a v telefonu klepni na „📺 Vyhledat televizi“. Telefon si přihlášení vezme z televize.", "Neprihlasuj sa znova. V televízore daj „+ Pridať Android zariadenie“ a v telefóne klepni na „📺 Vyhľadať televízor“. Telefón si prihlásenie vezme z televízora."),
-        "nemamTv" to listOf("Nemám televizi – přihlásit se tady ↓", "Nemám televízor – prihlásiť sa tu ↓"),
+        "maTvNadpis" to listOf("📺 Máš PlayCaption už přihlášenou v Android TV / Google TV?", "📺 Máš PlayCaption už prihlásenú v Android TV / Google TV?"),
+        "maTv" to listOf("Pouze pro Android TV / Google TV: na TV zvol „+ Přidat Android zařízení“ a zde „Převzít připojení z Android TV“. U LG a Samsungu pokračuj přihlášením níže v telefonu.", "Len pre Android TV / Google TV: na TV zvoľ „+ Pridať Android zariadenie“ a tu „Prevziať pripojenie z Android TV“. Pri LG a Samsungu pokračuj prihlásením nižšie v telefóne."),
+        "nemamTv" to listOf("Přihlásit se v tomto telefonu ↓", "Prihlásiť sa v tomto telefóne ↓"),
         "pridatBtn" to listOf("+ Přidat Android zařízení", "+ Pridať Android zariadenie"),
         "pridatNadpis" to listOf("Přidat Android zařízení", "Pridať Android zariadenie"),
         "pridatKrok1" to listOf("1. Naskenuj QR kód a nainstaluj aplikaci do telefonu / tabletu.", "1. Naskenuj QR kód a nainštaluj aplikáciu do telefónu / tabletu."),
@@ -496,4 +553,23 @@ object Texty {
     }
 
     fun t(context: Context, klic: String) = t(Nastaveni(context).jazykNeboCs, klic)
+
+    internal fun spojeni(jazyk: String, stav: PrehledSpojeni, podrobne: Boolean = false): String {
+        val detail = when {
+            podrobne || stav.detail.isBlank() -> stav.detail
+            stav.klic != "stavNavazuji" && stav.klic != "stavUkoncenoChybou" -> t(jazyk, "stavPodrobnosti")
+            else -> {
+                val radek = stav.detail.lineSequence().firstOrNull { it.isNotBlank() }?.trim().orEmpty()
+                if (radek.length > 220 || radek != stav.detail.trim())
+                    radek.take(220) + "…\n" + t(jazyk, "stavPodrobnosti") else radek
+            }
+        }
+        return t(jazyk, stav.klic) + detail.takeIf { it.isNotBlank() }?.let { "\n$it" }.orEmpty() +
+            stav.stariSnimkuMs?.let { "\n" + t(jazyk, "stavStariSnimku").replace("{sekundy}", (it / 1000).toString()) }.orEmpty()
+    }
+
+    internal fun prenos(jazyk: String, stav: PrehledPrenosu, podrobne: Boolean = false) =
+        t(jazyk, stav.klic) + stav.chyba?.let {
+            "\n${t(jazyk, stav.duvodKlic)}" + if (podrobne) " ($it)" else "\n" + t(jazyk, "stavPodrobnosti")
+        }.orEmpty()
 }

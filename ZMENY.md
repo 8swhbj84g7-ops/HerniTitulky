@@ -12,18 +12,76 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
 - Žlutý rámeček nepřijímá opožděné OCR po zahájení novějšího čtení. Záznam navíc
   rozlišuje počty řádků před/po výběru a stabilizaci. Původní scénu Alan Wake 2
   je ještě potřeba ověřit při hraní; LG protokol, přijímač ani FPS se nemění.
+- PS5: pomocný Remote Play stream na telefonu ani Android TV neotevírá zvukové
+  přehrávání a nepředává PCM do přehrávací fronty. Odstranění dvojitého zvuku
+  nemění HDMI, systémovou hlasitost ani opravu sessionFree; dekodér dál odčerpává
+  buffery a končí přes EOS. Nové nativní regrese ověřují obě přehrávací cesty.
+- PS5: nativní oprava zámku audio dekodéru. Po nedostupném vstupním bufferu
+  chybová větev nově odemkne mutex, na který jinak při ukončení čekal sessionFree.
+  Stejná oprava v ARM knihovnách TV i telefonu; šest regresí se skutečnými vlákny.
+  Časové limity, kodeky a síťové chování se nemění. Přejímka nových knihoven na TCL zbývá.
+- GL plocha i YUV ImageReader patří konkrétní PS5 Session a zavírají se až po
+  úspěšném dispose. Nový pokus ani konec služby výstup živého dekodéru nezavře;
+  při blokujícím či chybném úklidu zůstává držený. Obsluha YUV pokračuje do
+  dokončení posledního výstupu, aby starý dekodér mohl dokončit práci.
+- Telefon i TV ignorují události již ukončené PS5 relace. Po třech připojených
+  pokusech bez jediného snímku se opakování v procesu zastaví s návodem na
+  Vynutit ukončení, bez mazání dat. První skutečný snímek průběžnou řadu selhání
+  vyčistí; samotný handshake nikoli. Obsazení PS5 má samostatné počítadlo a log.
+- PS5 diagnostika zaznamená první dekódovaný snímek z GL/YUV/paměti i na telefonu
+  a velikost sdíleného nativního logu před/po vytvoření, po připojení a po úklidu.
+  Prázdný chiaki.log se neinterpretuje jako důkaz chybějících video paketů.
+- Diagnostika PS5 bez obrazu: ID relací, délky jednotlivých kroků ukončování,
+  upozornění se stackem při překročení pěti sekund a záznam hlídače/YUV/GL.
+  Adamův report z TCL potvrdil blokování `setSurface(null)` před `stop()`.
+  Ukončení nově používá `stop()` → `dispose(join/free)` bez samostatného
+  odpojování Surface. Nová oprava čeká na opakovanou přejímku stejné TCL.
+  První selhání GL a stav příjmu titulků z telefonu jsou viditelné
+  v Záznamu. Postup přejímky: `docs/PS5-BEZ-OBRAZU.md`.
+- Automatická volba obrazu TV se potvrzuje skutečným snímkem, ne časovačem.
+  Po doloženém YUV výpadek sám nepřepíná na GL; neověřený GL pokus bez snímků
+  vrací stávající hlídač na YUV. Stará volba GL se nejprve zachovává a ověřuje,
+  telefon, kodeky, časy připojení a spárování zůstávají. Přejímka TCL ještě zbývá.
+- PSN přihlášení: staré karty a formuláře prohlížeče už nemohou odeslat použitý
+  kód do nového pokusu. Otevřená stránka, formulář i QR patří jednomu pokusu;
+  skutečné chyby jeho ověření zůstávají viditelné.
+- PSN přihlášení: prohlížeč potvrzuje uložený účet až po ověření u Sony, kontrole
+  Account ID a úspěšném zápisu na zařízení. Během ověřování ukazuje průběh;
+  konkrétní chyba zůstává viditelná v aplikaci i na webové stránce.
+- Opakované odeslání stejného kódu nespouští další výměnu. Zrušený pokus nesmí
+  později přepsat účet; PIN párování čeká na dokončené přihlášení.
+- Instrukce rozlišují telefon/tablet a Android TV. Telefon u LG/Samsungu zadává
+  PIN z PS5 přímo, bez návratu přes Home na TV. Android TV zachovává přihlášení
+  telefonem přes QR a místní síť. Verze APK ani TV přijímačů se tímto krokem nemění.
 
 - Samsung: oprava nestabilního testu potvrzení dočtené Story repliky. Simulovaný
   čas ověřuje i případ, kdy 1 400 ms ještě nestačí kvůli fázi vykreslovacího tiku.
   Časování přijímače ani doba zobrazení titulků se nemění.
-- Oprava ztracených titulků při zapnutém Story a výstupu do Android TV: tento
-  přijímač používá Standardní PCT1, protože jeho PCS1 slouží předávání spárování.
-  Příběhový režim na Android TV přijímači tím není implementován. Telefon ukazuje
-  omezení a uloženou předvolbu Story zachovává pro jiné výstupy.
-- U LG/Samsungu a neznámých přijímačů se Story aktivuje až po platném PCA1 od
+- Android TV v režimu „S telefonem“ nově umí Story: měří stránky podle boxu,
+  zachovává čtecí čas při pauze, skrývá text mimo vstup a při volbách a potvrzuje
+  dočtení poslední stránky. Opakované pakety čtení nerestartují; staré generace
+  neobnoví zrušený text. PCS1 Story je oddělené od stávajícího předání spárování.
+- U všech TV včetně Androidu se Story aktivuje až po platném PCA1 od
   zvoleného cíle. Do té doby pokračuje Standardní výstup; přenos se přepne až
   s první Story stránkou. Staré titulky se po návratu na Standardní neopakují,
-  volby zůstávají funkční. Místní Story v telefonu se nemění.
+  volby zůstávají funkční. Starší Android TV bez podpory zůstane na Standardním
+  výstupu; je nutné aktualizovat telefon i TV. Místní Story, LG/Samsung protokol
+  a režim „Jen televize“ se nemění. Přejímka na TCL zatím neproběhla.
+- Stav konzole už nezelená pouhým spuštěním služby: rozlišuje čekání na spojení,
+  čekání na první snímek, příjem a výpadek obrazu. V běžném UI jsou krátké hlášky;
+  úplné důvody a technické podrobnosti zůstávají v Záznamu.
+- Fatální důvod (např. požadavek PS5 na přihlašovací PIN) zůstává viditelný
+  i po zastavení služby; nový pokus nebo ruční vypnutí jej vyčistí.
+- Výstup do TV ukazuje chyby UDP odesílání a otevřeně uvádí, že přijetí a zobrazení
+  nejsou potvrzené. Android přijímač hlásí chybu soketu, oprávnění či okna překryvu
+  a skrytí mimo TV vstup. Aktuální stavy jsou i v Záznamu.
+- Beze změny formátů paketů pro LG, Samsung a Android TV, kodeků a nastavení.
+
+- LG průvodce odděluje úspěšnou instalaci a přijetí požadavku na spuštění od
+  samostatné kontroly běžícího přijímače. Potvrdí jen LG se shodným ID i IP,
+  ukáže čas kontroly a zapíše výsledek do Záznamu. Opožděné/zrušené hledání se ignoruje.
+- Kontrola využívá stávající discovery včetně staršího ohlášení bez nového ACK.
+  Nemění výstup titulků, přenosové protokoly ani instalační balíček.
 
 ## 0.21 (versionCode 33)
 
