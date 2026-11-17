@@ -409,7 +409,8 @@ class MainActivity : Activity() {
             setPadding(dp(15), dp(12), dp(15), dp(12))
         }
         val jazykTexty = if (telefon) svisle() else vodorovne().apply { gravity = Gravity.BOTTOM }
-        jazykTexty.addView(text("${j.vlajka}  ${j.nazev}", pismo(16f, 21f), Color.WHITE))
+        jazykTexty.addView(text("${j.vlajka}  ${j.nazev}", pismo(16f, 21f), Color.WHITE).jedenRadek(),
+            if (telefon) plnaSirka() else LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
         jazykTexty.addView(text(t("zdrojKratce"), pismo(11.5f, 14f), TEXT2),
             LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
                 if (telefon) topMargin = dp(2) else leftMargin = dp(8)
@@ -446,7 +447,7 @@ class MainActivity : Activity() {
             maxLines = 3
             ellipsize = android.text.TextUtils.TruncateAt.END
         }
-        stavTexty.addView(stavText)
+        stavTexty.addView(stavText.jedenRadek(), plnaSirka())
         stavTexty.addView(stavPodtext, odsazeni(top = 2))
         stavObsah.addView(stavTexty, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { leftMargin = dp(14) })
         stavKarta.addView(stavObsah, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER_VERTICAL))
@@ -474,7 +475,7 @@ class MainActivity : Activity() {
         }.also { konzole.addView(it, odsazeni(top = 8)) }
         // telefon: najít televizi a převzít od ní spárování s PS5 (bez přihlašování účtu a PINu z PS5)
         if (telefon && !TvProfily(this).platforma.jenZobrazovac) {
-            konzole.addView(tlacitkoZelene(t("prevzitZTv")) { prevzitSparovaniZTv() }, odsazeni(top = 12))
+            konzole.addView(tlacitkoZelene(t("prevzitZTv")) { prevzitSparovaniZTv() }.jedenRadek(), odsazeni(top = 12))
             // nespárovaný telefon a v síti je televize s PlayCaption → přihlašování schovat, ať nikdo neklikne špatně
             if (!udaje.sparovano) Propojeni.hledej(this, 2500) { nalez ->
                 ui.post {
@@ -510,7 +511,7 @@ class MainActivity : Activity() {
         nast.napovedy = false
         run {
             val r = svisle()
-            r.addView(text(t("napovedy"), pismo(16f, 20f), Color.WHITE))
+            r.addView(text(t("napovedy"), pismo(16f, 20f), Color.WHITE).jedenRadek(), plnaSirka())
             r.addView(text(if (telefon) t("napovedyTelefon") else t("napovedyJenMobil"), pismo(12f, 15f), TEXT2), odsazeni(top = 2))
             co.addView(r)
         }
@@ -655,10 +656,10 @@ class MainActivity : Activity() {
             setPadding(dp(14), dp(10), dp(12), dp(10))
         }
         val nazevStav = if (telefon) svisle() else vodorovne().apply { gravity = Gravity.CENTER_VERTICAL }
-        val jmeno = text("🎮  $nazev", pismo(16f, 21f), Color.WHITE)
-        val stav = text("", pismo(16f, 16f), TEXT2, tucne = true)
-        nazevStav.addView(jmeno)
-        nazevStav.addView(stav, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
+        val jmeno = text("🎮  $nazev", pismo(16f, 21f), Color.WHITE).jedenRadek()
+        val stav = text("", pismo(16f, 16f), TEXT2, tucne = true).jedenRadek()
+        nazevStav.addView(jmeno, if (telefon) plnaSirka() else LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        nazevStav.addView(stav, (if (telefon) plnaSirka() else LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)).apply {
             if (telefon) topMargin = dp(2) else leftMargin = dp(8)
         })
         radek.addView(nazevStav, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { rightMargin = dp(10) })
@@ -711,14 +712,28 @@ class MainActivity : Activity() {
         layoutParams = FrameLayout.LayoutParams(dp(26), dp(26), Gravity.CENTER)
     }
 
+    /**
+     * Text vždy na jednom řádku – na úzkém displeji se písmo samo zmenší (místo zalomení „An/o“).
+     * Funguje jen tam, kde má text danou šířku (MATCH_PARENT nebo váha v řádku).
+     */
+    private fun <T : TextView> T.jedenRadek(): T = apply {
+        maxLines = 1
+        val sp = (textSize / resources.displayMetrics.scaledDensity).toInt()
+        setAutoSizeTextTypeUniformWithConfiguration(minOf(8, sp - 1).coerceAtLeast(6), sp.coerceAtLeast(9), 1, android.util.TypedValue.COMPLEX_UNIT_SP)
+    }
+
+    private fun plnaSirka() = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+
     /** Šedé zaoblené tlačítko (Změnit, Znovu připojit). */
     private fun tlacitkoSede(s: String, akce: () -> Unit) = tlacitko(s, pismo(14f, 18f), akce).apply {
+        maxLines = 1
         gravity = Gravity.CENTER
         background = vyber(Color.parseColor("#2A2B36"), radius = 999f)
         setPadding(dp(18), dp(9), dp(18), dp(9))
     }
 
     private fun tlacitkoZeleneMale(s: String, akce: () -> Unit) = tlacitkoZelene(s, akce).apply {
+        maxLines = 1
         if (!telefon) { textSize = 14f * SKALA; setPadding(dp(18), dp(9), dp(18), dp(9)) }
     }
 
@@ -1830,7 +1845,7 @@ class MainActivity : Activity() {
     private fun prepinac(popis: String, cti: () -> Boolean, zapis: (Boolean) -> Unit, zap: String, vyp: String, podpis: String? = null): View {
         val radek = vodorovne().apply { gravity = Gravity.CENTER_VERTICAL }
         val texty = svisle()
-        texty.addView(text(popis, pismo(16f, 20f), Color.WHITE))
+        texty.addView(text(popis, pismo(16f, 20f), Color.WHITE).jedenRadek(), plnaSirka())
         // malé šedé vysvětlení pod názvem (co přesně se tím překládá)
         if (!podpis.isNullOrBlank()) texty.addView(text(podpis, pismo(12f, 14f), TEXT2), odsazeni(top = 2))
         radek.addView(texty, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { rightMargin = dp(12) })
