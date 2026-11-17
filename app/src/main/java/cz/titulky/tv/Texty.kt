@@ -574,6 +574,7 @@ object Texty {
         "telZadny" to listOf("zatím žádný", "zatiaľ žiadny"),
         "pridatTelefon" to listOf("+ Přidat telefon", "+ Pridať telefón"),
         // stav (pruh nahoře)
+        "stavOkVypnout" to listOf("Zmáčkni OK\npro vypnutí", "Stlač OK\npre vypnutie"),
         "banOkPs" to listOf("PlayStation připravena", "PlayStation pripravená"),
         "banOkXbox" to listOf("Xbox připraven", "Xbox pripravený"),
         "banOkText" to listOf("Vše je nastavené – můžeš hrát.", "Všetko je nastavené – môžeš hrať."),

@@ -309,10 +309,15 @@ class MainActivity : Activity() {
     private var stavIkona: TextView? = null
     private var stavNacitani: View? = null
     private var stavVypln: View? = null
+    /** Televize: malá nápověda vpravo v pruhu Stav („Zmáčkni OK pro vypnutí“). */
+    private var stavOkNapoveda: TextView? = null
     private lateinit var stavKarta: FrameLayout
     private var stavUrovenPosledni: UrovenSpojeni? = null
     private var stavAnimace: android.animation.ValueAnimator? = null
     private var stavPodil = 0f
+    /** Poslední použité barvy pruhu (pozadí, rámeček, nadpis) – odsud se „zhasíná“. */
+    private var stavBarvy: Triple<Int, Int, Int>? = null
+    private var stavZhasina: android.animation.ValueAnimator? = null
 
     // řádky konzolí (rozsvítí se ta, ke které se připojuje)
     private var psRadek: LinearLayout? = null
@@ -335,6 +340,8 @@ class MainActivity : Activity() {
         obrazovka = "hlavni"
         stavUrovenPosledni = null
         stavAnimace?.cancel(); stavAnimace = null
+        stavZhasina?.cancel(); stavZhasina = null
+        stavBarvy = null
         stavPodil = 0f
 
         // ---------- logo (OK = diagnostika, podržení OK = diagnostika s vývojem)
@@ -466,6 +473,12 @@ class MainActivity : Activity() {
         stavTexty.addView(stavText.jedenRadek(), plnaSirka())
         stavTexty.addView(stavPodtext, odsazeni(top = 2))
         stavObsah.addView(stavTexty, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply { leftMargin = dp(14) })
+        // televize: OK na pruhu překlad vypne / zapne – ať to lidi vědí
+        stavOkNapoveda = if (telefon) null else text("", 12.5f, ZLUTA, tucne = true).apply {
+            gravity = Gravity.END or Gravity.CENTER_VERTICAL
+            maxLines = 2
+            visibility = View.GONE
+        }.also { stavObsah.addView(it, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { leftMargin = dp(12) }) }
         stavKarta.addView(stavObsah, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER_VERTICAL))
         val stavRadek = vodorovne().apply { gravity = Gravity.CENTER_VERTICAL }
         stavRadek.addView(stavKarta, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f))
@@ -788,6 +801,12 @@ class MainActivity : Activity() {
             else -> t(spojeni.klic) to ""
         }
         stavText.text = nadpis
+        // nápověda: běží → „OK = vypnout“; vypnuto/pozastaveno už říká nadpis („zapni OK“)
+        stavOkNapoveda?.let { n ->
+            val bezi = nejakaKonzole && sluzba && !RemotePlayService.pozastaveno
+            n.text = t("stavOkVypnout")
+            n.visibility = if (bezi) View.VISIBLE else View.GONE
+        }
         stavPodtext?.text = podtext
         stavPodtext?.visibility = if (podtext.isBlank()) View.GONE else View.VISIBLE
 
@@ -797,11 +816,39 @@ class MainActivity : Activity() {
             UrovenSpojeni.CHYBA -> Triple(Color.parseColor("#3A1012"), Color.parseColor("#FF4A50"), CERVENA_SVETLA)
             else -> Triple(KARTA, Color.parseColor("#3A3A44"), Color.WHITE)
         }
-        stavText.setTextColor(barvaNadpisu)
-        stavKarta.background = StateListDrawable().apply {
-            addState(intArrayOf(android.R.attr.state_focused), zaobleni(pozadi, 18f, Color.WHITE))
-            addState(intArrayOf(), zaobleni(pozadi, 18f, ramecek))
+        fun nastavBarvy(p: Int, r: Int, n: Int) {
+            stavText.setTextColor(n)
+            stavKarta.background = StateListDrawable().apply {
+                addState(intArrayOf(android.R.attr.state_focused), zaobleni(p, 18f, Color.WHITE))
+                addState(intArrayOf(), zaobleni(p, 18f, r))
+            }
         }
+        // vypnutí z běžícího stavu → pruh pomalu zhasne (jako když se stmívá světlo)
+        val predchozi = stavBarvy
+        val zhasnout = !telefon && uroven == UrovenSpojeni.VYPNUTO && predchozi != null &&
+            (stavUrovenPosledni == UrovenSpojeni.OK || stavUrovenPosledni == UrovenSpojeni.CEKANI)
+        if (zhasnout && predchozi != null) {
+            stavZhasina?.cancel()
+            val argb = android.animation.ArgbEvaluator()
+            stavVypln?.animate()?.alpha(0f)?.setDuration(1200)?.start()
+            stavZhasina = android.animation.ValueAnimator.ofFloat(0f, 1f).apply {
+                duration = 1800
+                interpolator = android.view.animation.AccelerateDecelerateInterpolator()
+                addUpdateListener {
+                    val f = it.animatedValue as Float
+                    nastavBarvy(argb.evaluate(f, predchozi.first, pozadi) as Int,
+                        argb.evaluate(f, predchozi.second, ramecek) as Int,
+                        argb.evaluate(f, predchozi.third, barvaNadpisu) as Int)
+                }
+                addListener(object : android.animation.AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: android.animation.Animator) { stavZhasina = null }
+                })
+                start()
+            }
+        } else if (stavZhasina == null) {
+            nastavBarvy(pozadi, ramecek, barvaNadpisu)
+        }
+        stavBarvy = Triple(pozadi, ramecek, barvaNadpisu)
         stavNacitani?.visibility = if (uroven == UrovenSpojeni.CEKANI) View.VISIBLE else View.GONE
         stavIkona?.visibility = if (uroven == UrovenSpojeni.CEKANI) View.GONE else View.VISIBLE
         stavIkona?.apply {
@@ -817,8 +864,14 @@ class MainActivity : Activity() {
             stavAnimace?.cancel()
             val cil = when (uroven) { UrovenSpojeni.CEKANI -> 0.9f; UrovenSpojeni.OK -> 1f; else -> 0f }
             val doba = when (uroven) { UrovenSpojeni.CEKANI -> 15000L; UrovenSpojeni.OK -> 500L; else -> 0L }
-            stavVypln?.alpha = 1f
-            if (doba == 0L) nastavVypln(cil)
+            if (zhasnout) {
+                // výplň už pomalu mizí se zhasínáním – vynulovat až potom
+                ui.postDelayed({ if (stavUrovenPosledni == UrovenSpojeni.VYPNUTO) nastavVypln(0f) }, 1300)
+            } else {
+                stavVypln?.alpha = 1f
+            }
+            if (zhasnout) Unit
+            else if (doba == 0L) nastavVypln(cil)
             else stavAnimace = android.animation.ValueAnimator.ofFloat(stavPodil, cil).apply {
                 duration = doba
                 interpolator = android.view.animation.DecelerateInterpolator()
