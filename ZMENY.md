@@ -6,6 +6,10 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
 
 ## Nevydané změny
 
+- PS5: pomocný Remote Play stream na telefonu ani Android TV neotevírá zvukové
+  přehrávání a nepředává PCM do přehrávací fronty. Odstranění dvojitého zvuku
+  nemění HDMI, systémovou hlasitost ani opravu sessionFree; dekodér dál odčerpává
+  buffery a končí přes EOS. Nové nativní regrese ověřují obě přehrávací cesty.
 - PS5: nativní oprava zámku audio dekodéru. Po nedostupném vstupním bufferu
   chybová větev nově odemkne mutex, na který jinak při ukončení čekal sessionFree.
   Stejná oprava v ARM knihovnách TV i telefonu; šest regresí se skutečnými vlákny.

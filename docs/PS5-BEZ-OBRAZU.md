@@ -1,5 +1,41 @@
 # PS5 bez obrazu a příjem překladů z telefonu
 
+## Doplnění – potlačení přehrávání Remote Play
+
+Adamova přejímka aa60273 na TCL + POCO: 10/10 přechodů, 20/20 dokončených
+TV relací, dvakrát Zastavit/opět připojit, bez překročení 5 s a bez pádů.
+Ve starém logu navíc dohledal „Failed to get input audio buffer“ 4 s před
+zaseknutím #b2f2cd3. To podporuje původní příčinu; úplný nativní stack chybí.
+Test zavření telefonu před ConnectedEvent zůstal neověřený kvůli odmítnutému
+ADB vstupu na Xiaomi (karta se neodsunula).
+
+Nově nahlásil dvojitý zvuk: při „Jen televize“ bylo vedle HDMI slyšet i pomocný
+Remote Play stream. Příčinou dřívějšího ticha mohl být zaseknutý audio dekodér,
+ale report to neprokazuje. Nový patch proto výslovně vypíná místní přehrávání:
+audio-output settings neotevírá zařízení a audio-output frame PCM zahazuje.
+Platí pro obě ARM varianty telefonu i TV. Příjem, dekódování, odčerpávání bufferů,
+EOS, oprava mutexu i stop → dispose → uvolnění výstupu se nemění.
+Nevolá se systémové ztlumení, hlasitost ani změna HDMI zvukové cesty.
+
+Před sloučením na novém commitu ověřit poslechem, že „Jen televize“ nezdvojuje
+zvuk a hra přes HDMI dál hraje; totéž při „S telefonem“, pozastavení a obnovení.
+Současně zopakovat předávání, obraz/titulky a dokončené úklidy bez přibývání
+ps5-konec. Přejímka aa60273 nepokrývá tyto nově sestavené knihovny.
+PR #15 zůstává draft, bez release, tagu a změny verze.
+
+Ověření potlačení přehrávání: dva nové nativní testy nad skutečným audio-output.cpp
+prošly spolu s původními šesti mutex/EOS scénáři, také pod ASan/UBSan. Prošlo
+sestavení obou ARM variant, kontrola JNI/závislostí a SHA-256 knihoven v APK,
+242 JVM testů, šest webOS sad i Samsung renderer testem z #21. Síťové sady
+musí běžet odděleně: při jejich chybném souběhu vznikla kolize UDP portů;
+následný izolovaný JVM běh prošel bez selhání.
+
+Na připojeném Redmi Pad Pro (API 36, ARM64) navíc samostatný dočasný proces
+načetl skutečnou novou knihovnu, zavolal nastavení 48/44,1 kHz, PCM callbacky
+a uvolnění. Po nastavení a PCM nebyl jeho PID mezi AudioFlinger klienty;
+proces skončil bez chyby. Instalovaná aplikace se tímto testem neměnila.
+Nešlo o PS5 relaci ani poslech HDMI na TCL; tato přejímka stále zbývá.
+
 ## Doplnění – 17. 11. 2026: nativní audio zámek
 
 Přejímka fa223f4 na TCL 65C805 + POCO F8 Pro nakonec zaznamenala 20/21
@@ -17,19 +53,20 @@ patch mění stejným způsobem audio návrat; bez změny časových limitů a k
 Řízený nativní test na původním kódu chybu reprodukoval; po patchi prošlo šest
 scénářů včetně částečného rámce a rekurzivní inicializace. Test používá upstream
 audio-decoder.c i skutečná pthread vlákna, ale řízený MediaCodec, nikoli TCL.
-Report neobsahuje celý nativní stack ani řádek předchozího selhání audio bufferu;
-shoda této prokázané chyby s konkrétní relací #b2f2cd3 musí být potvrzena novou
-přejímkou. Jiné chyby uvnitř systémového dekodéru nelze tímto testem vyloučit.
+Původní report neobsahoval celý nativní stack ani řádek předchozího selhání audio
+bufferu; později dohledané řádky a přejímka aa60273 jsou popsané výše. Úplný
+nativní stack stále chybí a jiné chyby systémového dekodéru nelze vyloučit.
 
-ARM knihovny TV i telefonu vznikají ze stejné připnuté verze Chiaki-TV s tímto
-jediným zdrojovým patchem. Postup, testy a omezení: [native/README.md](../native/README.md).
+V aa60273 vznikly ARM knihovny TV i telefonu ze stejné připnuté verze Chiaki-TV
+pouze s opravou mutexu. Následné potlačení přehrávání je popsané výše.
+Postup, testy a omezení: [native/README.md](../native/README.md).
 Pořadí stop → dispose → uvolnění výstupu a ochrany fa223f4 zůstávají.
 Nová přejímka musí zahrnout více opakování původního přechodu TCL z „Jen televize“
 na „S telefonem“, celá ukončení i kontrolu vláken a paměti po přechodech. Test
 zavření telefonu před ConnectedEvent zůstává podle dodaného hlášení neověřený.
 PR #15 zůstává draft, bez release, tagu a změny verze.
 
-Lokální ověření tohoto doplnění: šest nativních scénářů prošlo také s ASan/UBSan;
+Lokální ověření aa60273: šest nativních scénářů prošlo také s ASan/UBSan;
 na původním kódu zámková regrese selže. Prošlo 242 JVM testů a sestavení debug
 i instrumentačního APK. V APK byly porovnány SHA-256 všech čtyř nových ARM knihoven
 s native/chiaki-build.json, JNI názvy a sdílené závislosti jsou shodné s původními.

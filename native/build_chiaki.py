@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the existing Chiaki revision with the audio mutex fix; leave app binaries untouched."""
+"""Build the pinned Chiaki with the mutex fix and silent playback; leave app binaries untouched."""
 import hashlib
 import json
 from pathlib import Path
@@ -10,6 +10,7 @@ import sys
 
 REVISION = "f814cf69d636f149ad5a3cfffd19cb22da90beda"
 NDK_REVISION = "21.4.7075529"
+PLAYBACK_SOURCE_SHA256 = "9d20afbe898551159124f5f75397973e3e5ad48fab0e8bc7be7b5208006a5cc8"
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
 
@@ -35,8 +36,9 @@ def main():
     if source == REPO or build.is_relative_to(source) or build.is_relative_to(REPO):
         sys.exit("Use a separate upstream checkout and build directory outside both repositories")
     audio = "android/app/src/main/cpp/audio-decoder.c"
+    playback = "android/app/src/main/cpp/audio-output.cpp"
     changed = output("git", "-C", str(source), "diff", "HEAD", "--name-only").splitlines()
-    if set(changed) - {audio}:
+    if set(changed) - {audio, playback}:
         sys.exit("Upstream checkout contains unrelated tracked changes")
     original = subprocess.check_output(["git", "-C", str(source), "show", f"HEAD:{audio}"])
     old = b'CHIAKI_LOGE(decoder->log, "Failed to get input audio buffer");\n\t\t\treturn;'
@@ -48,11 +50,19 @@ def main():
                         str(HERE / "chiaki-audio-unlock.patch")], check=True)
     if (source / audio).read_bytes() != fixed:
         sys.exit("Audio source differs from the reviewed one-line patch")
+    original_playback = subprocess.check_output(["git", "-C", str(source), "show", f"HEAD:{playback}"])
+    if (source / playback).read_bytes() == original_playback:
+        subprocess.run(["git", "-C", str(source), "apply", "--unidiff-zero",
+                        str(HERE / "chiaki-silent-audio.patch")], check=True)
+    if sha256((source / playback).read_bytes()) != PLAYBACK_SOURCE_SHA256:
+        sys.exit("Playback source differs from the reviewed silent callbacks")
     subprocess.run([sys.executable, str(HERE / "test/audio_shutdown.py"), str(source)], check=True)
     host = "darwin-x86_64" if sys.platform == "darwin" else "linux-x86_64"
     tools = ndk / "toolchains/llvm/prebuilt" / host / "bin"
     manifest = {"upstream": REVISION, "ndk": NDK_REVISION,
-                "patchSha256": sha256((HERE / "chiaki-audio-unlock.patch").read_bytes()), "libraries": {}}
+                "patchSha256": sha256((HERE / "chiaki-audio-unlock.patch").read_bytes()),
+                "playbackPatchSha256": sha256((HERE / "chiaki-silent-audio.patch").read_bytes()),
+                "libraries": {}}
     for abi in ["arm64-v8a", "armeabi-v7a"]:
         directory = build / ("build-" + abi)
         subprocess.run([
