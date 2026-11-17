@@ -16,6 +16,7 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
 - Diagnostika: najetí na logo ukáže „DIAGNOSTIKA – Zmáčkni OK“, záznam je přes celou
   obrazovku a posouvá se šipkami ▲▼ (podržení OK dál přidá tlačítko Vývoj).
 - LG průvodce: odstraněna zastaralá věta, že na LG je potřeba Standardní režim.
+- Poděkování v aplikaci: Rudolf Nohal (LG) a Michael Šubák (Samsung).
 
 - PC-001: Android zachová kompletní víceřádkový text, když OCR na nezměněném
   obrazu opakovaně vynechá již přečtené řádky. Při skutečné změně snímku zůstává
