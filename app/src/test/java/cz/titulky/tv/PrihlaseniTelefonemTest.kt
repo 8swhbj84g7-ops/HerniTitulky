@@ -103,6 +103,7 @@ class PrihlaseniTelefonemTest {
 
     @Test fun qrPrihlaseniPoMistiSitiPotvrdiUlozeniVTelevizi() {
         val ip = java.net.NetworkInterface.getNetworkInterfaces().toList()
+            .filter { it.isUp && !it.isPointToPoint && !it.isVirtual }
             .flatMap { it.inetAddresses.toList() }
             .firstOrNull { it is java.net.Inet4Address && it.isSiteLocalAddress && !it.isLoopbackAddress }
             ?.hostAddress

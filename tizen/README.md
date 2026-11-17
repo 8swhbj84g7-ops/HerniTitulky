@@ -48,7 +48,9 @@ python3 tizen/build.py
 node tizen/test/test.cjs
 ```
 
-Vykreslenie v skúške potrebuje Playwright (`npm install playwright`), bez neho sa overí iba služba.
+Vykreslenie v skúške potrebuje Playwright s `page.clock` (1.45 alebo novší; `npm install playwright`),
+bez neho sa overí iba služba. Čas stránky je simulovaný: skúška overuje dokončenie Príbehu
+presne na tiku aj tesne po hranici tiku, bez čakania podľa rýchlosti počítača.
 Pri zmene verzie uprav `version` v `app/config.xml` aj `VERZIA` v `app/service/service.js`,
 `build.py` ich zhodu stráži.
 
