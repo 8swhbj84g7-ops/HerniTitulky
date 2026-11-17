@@ -133,6 +133,8 @@ class Ctecka {
                     } }
                 }
                 var hotoveRadky = VyberTitulku.radky(kusy, obraz.width, ::doplnJmeno)
+                val seskupenych = hotoveRadky.size
+                fun pocty(vybranych: Int) = "OCR řádky (surové/seskupené/po filtrech/vybrané): ${kusy.size}/$seskupenych/${hotoveRadky.size}/$vybranych"
 
                 // spodní nápověda / úkol mise: nejspodnější řádek, který je nápověda k ovládání,
                 // nebo nekončí tečkou a je oddělený mezerou od řádků nad ním
@@ -164,10 +166,10 @@ class Ctecka {
                 val napovedaBox = napovedaRadek?.let { Rect(it.left, it.top, it.right, it.bottom) }
 
                 if (hotoveRadky.isEmpty()) {
-                    if (napovedaText == null) { diagnostika = ""; hotovo(Titulek.NIC); return@addOnSuccessListener }
+                    if (napovedaText == null) { diagnostika = pocty(0); hotovo(Titulek.NIC); return@addOnSuccessListener }
                     jazyk.identifyLanguage(napovedaText)
                         .addOnSuccessListener { kod ->
-                            diagnostika = "nápověda jazyk=$kod | $napovedaText"
+                            diagnostika = "${pocty(0)} | nápověda jazyk=$kod | $napovedaText"
                             val bezDiakritiky = napovedaText.none { it.isLetter() && it.code > 127 }
                             hotovo(if (kod == "en" || (kod != "cs" && kod != "sk" && kod != cilovyJazyk && bezDiakritiky && anglickeSlovo(napovedaText))) Titulek(emptyList(), null, 0, emptyList(), vycisti(napovedaText), napovedaBox) else Titulek.NIC)
                         }
@@ -198,7 +200,7 @@ class Ctecka {
 
                 // sloupec krátkých řádků (1–2 slova) = menu, ne titulek
                 if (vybrane.size >= 3 && vybrane.count { VyberTitulku.pocetSlov(it.text) <= 2 } >= vybrane.size - 1) {
-                    diagnostika = "menu (sloupec krátkých řádků) | " + vybrane.joinToString(" / ") { it.text }
+                    diagnostika = "${pocty(vybrane.size)} | menu (sloupec krátkých řádků) | " + vybrane.joinToString(" / ") { it.text }
                     hotovo(Titulek.NIC); return@addOnSuccessListener
                 }
                 val box = Rect(
@@ -212,12 +214,12 @@ class Ctecka {
                 // → nepřekládat a neukazovat, jinak by na televizi byl nesmysl
                 if (jeNesmysl(bezJmen)) {
                     nesmysl = true
-                    diagnostika = "  [rozmazané – čtu znovu: " + repliky.joinToString(" / ") + "]"
+                    diagnostika = "${pocty(vybrane.size)} | [rozmazané – čtu znovu: " + repliky.joinToString(" / ") + "]"
                     hotovo(Titulek.NIC); return@addOnSuccessListener
                 }
                 jazyk.identifyLanguage(bezJmen)
                     .addOnSuccessListener { kod ->
-                        diagnostika = "jazyk=$kod | " + repliky.joinToString(" / ") +
+                        diagnostika = "${pocty(vybrane.size)} | jazyk=$kod | " + repliky.joinToString(" / ") +
                             (napovedaText?.let { " || nápověda: $it" } ?: "")
                         // krátké repliky ("Ah, gentlemen.", "Arthur...") rozpoznávač jazyka často neurčí →
                         // když v textu nejsou žádné znaky s diakritikou, bereme ho jako angličtinu

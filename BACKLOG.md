@@ -2,7 +2,8 @@
 
 ## PC-001 – Úplný překlad víceřádkových a postupně se objevujících textů
 
-Stav: zaznamenáno, zatím bez opravy. Priorita: po dokončení LG přijímače.
+Stav: opraven reprodukovaný výpadek řádků při nezměněném obrazu; původní herní
+scéna ještě čeká na přejímku. Větev `codex/pc-001-multiline-text`, bez vydání.
 
 ### Pozorované chování
 
@@ -31,17 +32,37 @@ pouze zobrazení již kompletního textu; nereprodukuje ani neopravuje chybu ze 
 - Oddělit skutečně chybějící text od oříznutí při zobrazení na tabletu nebo LG.
   LG v této verzi pouze přijímá hotový text; samo OCR ani překlad neprovádí.
 
-### Postup budoucího řešení
+### Audit a oprava – 16. 11. 2026
+
+- Seskupení OCR řádků i čekání na kompletní výsledky jednotlivých překladů už
+  existují. LG přijímá hotový text; v tomto kroku se jeho kód ani protokol nemění.
+- Regresní scénář před opravou selhal: celý třířádkový odstavec následovaný dvěma
+  stejnými čteními posledního řádku přijal `StabilitaTextu` jako nové úplné čtení.
+  `TextVRamecku` pak nahradil celý odstavec textem „Shoebox in the Dark Place.“.
+  Ztráta v této simulaci nastává na Androidu před překladem, nikoli při zobrazení LG.
+- Stabilizace nyní porovnává otisk všech pixelů zdrojového výřezu a počet řádků.
+  Výpadek dříve přečtených řádků na stejném obrazu nepotvrdí ani opakované OCR.
+  Doplnění a opravy zůstávají možné; při změně obrazu platí původní potvrzování
+  kratšího textu a jeho zmizení. Bez otisku se chování nemění.
+- Žlutý rámeček také zahazuje opožděné výsledky OCR, pokud mezitím začalo novější
+  čtení. Dosavadní ochrana opožděných překladů zůstává zachovaná.
+- Záznam uvádí počty surových, seskupených, filtrovaných a vybraných řádků,
+  číslo snímku a zkrácený otisk; neukládá zdrojový obrázek ani přihlašovací údaje.
+- Prošlo 202 JVM testů včetně výpadku horních/prostředních řádků, prázdného OCR,
+  skutečné změny scény, růstu textu, resetu a skutečného UDP přenosu celého
+  odstavce. Síťový překladač je v tomto testu nahrazen pevnou odpovědí.
+- Limit: shoda otisku je konzervativní důkaz stejného obrazu. Měnící se pozadí
+  nebo kompresní šum tuto ochranu neaktivují. Bez původních snímků a herního
+  ověření není prokázáno, že jde o jedinou příčinu hlášeného PC-001.
+
+### Zbývající herní přejímka
 
 1. Na stejné scéně porovnat snímek z Remote Play, kompletní výsledek OCR,
    vstup/výstup překladu, odeslaný paket a zobrazení na tabletu i LG.
 2. Změřit stáří snímku, interval OCR a čas překladu; identifikovat, kde vzniká
    zpoždění nebo ztráta řádků. Záznamy nesmějí obsahovat PSN klíče/tokeny.
-3. Připravit malé opakovatelné scénáře: statický text o 3+ řádcích, postupně psaný
-   text, změna celé scény během překladu a opožděná odpověď staršího překladu.
-4. Opravit zjištěnou příčinu a přidat regresní test. Nepřepínat FPS naslepo.
-5. Teprve potom porovnat 30/60 FPS na stejných datech: latence, úplnost textu,
-   zatížení tabletu, teplota a síťový provoz.
+3. Při další ztrátě porovnat nové počty řádků a otisky. Rozlišit výpadek již
+   samotného OCR od výběru řádků, stabilizace a překladu. Nepřepínat FPS naslepo.
 
 Hotovo znamená: zůstává kompletní aktuální text, starší odpověď ho nepřepíše,
 neproblikávají zbytečně částečné řádky a po změně scény nezůstává starý překlad.

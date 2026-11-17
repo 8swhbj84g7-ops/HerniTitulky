@@ -6,6 +6,12 @@ Při každé nové verzi se zvýší číslo v `app/build.gradle.kts` (versionCo
 
 ## Nevydané změny
 
+- PC-001: Android zachová kompletní víceřádkový text, když OCR na nezměněném
+  obrazu opakovaně vynechá již přečtené řádky. Při skutečné změně snímku zůstává
+  původní potvrzování kratšího textu a zmizení; opravy a doplňování jsou zachované.
+- Žlutý rámeček nepřijímá opožděné OCR po zahájení novějšího čtení. Záznam navíc
+  rozlišuje počty řádků před/po výběru a stabilizaci. Původní scénu Alan Wake 2
+  je ještě potřeba ověřit při hraní; LG protokol, přijímač ani FPS se nemění.
 - PS5: pomocný Remote Play stream na telefonu ani Android TV neotevírá zvukové
   přehrávání a nepředává PCM do přehrávací fronty. Odstranění dvojitého zvuku
   nemění HDMI, systémovou hlasitost ani opravu sessionFree; dekodér dál odčerpává

@@ -6,6 +6,30 @@ import org.junit.Test
 class StabilitaTextuTest {
     private val cely = "We have to find the way back to our home."
 
+    @Test fun stejnePixelyNepotvrdiOpakovaneZkraceneOcr() {
+        val s = StabilitaTextu()
+        assertTrue(s.prijmi(cely, "snimek42", 3))
+        repeat(4) { assertFalse(s.prijmi("to our home.", "snimek42", 1)) }
+        assertTrue(s.prijmi(cely, "snimek42", 3))
+        assertFalse(s.prijmi("to our home.", "snimek43", 1))
+        assertTrue(s.prijmi("to our home.", "snimek43", 1))
+    }
+
+    @Test fun jineZalomeniStejnehoCteniNezrusiOchranuRadku() {
+        val s = StabilitaTextu()
+        assertTrue(s.prijmi(cely, "stejny", 3))
+        assertTrue(s.prijmi(cely, "stejny", 1))
+        repeat(3) { assertFalse(s.prijmi("to our home.", "stejny", 1)) }
+        repeat(3) { assertFalse(s.prijmi("", "stejny", 0)) }
+    }
+
+    @Test fun jednoradkoveCteniZustavaSPuvodnimPotvrzovanim() {
+        val s = StabilitaTextu()
+        assertTrue(s.prijmi(cely, "stejny", 1))
+        assertFalse(s.prijmi("to our home.", "stejny", 1))
+        assertTrue(s.prijmi("to our home.", "stejny", 1))
+    }
+
     @Test fun gtaOpravaCteniNeniPokracovaniVety() {
         assertTrue(StabilitaTextu.opakovaneCteni("Oh. thank fuck Youve goiti", "hi thank fuck! You've gotit"))
         assertTrue(StabilitaTextu.opakovaneCteni("hi thank fuck! You've gotit", "Oh thank fuck! You've got it"))
