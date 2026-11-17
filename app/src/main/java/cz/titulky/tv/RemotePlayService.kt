@@ -92,7 +92,7 @@ class RemotePlayService : Service() {
     private fun platformaCile() = TvProfily.aktivniId?.let { tvProfily.platformaPrijimace(it) } ?: TvPlatforma.NEZNAMA
     private fun pozadujePribeh() = telefon && nast.pribehovy && nast.dialogy
     private fun chcePribeh() = pozadujePribeh() && PodporaPribehu.pouzit(
-        Propojeni.Vysilac.cilIp, platformaCile(), pribehSpojeni?.takeIf { it.podporujePribeh }?.ip)
+        Propojeni.Vysilac.cilIp, pribehSpojeni?.takeIf { it.podporujePribeh }?.ip)
     private fun pribehId(t: CteciFronta.Token) = "$pribehSession.${t.relace}.${t.poradi}.${t.revize}"
     private fun zrusPribeh(vycistitTelefon: Boolean = true) {
         pribeh.reset()
@@ -136,7 +136,7 @@ class RemotePlayService : Service() {
                 val ted = android.os.SystemClock.elapsedRealtime()
                 val ip = Propojeni.Vysilac.cilIp
                 pribehSpojeni?.chyba?.let { pribehChyba = "Přijímač není dostupný: $it"; pribehSpojeni?.close(); pribehSpojeni = null; pribehPristiPokus = ted + 5000 }
-                if (ip != null && PodporaPribehu.dotazovat(platformaCile()) && pribehSpojeni == null && ted >= pribehPristiPokus) {
+                if (ip != null && pribehSpojeni == null && ted >= pribehPristiPokus) {
                     pribehPristiPokus = ted + 5000
                     runCatching { PribehSpojeni(ip, cas = { android.os.SystemClock.elapsedRealtime() }) }
                         .onSuccess { pribehSpojeni = it; pribehChyba = "" }.onFailure { pribehChyba = "Přijímač není dostupný: ${it.javaClass.simpleName}" }
@@ -148,9 +148,7 @@ class RemotePlayService : Service() {
                 kontextPribehu()
                 if (!chcePribeh()) {
                     Propojeni.Vysilac.pribehRidi = false
-                    pribehStav = if (platformaCile() == TvPlatforma.ANDROID_TV)
-                        "Příběh: Android TV zatím nepodporuje tento režim · posílám Standardní titulky."
-                    else "Příběh: přijímač zatím nepotvrdil podporu · posílám Standardní titulky."
+                    pribehStav = "Příběh: přijímač zatím nepotvrdil podporu · posílám Standardní titulky."
                     ui.postDelayed(this, 100)
                     return
                 }

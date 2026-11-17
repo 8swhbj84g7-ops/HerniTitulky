@@ -77,7 +77,7 @@ class VysilacTest {
                 Propojeni.Vysilac.nastavCil("127.0.0.1", "Android TV")
                 val pozadovanyPribeh = true
                 Propojeni.Vysilac.pribehRidi = pozadovanyPribeh &&
-                    PodporaPribehu.pouzit("127.0.0.1", TvPlatforma.ANDROID_TV, null)
+                    PodporaPribehu.pouzit("127.0.0.1", null)
                 Propojeni.Vysilac.zmena("Celý český titulek.", 6000, "")
                 Propojeni.Vysilac.nastavVolby(listOf("První odpověď"), 0)
                 val pakety = mutableListOf<String>()

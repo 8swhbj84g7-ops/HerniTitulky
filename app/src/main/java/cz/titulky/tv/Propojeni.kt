@@ -71,7 +71,7 @@ object Propojeni {
      * Televize: ohlašuje se do sítě a přijímá titulky z telefonu.
      * [priTitulku] dostane (text, doba v ms, nápověda) – volá se z vlákna sítě.
      */
-    class Prijimac(
+    internal class Prijimac(
         context: Context,
         private val priTitulku: (String, Long, String, FloatArray?, IntArray?) -> Unit,
         /** (české volby, která je vybraná (-1 = nevíme), oblast voleb, rámeček: 0 = ne, 1 = chvíli, 2 = trvale) */
@@ -79,7 +79,9 @@ object Propojeni {
         /** (oblast titulků, ukázat modrý rámeček) */
         private val priOblasti: ((FloatArray, Boolean) -> Unit)? = null,
         /** Kód pro převzetí spárování telefonem – ukázat na televizi ("" = schovat). */
-        private val priKoduSparovani: ((String) -> Unit)? = null
+        private val priKoduSparovani: ((String) -> Unit)? = null,
+        /** ACK až po zpracování překryvem, ne pouhým přijetím datagramu. */
+        private val priPribehu: ((PribehProtokol.Titulek, (String) -> Unit) -> Unit)? = null
     ) {
         @Volatile private var bezi = true
         private val c = context.applicationContext
@@ -183,12 +185,21 @@ object Propojeni {
                         bind(InetSocketAddress(PORT_TITULKY))
                     }
                     socket = s
+                    val pribeh = PribehPrijem(priPribehu?.let { prijmi -> { titulek, ack ->
+                        if (bezi) prijmi(titulek) { stav -> if (bezi) ack(stav) }
+                    } }, { android.os.SystemClock.elapsedRealtime() })
                     val buf = ByteArray(8192)
                     while (bezi) {
+                        pribeh.odesliOdpovedi(s)
                         val p = DatagramPacket(buf, buf.size)
                         try { s.receive(p) } catch (e: SocketTimeoutException) { continue }
                         val casti = String(p.data, 0, p.length, Charsets.UTF_8).split("\t")
-                        if (casti.size >= 2 && casti[0] == SPAROVANI) {
+                        if (pribeh.zpracuj(p)) {
+                            pribeh.odesliOdpovedi(s)
+                            posledniZprava = System.currentTimeMillis()
+                            continue
+                        }
+                        if (casti.size >= 2 && casti[0] == SPAROVANI && casti[1] in listOf("ZADOST", "KOD")) {
                             runCatching { sparovani(s, p, casti) }
                             continue
                         }
@@ -546,7 +557,7 @@ object Propojeni {
     }
 
     private fun escapuj(s: String) = s.replace("\\", "\\\\").replace("\t", " ").replace("\n", "\\n")
-    private fun odEscapuj(s: String): String {
+    internal fun odEscapuj(s: String): String {
         val sb = StringBuilder()
         var i = 0
         while (i < s.length) {
