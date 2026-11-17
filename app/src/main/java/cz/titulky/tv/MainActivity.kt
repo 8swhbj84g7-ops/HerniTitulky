@@ -379,6 +379,22 @@ class MainActivity : Activity() {
                 }
                 povolitBtn = btn
                 addView(btn)
+                // tlačítko pulzuje, ať si ho člověk všimne (dokud povolení chybí)
+                android.animation.AnimatorSet().apply {
+                    playTogether(
+                        android.animation.ObjectAnimator.ofFloat(btn, View.SCALE_X, 1f, 1.06f).apply {
+                            repeatCount = android.animation.ValueAnimator.INFINITE; repeatMode = android.animation.ValueAnimator.REVERSE },
+                        android.animation.ObjectAnimator.ofFloat(btn, View.SCALE_Y, 1f, 1.06f).apply {
+                            repeatCount = android.animation.ValueAnimator.INFINITE; repeatMode = android.animation.ValueAnimator.REVERSE })
+                    duration = 700
+                    start()
+                }.also { puls ->
+                    // obrazovka se zavřela / překreslila → pulzování zastavit
+                    btn.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+                        override fun onViewAttachedToWindow(v: View) {}
+                        override fun onViewDetachedFromWindow(v: View) { puls.cancel() }
+                    })
+                }
                 val txt = svisle()
                 txt.addView(text(t("povolitChybi"), 16.5f, Color.parseColor("#FF8A8E"), tucne = true))
                 txt.addView(text(t("povolitJak"), 12.5f, Color.parseColor("#D8D8E0")), odsazeni(top = 3))
