@@ -368,7 +368,8 @@ object Propojeni {
         @Volatile private var napoveda = ""
         /** Barvy jmen postav (u každého řádku, 0 = bez barvy). */
         @Volatile private var barvy: IntArray? = null
-        @Volatile private var generace = 0L
+        @Volatile internal var generace = 0L
+            private set
         private val zamek = Any()
         /** Poloha a velikost titulků na televizi: střed X, spodní hrana Y, šířka (0..1), velikost písma (1 = normální). */
         @Volatile private var rozvrh: FloatArray? = null
@@ -463,6 +464,14 @@ object Propojeni {
                 if (puvodni != null) vycistiCil(puvodni, cislo, cisloVoleb)
                 if (ip != null) spustOpakovani(generace)
             }
+        }
+
+        /** Stejný profil na nové IP zachová titulky a volby. Na původní IP už může bydlet jiná TV. */
+        internal fun presmerujStejnouTv(ip: String?) = synchronized(zamek) {
+            generace++
+            prenos.reset(generace)
+            cilIp = ip
+            if (ip != null) spustOpakovani(generace)
         }
 
         private fun vycistiCil(ip: String, titulekId: Long, volbyId: Long) {
