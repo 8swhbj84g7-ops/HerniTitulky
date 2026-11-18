@@ -11,6 +11,7 @@ var prijemText = 'Spúšťam príjem titulkov...';
 var prijemChyba = false;
 var nazovTv = '';
 var verziaTv = '';
+var AUTOR_TEXT = 'Aplikáciu pre Samsung pripravil Michael Šubák, sledujte ďalšie tipy pre PS5 na bestranger.eu';
 var sluzbaVidena = 0;
 var sluzbaPokus = 0;
 var dataVidene = 0;
@@ -58,6 +59,7 @@ function kresliLadenie(teraz) {
     var p = stavSluzby && stavSluzby.pocty;
     var riadky = [
         'LADENIE (OK = schovať)   beží ' + Math.round((teraz - start) / 1000) + ' s' + (verziaTv ? '   verzia ' + verziaTv : ''),
+        AUTOR_TEXT,
         'Služba: ' + (stavSluzby ? stavSluzby.node + ', ozvala sa pred ' + pred(sluzbaVidena, teraz) : 'zatiaľ sa neozvala'),
         'TV v sieti: ' + (stavSluzby && stavSluzby.adresy && stavSluzby.adresy.length ? stavSluzby.adresy.join(', ') : 'neznáme'),
         'Ohlásenia: ' + (p ? p.ohlasenia : 0) + '   Telefón: ' + (poslednyZdroj || 'žiadny') + ', dáta pred ' + pred(dataVidene || posledneData, teraz),
