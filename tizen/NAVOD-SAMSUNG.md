@@ -152,6 +152,8 @@ odoslanie súboru ani prejdenie návodu to nepotvrdzuje.
   nevie, preto sa tlačidlo na prevzatie prihlásenia z televízora pri platforme Samsung neukazuje.
 - Ovládanie na televízore: šípky vľavo a vpravo menia HDMI vstup, OK ukáže alebo schová ladiaci
   panel, Späť aplikáciu ukončí.
+- Priehľadnosť pozadia titulkov zmeníš na ovládači televízora: šípka hore ju zvyšuje, šípka dole
+  znižuje, po 10 %. Hodnota sa uloží v televízore. Predvolene je pozadie čierne ako doteraz.
 - Dva televízory Samsung majú každý vlastný profil a vlastné nastavenie polohy titulkov.
 - Príbehový režim funguje s prijímačom od verzie 1.3.0.
 
