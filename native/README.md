@@ -99,3 +99,17 @@ Po výměně knihoven spustit `:app:testDebugUnitTest :app:assembleDebug
 :app:assembleDebugAndroidTest` a přejímku TCL + telefonu. Při instalaci
 zachovat podpis příslušného zařízení, data a spárování. PR #15 zůstává draft;
 žádný release, tag ani změna veřejné verze není součástí této opravy.
+
+## Herní zvuk samostatného režimu TV Stick
+
+Režim používá vlastní soubor `libchiaki-hra.so` ve vyhrazeném procesu. Obě dodané knihovny byly sestaveny ze stejné revize Chiaki-TV 2.1.1 a stejných závislostí jako výše. Na čistý checkout sestavovací skript aplikuje opravu zámku a `chiaki-stick.patch`. Tato varianta otevírá sdílený výstup Oboe, kontroluje úspěch před spuštěním a vypíná nativní protokolové výpisy včetně párování. Dekodér herního videa při startu déle čeká na první vstupní buffery a při konci synchronně uvolní vlákno i obrazovou plochu. Stav a časování hlásí Android bez klíčů a obsahu protokolu.
+
+Použij výše uvedené nástroje a čerstvý checkout v pracovní složce mimo tento repozitář. Příkaz pro herní variantu je:
+
+```sh
+python native/build_chiaki.py /cesta/Chiaki-TV /cesta/android-ndk-r21e /cesta/build-hra --game
+```
+
+Skript ověří opravy, skutečný průchod PCM vzorků do výstupní fronty i odmítnuté otevření zařízení, porovná rozhraní JNI a systémové závislosti a vytvoří obě ARM knihovny. Pro každou architekturu patří výsledek z `build-hra/jniLibs/<ABI>/libchiaki-hra.so` do stejné složky v `app/src/main/jniLibs`. Otisky distribuovaných knihoven jsou v `chiaki-stick-build.json`.
+
+Samostatný testovací adaptér vzniká v `build-hra/testJniLibs/<ABI>/libstickprobe.so`. Pro aktualizaci testovací APK zkopíruj každou variantu do `app/src/androidTest/jniLibs/<ABI>`. Adaptér podává lokální zkušební H.264 data přímo do dekodéru herní knihovny bez skutečné konzole.

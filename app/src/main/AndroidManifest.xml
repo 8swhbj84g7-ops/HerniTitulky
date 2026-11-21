@@ -28,7 +28,8 @@
         android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
 
         <activity
-            android:name=".MainActivity"
+            android:name=".stick.StickHome"
+            android:process=":stick"
             android:label="@string/app_name"
             android:icon="@drawable/gamelingo_ikona"
             android:launchMode="singleTop"
@@ -39,6 +40,11 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
+        <activity android:name=".MainActivity" android:launchMode="singleTop" android:exported="false"/>
+        <activity android:name=".stick.StickPair" android:process=":stick" android:exported="false"/>
+        <activity android:name=".stick.StickGame" android:process=":stick" android:exported="false"
+            android:screenOrientation="landscape" android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenSize"/>
 
         <activity
             android:name=".LgExportActivity"

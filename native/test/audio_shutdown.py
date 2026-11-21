@@ -30,5 +30,6 @@ with tempfile.TemporaryDirectory(prefix="playcaption-audio-test-") as temporary:
         "-I" + str(source / "android/app/src/main/cpp"), "-I" + str(source / "lib/include"),
         str(here / "audio_output.cpp"), "-o", str(playback)
     ], check=True)
-    for scenario in ["no-device-playback", "no-pcm-playback"]:
+    scenarios = ["audible-pcm", "output-unavailable"] if "--game" in sys.argv else ["no-device-playback", "no-pcm-playback"]
+    for scenario in scenarios:
         subprocess.run([str(playback), scenario], check=True, timeout=10)

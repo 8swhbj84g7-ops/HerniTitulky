@@ -226,7 +226,7 @@ class PrijemService : Service() {
             NotificationChannel(kanal, "Titulky z telefonu", NotificationManager.IMPORTANCE_LOW)
         )
         val n = Notification.Builder(this, kanal)
-            .setContentTitle("PlayCaption – titulky z telefonu")
+            .setContentTitle("Herní titulky – titulky z telefonu")
             .setSmallIcon(android.R.drawable.ic_media_play)
             .build()
         if (Build.VERSION.SDK_INT >= 34) startForeground(4, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)

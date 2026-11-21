@@ -558,7 +558,7 @@ class RemotePlayService : Service() {
 
     private fun zastavProRestart() {
         val kde = if (telefon) "telefonu" else "televizi"
-        val duvod = "PS5 se opakovaně připojila bez obrazu. V nastavení aplikací na $kde dej PlayCaption → Vynutit ukončení a spusť ji znovu. Spárování zachovej."
+        val duvod = "PS5 se opakovaně připojila bez obrazu. V nastavení aplikací na $kde dej Herní titulky → Vynutit ukončení a spusť ji znovu. Spárování zachovej."
         automat = false; aktivni = false; chciPS5 = false
         ui.removeCallbacks(hlidac)
         ui.removeCallbacks(hlidacSpojeni)

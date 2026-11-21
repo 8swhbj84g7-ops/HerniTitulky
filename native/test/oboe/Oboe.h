@@ -5,11 +5,12 @@
 
 namespace oboe {
 extern int device_opens, stream_starts;
+extern bool refuse;
 enum class AudioFormat { I16 };
-enum class Result { OK };
+enum class Result { Error, OK };
 enum class DataCallbackResult { Continue, Stop };
 enum class PerformanceMode { LowLatency };
-enum class SharingMode { Exclusive };
+enum class SharingMode { Shared, Exclusive };
 class AudioStream {
 public:
     AudioFormat getFormat() { return AudioFormat::I16; }
@@ -34,6 +35,7 @@ public:
     AudioStreamBuilder *setCallback(AudioStreamCallback *) { return this; }
     Result openManagedStream(ManagedStream &stream) {
         device_opens++;
+        if (refuse) return Result::Error;
         stream = std::make_shared<AudioStream>();
         return Result::OK;
     }

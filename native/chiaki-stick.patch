@@ -1,0 +1,214 @@
+diff --git a/android/app/src/main/cpp/audio-output.cpp b/android/app/src/main/cpp/audio-output.cpp
+index 53157f1..82dcdc9 100644
+--- a/android/app/src/main/cpp/audio-output.cpp
++++ b/android/app/src/main/cpp/audio-output.cpp
+@@ -60,17 +60,15 @@ extern "C" void android_chiaki_audio_output_settings(uint32_t channels, uint32_t
+ 
+ 	oboe::AudioStreamBuilder builder;
+ 	builder.setPerformanceMode(oboe::PerformanceMode::LowLatency)
+-		->setSharingMode(oboe::SharingMode::Exclusive)
++		->setSharingMode(oboe::SharingMode::Shared)
+ 		->setFormat(oboe::AudioFormat::I16)
+ 		->setChannelCount(channels)
+ 		->setSampleRate(rate)
+ 		->setCallback(&ao->stream_callback);
+ 
+ 	auto result = builder.openManagedStream(ao->stream);
+-	if(result == oboe::Result::OK)
+-		CHIAKI_LOGI(ao->log, "Audio Output opened Oboe stream");
+-	else
+-		CHIAKI_LOGE(ao->log, "Audio Output failed to open Oboe stream: %s", oboe::convertToText(result));
++	if(result != oboe::Result::OK || !ao->stream)
++		return;
+ 
+ 	result = ao->stream->start();
+ 	if(result == oboe::Result::OK)
+diff --git a/android/app/src/main/cpp/log.c b/android/app/src/main/cpp/log.c
+index cbb3c7e..3e8fd78 100644
+--- a/android/app/src/main/cpp/log.c
++++ b/android/app/src/main/cpp/log.c
+@@ -72,7 +72,8 @@ static void log_cb_android_file(ChiakiLogLevel level, const char *msg, void *use
+ 
+ ChiakiErrorCode android_chiaki_file_log_init(ChiakiLog *log, uint32_t level, const char *file)
+ {
+-	chiaki_log_init(log, level, log_cb_android, NULL);
++	/* Only aggregate game diagnostics leave this native layer. */
++	chiaki_log_init(log, 0, log_cb_android, NULL);
+ 	if(file)
+ 	{
+ 		FILE *f = fopen(file, "w+");
+@@ -120,7 +121,7 @@ void android_chiaki_jni_log_init(AndroidChiakiJNILog *log, JNIEnv *env, jobject
+ 	log->java_log = E->NewGlobalRef(env, java_log);
+ 	jclass log_class = E->GetObjectClass(env, log->java_log);
+ 	log->java_log_meth = E->GetMethodID(env, log_class, "log", "(ILjava/lang/String;)V");
+-	log->log.level_mask = (uint32_t)E->GetIntField(env, log->java_log, E->GetFieldID(env, log_class, "levelMask", "I"));
++	log->log.level_mask = 0;
+ 	log->log.cb = android_chiaki_log_cb;
+ 	log->log.user = log;
+ }
+diff --git a/android/app/src/main/cpp/video-decoder.c b/android/app/src/main/cpp/video-decoder.c
+index 1146ad8..cbe0e66 100644
+--- a/android/app/src/main/cpp/video-decoder.c
++++ b/android/app/src/main/cpp/video-decoder.c
+@@ -30,24 +30,17 @@ static void kill_decoder(AndroidChiakiVideoDecoder *decoder)
+ {
+ 	chiaki_mutex_lock(&decoder->codec_mutex);
+ 	decoder->shutdown_output = true;
+-	ssize_t codec_buf_index = AMediaCodec_dequeueInputBuffer(decoder->codec, 1000);
+-	if(codec_buf_index >= 0)
+-	{
+-		CHIAKI_LOGI(decoder->log, "Video Decoder sending EOS buffer");
+-		AMediaCodec_queueInputBuffer(decoder->codec, (size_t)codec_buf_index, 0, 0, decoder->timestamp_cur++, AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM);
+-		AMediaCodec_stop(decoder->codec);
+-		chiaki_mutex_unlock(&decoder->codec_mutex);
+-		chiaki_thread_join(&decoder->output_thread, NULL);
+-	}
+-	else
+-	{
+-		CHIAKI_LOGE(decoder->log, "Failed to get input buffer for shutting down Video Decoder!");
+-		AMediaCodec_stop(decoder->codec);
+-		chiaki_mutex_unlock(&decoder->codec_mutex);
+-	}
++	chiaki_mutex_unlock(&decoder->codec_mutex);
++	// The output wait is bounded. Join before releasing either the codec or its window.
++	chiaki_thread_join(&decoder->output_thread, NULL);
++	chiaki_mutex_lock(&decoder->codec_mutex);
++	AMediaCodec_stop(decoder->codec);
+ 	AMediaCodec_delete(decoder->codec);
+ 	decoder->codec = NULL;
++	ANativeWindow_release(decoder->window);
++	decoder->window = NULL;
+ 	decoder->shutdown_output = false;
++	chiaki_mutex_unlock(&decoder->codec_mutex);
+ }
+ 
+ void android_chiaki_video_decoder_fini(AndroidChiakiVideoDecoder *decoder)
+@@ -59,17 +52,13 @@ void android_chiaki_video_decoder_fini(AndroidChiakiVideoDecoder *decoder)
+ 
+ void android_chiaki_video_decoder_set_surface(AndroidChiakiVideoDecoder *decoder, JNIEnv *env, jobject surface)
+ {
+-	chiaki_mutex_lock(&decoder->codec_mutex);
+-
+ 	if(!surface)
+ 	{
+ 		if(decoder->codec)
+-		{
+ 			kill_decoder(decoder);
+-			CHIAKI_LOGI(decoder->log, "Decoder shut down after surface was removed");
+-		}
+ 		return;
+ 	}
++	chiaki_mutex_lock(&decoder->codec_mutex);
+ 
+ 	if(decoder->codec)
+ 	{
+@@ -86,6 +75,8 @@ void android_chiaki_video_decoder_set_surface(AndroidChiakiVideoDecoder *decoder
+ 	}
+ 
+ 	decoder->window = ANativeWindow_fromSurface(env, surface);
++	if(!decoder->window)
++		goto beach;
+ 
+ 	const char *mime = chiaki_codec_is_h265(decoder->target_codec) ? "video/hevc" : "video/avc";
+ 	CHIAKI_LOGI(decoder->log, "Initializing decoder with mime %s", mime);
+@@ -145,15 +136,26 @@ bool android_chiaki_video_decoder_video_sample(uint8_t *buf, size_t buf_size, vo
+ 	AndroidChiakiVideoDecoder *decoder = user;
+ 	chiaki_mutex_lock(&decoder->codec_mutex);
+ 
+-	if(!decoder->codec)
++	if(!decoder->codec || decoder->shutdown_output)
+ 	{
++		r = false;
+ 		CHIAKI_LOGE(decoder->log, "Received video data, but decoder is not initialized!");
+ 		goto beach;
+ 	}
+ 
++	// Chiaki delivers the Annex B profile header separately from picture data.
++	uint32_t flags = 0;
++	if(decoder->target_codec == CHIAKI_CODEC_H264 && buf_size > 4 &&
++			buf[0] == 0 && buf[1] == 0 &&
++			((buf[2] == 1 && (buf[3] & 31) == 7) ||
++			 (buf[2] == 0 && buf[3] == 1 && (buf[4] & 31) == 7)))
++		flags = AMEDIACODEC_BUFFER_FLAG_CODEC_CONFIG;
++
+ 	while(buf_size > 0)
+ 	{
+-		ssize_t codec_buf_index = AMediaCodec_dequeueInputBuffer(decoder->codec, INPUT_BUFFER_TIMEOUT_MS * 1000);
++		// On startup Android may need longer to allocate the first input buffers.
++		int timeout_ms = decoder->timestamp_cur < 2 || flags ? 100 : INPUT_BUFFER_TIMEOUT_MS;
++		ssize_t codec_buf_index = AMediaCodec_dequeueInputBuffer(decoder->codec, timeout_ms * 1000);
+ 		if(codec_buf_index < 0)
+ 		{
+ 			CHIAKI_LOGE(decoder->log, "Failed to get input buffer");
+@@ -163,6 +165,13 @@ bool android_chiaki_video_decoder_video_sample(uint8_t *buf, size_t buf_size, vo
+ 
+ 		size_t codec_buf_size;
+ 		uint8_t *codec_buf = AMediaCodec_getInputBuffer(decoder->codec, (size_t)codec_buf_index, &codec_buf_size);
++		if(!codec_buf || codec_buf_size == 0)
++		{
++			AMediaCodec_queueInputBuffer(decoder->codec, (size_t)codec_buf_index, 0, 0, 0, 0);
++			r = false;
++			goto beach;
++		}
++
+ 		size_t codec_sample_size = buf_size;
+ 		if(codec_sample_size > codec_buf_size)
+ 		{
+@@ -170,10 +179,11 @@ bool android_chiaki_video_decoder_video_sample(uint8_t *buf, size_t buf_size, vo
+ 			codec_sample_size = codec_buf_size;
+ 		}
+ 		memcpy(codec_buf, buf, codec_sample_size);
+-		media_status_t r = AMediaCodec_queueInputBuffer(decoder->codec, (size_t)codec_buf_index, 0, codec_sample_size, decoder->timestamp_cur++, 0); // timestamp just raised by 1 for maximum realtime
+-		if(r != AMEDIA_OK)
++		media_status_t status = AMediaCodec_queueInputBuffer(decoder->codec, (size_t)codec_buf_index, 0, codec_sample_size, decoder->timestamp_cur++, flags);
++		if(status != AMEDIA_OK)
+ 		{
+-			CHIAKI_LOGE(decoder->log, "AMediaCodec_queueInputBuffer() failed: %d", (int)r);
++			r = false;
++			goto beach;
+ 		}
+ 		buf += codec_sample_size;
+ 		buf_size -= codec_sample_size;
+@@ -191,28 +201,28 @@ static void *android_chiaki_video_decoder_output_thread_func(void *user)
+ 
+ 	while(1)
+ 	{
++		chiaki_mutex_lock(&decoder->codec_mutex);
++		bool stopping = decoder->shutdown_output;
++		chiaki_mutex_unlock(&decoder->codec_mutex);
++		if(stopping)
++			break;
+ 		AMediaCodecBufferInfo info;
+-		ssize_t status = AMediaCodec_dequeueOutputBuffer(decoder->codec, &info, -1);
++		ssize_t status = AMediaCodec_dequeueOutputBuffer(decoder->codec, &info, 50000);
++		if(status < 0 && status != AMEDIACODEC_INFO_TRY_AGAIN_LATER &&
++				status != AMEDIACODEC_INFO_OUTPUT_FORMAT_CHANGED && status != AMEDIACODEC_INFO_OUTPUT_BUFFERS_CHANGED)
++			break;
+ 		if(status >= 0)
+ 		{
+-			AMediaCodec_releaseOutputBuffer(decoder->codec, (size_t)status, info.size != 0);
+-			if(info.flags & AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM)
++			bool eos = (info.flags & AMEDIACODEC_BUFFER_FLAG_END_OF_STREAM) != 0;
++			// Surface-backed buffers can have zero accessible bytes while carrying a frame.
++			AMediaCodec_releaseOutputBuffer(decoder->codec, (size_t)status,
++					!eos && !(info.flags & AMEDIACODEC_BUFFER_FLAG_CODEC_CONFIG));
++			if(eos)
+ 			{
+ 				CHIAKI_LOGI(decoder->log, "AMediaCodec reported EOS");
+ 				break;
+ 			}
+ 		}
+-		else
+-		{
+-			chiaki_mutex_lock(&decoder->codec_mutex);
+-			bool shutdown = decoder->shutdown_output;
+-			chiaki_mutex_unlock(&decoder->codec_mutex);
+-			if(shutdown)
+-			{
+-				CHIAKI_LOGI(decoder->log, "Video Decoder Output Thread detected shutdown after reported error");
+-				break;
+-			}
+-		}
+ 	}
+ 
+ 	CHIAKI_LOGI(decoder->log, "Video Decoder Output Thread exiting");
