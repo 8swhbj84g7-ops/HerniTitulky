@@ -102,7 +102,7 @@ zachovat podpis příslušného zařízení, data a spárování. PR #15 zůstá
 
 ## Herní zvuk samostatného režimu TV Stick
 
-Režim používá vlastní soubor `libchiaki-hra.so` ve vyhrazeném procesu. Obě dodané knihovny byly sestaveny ze stejné revize Chiaki-TV 2.1.1 a stejných závislostí jako výše. Na čistý checkout sestavovací skript aplikuje opravu zámku a `chiaki-stick.patch`. Tato varianta otevírá sdílený výstup Oboe, kontroluje úspěch před spuštěním a vypíná nativní protokolové výpisy včetně párování. Dekodér herního videa při startu déle čeká na první vstupní buffery a při konci synchronně uvolní vlákno i obrazovou plochu. Stav a časování hlásí Android bez klíčů a obsahu protokolu.
+Režim používá vlastní soubor `libchiaki-hra.so` ve vyhrazeném procesu. Herní knihovny vycházejí ze stejné revize Chiaki-TV 2.1.1. Při sestavení herní varianty přepíná `chiaki-openssl.patch` OpenSSL na 3.5.9 LTS s pevným SHA-256 archivu. Původní knihovny pro ostatní režimy tato větev nesestavuje do produkční APK. Na čistý checkout sestavovací skript aplikuje opravu zámku a `chiaki-stick.patch`. Tato varianta otevírá sdílený výstup Oboe, kontroluje úspěch před spuštěním a vypíná nativní protokolové výpisy včetně párování. Dekodér herního videa při startu déle čeká na první vstupní buffery a při konci synchronně uvolní vlákno i obrazovou plochu. Stav a časování hlásí Android bez klíčů a obsahu protokolu.
 
 Použij výše uvedené nástroje a čerstvý checkout v pracovní složce mimo tento repozitář. Příkaz pro herní variantu je:
 

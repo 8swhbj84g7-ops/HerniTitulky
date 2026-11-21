@@ -81,17 +81,7 @@ private class ChiakiNative
 	{
 		init
 		{
-			// PlayCaption: telefon → upravená knihovna, která umí dát obraz z PS5 přímo do paměti
-			// (libchiaki-pc.so + libpcobraz1.so). Televize a jakákoli chyba → původní knihovna.
-			var pc = false
-			if (cz.titulky.tv.stick.StickRuntime.gameProcess)
-				System.loadLibrary("chiaki-hra")
-			else {
-				if (cz.titulky.tv.Rezim.ulozeny() == true)
-					pc = try { System.loadLibrary("chiaki-pc"); true } catch (e: Throwable) { false }
-				if (!pc) System.loadLibrary("chiaki-jni")
-			}
-			cz.titulky.tv.PametObraz.knihovnaPc = pc
+			cz.titulky.tv.stick.StickPlatform.loadChiaki()
 		}
 		@JvmStatic external fun errorCodeToString(value: Int): String
 		@JvmStatic external fun quitReasonToString(value: Int): String

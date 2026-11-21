@@ -10,9 +10,6 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.Gravity
 import android.widget.*
-import cz.titulky.tv.MainActivity
-import cz.titulky.tv.Rezim
-import cz.titulky.tv.Texty
 
 abstract class StickPage : Activity() {
     internal val config by lazy { StickConfig(this) }
@@ -55,13 +52,18 @@ class StickHome : StickPage() {
     private var reading: TextView? = null
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
-        if (Rezim.jeTelefon(this)) {
-            startActivity(Intent(this, MainActivity::class.java))
+        if (StickPlatform.useLegacyHome(this)) {
+            StickPlatform.legacyScreen(this)?.let(::startActivity)
             finish()
             return
         }
         home()
     }
+    override fun onResume() {
+        super.onResume()
+        if (!settings && !isFinishing) home()
+    }
+
     private fun home() {
         settings = false
         page("Herní titulky")
@@ -75,7 +77,9 @@ class StickHome : StickPage() {
             AlertDialog.Builder(this).setTitle("Poslední měření").setMessage(text)
                 .setPositiveButton("Zavřít", null).show()
         }
-        button("Původní režimy aplikace") { startActivity(Intent(this, MainActivity::class.java)) }
+        StickPlatform.legacyScreen(this)?.let { intent ->
+            button("Původní režimy aplikace") { startActivity(intent) }
+        }
         if (config.paired) play.requestFocus()
     }
     private fun choice(title: String, values: List<String>, index: Int, save: (Int) -> Unit) {
@@ -102,9 +106,11 @@ class StickHome : StickPage() {
                 p.edit().putInt(key, it).apply()
             }
         indexed("Kvalita streamu", "quality", Quality.values().map { it.label })
-        val languages = Texty.JAZYKY
-        choice("Jazyk překladu", languages.map { it.nazev }, languages.indexOfFirst { it.kod == config.language }.coerceAtLeast(0)) {
-            p.edit().putString("lang", languages[it].kod).apply()
+        val languages = linkedMapOf("cs" to "Čeština", "sk" to "Slovenčina", "de" to "Deutsch",
+            "pl" to "Polski", "fr" to "Français", "es" to "Español", "it" to "Italiano")
+        val codes = languages.keys.toList()
+        choice("Jazyk překladu", languages.values.toList(), codes.indexOf(config.language).coerceAtLeast(0)) {
+            p.edit().putString("lang", codes[it]).apply()
         }
         indexed("Velikost titulků", "size", listOf("Menší", "Střední", "Velké"), 1)
         indexed("Umístění", "position", listOf("Dole", "Nahoře"))
@@ -124,6 +130,22 @@ class StickHome : StickPage() {
         button("Připojit ovladač Bluetooth") {
             runCatching { startActivity(Intent(Settings.ACTION_BLUETOOTH_SETTINGS)) }
                 .onFailure { startActivity(Intent(Settings.ACTION_SETTINGS)) }
+        }
+        if (config.paired) button("Zrušit párování") {
+            AlertDialog.Builder(this).setTitle("Zrušit párování PS5?")
+                .setMessage("Klíče se odstraní z tohoto Sticku. Příští hraní vyžaduje nové párování.")
+                .setNegativeButton("Zpět", null)
+                .setPositiveButton("Zrušit párování") { _, _ ->
+                    Thread {
+                        val removed = runCatching { config.forget() }.isSuccess
+                        runOnUiThread {
+                            if (!isFinishing && !isDestroyed) {
+                                notice(if (removed) "Párování bylo zrušeno." else "Párování se nepodařilo odstranit.")
+                                options()
+                            }
+                        }
+                    }.start()
+                }.show()
         }
         button("Zpět") { home() }
     }

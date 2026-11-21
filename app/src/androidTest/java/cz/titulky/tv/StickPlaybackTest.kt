@@ -31,11 +31,11 @@ class StickPlaybackTest {
         val config = StickConfig(testContext)
         val reg = ByteArray(16) { (it + 1).toByte() }
         val key = ByteArray(16) { (it + 24).toByte() }
-        config.save("127.0.0.1", reg, key)
+        config.save(config.pairingAttempt(), "192.168.1.99", reg, key)
         val saved = StickConfig(testContext).connection()
         assertArrayEquals(reg, saved.registKey)
         assertArrayEquals(key, saved.morning)
-        assertFalse(config.prefs.getString("console", "")!!.contains("127.0.0.1"))
+        assertFalse(config.prefs.getString("console", "")!!.contains("192.168.1.99"))
         StickRuntime.prepare()
         // Only exercises the real ARM JNI structure, without starting a network connection.
         val session = Session(saved, null, false)
@@ -48,7 +48,10 @@ class StickPlaybackTest {
     @Test fun fullHd30() = decodedVideo("dialog1080", Quality.FULL)
 
     private fun decodedVideo(clip: String, quality: Quality) {
-        val activity = instrumentation.startActivitySync(Intent(app, VyvojActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        val developmentScreen = Intent().setClassName(app, "cz.titulky.tv.VyvojActivity")
+        val launcher = requireNotNull(app.packageManager.getLaunchIntentForPackage(app.packageName))
+        val intent = if (app.packageManager.resolveActivity(developmentScreen, 0) != null) developmentScreen else launcher
+        val activity = instrumentation.startActivitySync(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         val captionReady = CountDownLatch(1)
         val firstFrame = CountDownLatch(1)
         val measured = CountDownLatch(1)

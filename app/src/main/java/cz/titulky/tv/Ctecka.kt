@@ -217,8 +217,12 @@ class Ctecka {
                     diagnostika = "${pocty(vybrane.size)} | [rozmazané – čtu znovu: " + repliky.joinToString(" / ") + "]"
                     hotovo(Titulek.NIC); return@addOnSuccessListener
                 }
-                jazyk.identifyLanguage(bezJmen)
-                    .addOnSuccessListener { kod ->
+                val urceniJazyka = urciJazyk(bezJmen)
+                if (urceniJazyka == null) {
+                    chyba("Čtečka je zavřená.")
+                    return@addOnSuccessListener
+                }
+                urceniJazyka.addOnSuccessListener { kod ->
                         diagnostika = "${pocty(vybrane.size)} | jazyk=$kod | " + repliky.joinToString(" / ") +
                             (napovedaText?.let { " || nápověda: $it" } ?: "")
                         // krátké repliky ("Ah, gentlemen.", "Arthur...") rozpoznávač jazyka často neurčí →
@@ -315,7 +319,15 @@ class Ctecka {
         return t
     }
 
+    private var zavreno = false
+
+    @Synchronized
+    private fun urciJazyk(text: String) = if (zavreno) null else jazyk.identifyLanguage(text)
+
+    @Synchronized
     fun zavri() {
+        if (zavreno) return
+        zavreno = true
         recognizer.close()
         jazyk.close()
         vlakno.shutdown()

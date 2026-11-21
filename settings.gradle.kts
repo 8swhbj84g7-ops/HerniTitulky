@@ -7,3 +7,5 @@ dependencyResolutionManagement {
 }
 rootProject.name = "TitulkyTV"
 include(":app")
+
+include(":stick-app")

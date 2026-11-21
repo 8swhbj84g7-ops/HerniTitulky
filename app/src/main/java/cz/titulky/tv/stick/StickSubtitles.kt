@@ -16,7 +16,7 @@ import java.util.ArrayDeque
 /** PixelCopy reads only the decoder surface. Our Czech text never enters the OCR image. */
 internal class StickSubtitles(context: Context, private val config: StickConfig, private val show: (String) -> Unit) {
     private val reader = Ctecka()
-    private val translator = Prekladac(context, config.language)
+    private val translator = Prekladac(context, config.language, online = StickPlatform.onlineTranslation)
     private val main = Handler(Looper.getMainLooper())
     private val story = CteciFronta(maxReplik = 8)
     private val pending = ArrayDeque<Pair<String, Long>>()
@@ -33,7 +33,16 @@ internal class StickSubtitles(context: Context, private val config: StickConfig,
     var state = "čeká na anglické titulky"
         private set
 
-    init { translator.priprav({}, {}) }
+    init {
+        if (StickPlatform.onlineTranslation) translator.priprav({}, {})
+        else {
+            state = "připravuji jazykový model"
+            translator.priprav(
+                { if (!closed) state = "čeká na anglické titulky" },
+                { if (!closed) state = "jazykový model není dostupný" }
+            )
+        }
+    }
 
     fun sample(surface: Surface, width: Int, height: Int) {
         val now = SystemClock.elapsedRealtime()

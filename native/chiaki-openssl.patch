@@ -1,0 +1,15 @@
+diff --git a/cmake/OpenSSLExternalProject.cmake b/cmake/OpenSSLExternalProject.cmake
+index 0538d48..40f9895 100644
+--- a/cmake/OpenSSLExternalProject.cmake
++++ b/cmake/OpenSSLExternalProject.cmake
+@@ -23 +23 @@ if(ANDROID_ABI)
+-	set(OPENSSL_BUILD_ENV "ANDROID_NDK_HOME=${ANDROID_NDK}" "PATH=${ANDROID_NDK_BIN_PATH}:$ENV{PATH}")
++	set(OPENSSL_BUILD_ENV "ANDROID_NDK_ROOT=${ANDROID_NDK}" "PATH=${ANDROID_NDK_BIN_PATH}:$ENV{PATH}")
+@@ -36,2 +36,2 @@ ExternalProject_Add(OpenSSL-ExternalProject
+-		URL https://www.openssl.org/source/openssl-1.1.1d.tar.gz
+-		URL_HASH SHA256=1e3a91bc1f9dfce01af26026f856e064eab4c8ee0a8f457b5ae30b40b8b711f2
++		URL https://github.com/openssl/openssl/releases/download/openssl-3.5.9/openssl-3.5.9.tar.gz
++		URL_HASH SHA256=603f5602e2eef00d77fbd429d34dcd5822bb301757a1bc9cdb24c670f1eb859a
+@@ -40 +40 @@ ExternalProject_Add(OpenSSL-ExternalProject
+-			"<SOURCE_DIR>/Configure" "--prefix=<INSTALL_DIR>" no-shared ${OPENSSL_CONFIG_EXTRA_ARGS} "${OPENSSL_OS_COMPILER}"
++			"<SOURCE_DIR>/Configure" "--prefix=<INSTALL_DIR>" --libdir=lib no-shared no-tests no-apps no-docs no-module no-legacy no-engine no-dso ${OPENSSL_CONFIG_EXTRA_ARGS} "${OPENSSL_OS_COMPILER}"

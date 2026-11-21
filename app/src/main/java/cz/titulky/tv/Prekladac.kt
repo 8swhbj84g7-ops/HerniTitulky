@@ -22,7 +22,11 @@ import java.util.concurrent.Executors
  *
  * Výsledek se vždy vrací na hlavním vlákně.
  */
-class Prekladac(context: android.content.Context? = null, cilovy: String = "cs") {
+class Prekladac(
+    context: android.content.Context? = null,
+    cilovy: String = "cs",
+    private val online: Boolean = true
+) {
 
     /** Cílový jazyk překladu (kód: cs, sk, de, pl, fr, es, it). */
     @Volatile var cil: String = cilovy
@@ -61,6 +65,7 @@ class Prekladac(context: android.content.Context? = null, cilovy: String = "cs")
         val jazyk = cil
         cache.get(vstup)?.let { hotovo(it); return }
         if (zavreno) { chyba("Překladač je zavřený"); return }
+        if (!online) { prelozVTelevizi(vstup, hotovo, chyba); return }
         val strategie = PrekladPribehu({ t, callback ->
             if (!pribehObsazen.compareAndSet(false, true)) false
             else try {
@@ -115,6 +120,7 @@ class Prekladac(context: android.content.Context? = null, cilovy: String = "cs")
         // služba mezitím skončila (překladač zavřený) → nic nedělat, hlavně nespadnout
         if (zavreno) { chyba("překladač zavřený"); return }
 
+        if (!online) { prelozVTelevizi(vstup, hotovo, chyba); return }
         if (runCatching { sit.execute {
             val ted = System.currentTimeMillis()
             var vysledek: String? = null
@@ -252,7 +258,7 @@ class Prekladac(context: android.content.Context? = null, cilovy: String = "cs")
 
     /** Udržuje spojení s Googlem "teplé", aby první věta po pauze nečekala na připojení. */
     fun udrzujSpojeni() {
-        if (System.currentTimeMillis() < googlePauzaDo) return
+        if (!online || System.currentTimeMillis() < googlePauzaDo) return
         if (zavreno) return
         runCatching { sit.execute { runCatching { google("ok") } } }
     }

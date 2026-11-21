@@ -1,0 +1,7 @@
+Herní titulky · TV Stick is a fork of PlayCaption (© 2026 Adam Růžička and contributors).
+PlayCaption and Chiaki are licensed under GNU AGPLv3 (see AGPL-3.0.txt).
+Chiaki (© Florian Märkl and contributors), based on Chiaki-TV 2.1.1, includes
+OpenSSL 3.5.9 under Apache License 2.0 (see OpenSSL.txt and the respective sources).
+Chiaki's original OpenSSL linking exception is retained in the upstream sources.
+Corresponding sources and reproducible build instructions:
+https://github.com/8swhbj84g7-ops/HerniTitulky/tree/codex/tv-stick-production

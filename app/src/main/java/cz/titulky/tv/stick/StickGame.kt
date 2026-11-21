@@ -180,7 +180,9 @@ class StickGame : Activity(), TextureView.SurfaceTextureListener, InputManager.I
         }
         native.execute {
             try {
-                val s = Session(config.connection(), null, false)
+                val connection = config.connection()
+                val s = try { Session(connection, null, false) }
+                    finally { connection.registKey.fill(0); connection.morning.fill(0) }
                 owner = s
                 s.eventCallback = { event ->
                     ui.post {
@@ -229,14 +231,20 @@ class StickGame : Activity(), TextureView.SurfaceTextureListener, InputManager.I
         pinDialog?.dismiss()
         val field = EditText(this).apply {
             inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
-            filters = arrayOf(InputFilter.LengthFilter(4)); isSaveEnabled = false
+            filters = arrayOf(InputFilter.LengthFilter(4))
+            isSaveEnabled = false
+            importantForAutofill = View.IMPORTANT_FOR_AUTOFILL_NO
         }
         pinDialog = AlertDialog.Builder(this).setTitle(if (incorrect) "Nesprávný PIN profilu PS5" else "PIN profilu PS5")
             .setView(field).setPositiveButton("Odeslat") { _, _ ->
                 s.setLoginPin(field.text.toString())
                 started = SystemClock.elapsedRealtime()
                 pinDialog = null
-            }.setNegativeButton("Ukončit") { _, _ -> finish() }.setOnCancelListener { finish() }.show()
+            }.setNegativeButton("Ukončit") { _, _ -> finish() }.setOnCancelListener { finish() }.create()
+            .also { dialog ->
+                dialog.window?.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                dialog.show()
+            }
     }
 
     override fun dispatchKeyEvent(e: KeyEvent): Boolean {

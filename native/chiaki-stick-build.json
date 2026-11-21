@@ -5,10 +5,12 @@
   "playbackPatchSha256": "040b4de78b82271d722f6d9331667900f9004226d93d0829a45c252612e58f61",
   "libraries": {
     "arm64-v8a": {
-      "libchiaki-hra.so": "d92714c5cac32c852d0fc5809cb8756a15a8ae849d8d49861e72c3fd74740649"
+      "libchiaki-hra.so": "8b51c969395291164e524a892c37692c5aa9653de2f78345670bd273e247d55d"
     },
     "armeabi-v7a": {
-      "libchiaki-hra.so": "14d0fef22d15c679b7e924c37e6cc86bb9b1ca52d59fcf765d2814eca07215a8"
+      "libchiaki-hra.so": "60495c8cfd38a17fe7ca4052a20aaf593c96687b2a32c58a988b6386fb115fad"
     }
-  }
+  },
+  "openssl": "3.5.9",
+  "opensslPatchSha256": "d442df06ab166a2aafc292dedcdeb07b1ca7cab39c1035078b2b8376cc3d8d4e"
 }

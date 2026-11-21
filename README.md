@@ -2,9 +2,11 @@
 
 Android aplikace pro hraní přes Remote Play s českým překladem přímo nad obrazem. Je určená pro HDMI Stick připojený k běžné televizi nebo monitoru. Výchozí profil je 720p při 30 FPS.
 
-- [Instalace, připojení PS5 a DualSense](docs/TV-STICK.md)
+- [Instalace podepsané verze a ruční párování](docs/TV-STICK-AKTUALIZACE.md)
+- [Bezpečnost a sestavení produkčního balíčku](docs/TV-STICK-PRODUKCE.md)
+- [Návod k původním vývojovým režimům](docs/TV-STICK.md)
 - [Technický audit, testy, měření a zbývající ověření](docs/TV-STICK-TESTY.md)
-- [Zdrojová větev této upravené verze](https://github.com/8swhbj84g7-ops/HerniTitulky/tree/feature/tv-stick-remote-play)
+- [Zdrojová větev této upravené verze](https://github.com/8swhbj84g7-ops/HerniTitulky/tree/codex/tv-stick-production)
 
 Herní titulky jsou nezávislou úpravou projektu PlayCaption od Adama Růžičky a přispěvatelů. Licence AGPLv3 a původní autorská oznámení zůstávají součástí tohoto repozitáře. Níže je původní dokumentace převzatých režimů. Její odkazy ke stažení patří původní aplikaci.
 

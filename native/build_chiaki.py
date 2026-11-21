@@ -41,7 +41,8 @@ def main():
     changed = output("git", "-C", str(source), "diff", "HEAD", "--name-only").splitlines()
     log = "android/app/src/main/cpp/log.c"
     video = "android/app/src/main/cpp/video-decoder.c"
-    allowed = {audio, playback, log, video} if game else {audio, playback}
+    openssl = "cmake/OpenSSLExternalProject.cmake"
+    allowed = {audio, playback, log, video, openssl} if game else {audio, playback}
     if set(changed) - allowed:
         sys.exit("Upstream checkout contains unrelated tracked changes")
     original = subprocess.check_output(["git", "-C", str(source), "show", f"HEAD:{audio}"])
@@ -66,6 +67,12 @@ def main():
         sys.exit("Unexpected native video implementation")
     if sha256((source / playback).read_bytes()) != expected:
         sys.exit("Playback source differs from the reviewed silent callbacks")
+    if game:
+        openssl_patch = HERE / "chiaki-openssl.patch"
+        if openssl not in changed:
+            subprocess.run(["git", "-C", str(source), "apply", "--unidiff-zero", str(openssl_patch)], check=True)
+        if sha256((source / openssl).read_bytes()) != "fb3c7b2bd601856cc0cbcf4a3be6e991a3ddbdb4a2db155123dced2f9e2338e3":
+            sys.exit("Unexpected OpenSSL configuration")
     subprocess.run([sys.executable, str(HERE / "test/audio_shutdown.py"), str(source)] + (["--game"] if game else []), check=True)
     host = "darwin-x86_64" if sys.platform == "darwin" else "linux-x86_64"
     tools = ndk / "toolchains/llvm/prebuilt" / host / "bin"
@@ -73,6 +80,9 @@ def main():
                 "patchSha256": sha256((HERE / "chiaki-audio-unlock.patch").read_bytes()),
                 "playbackPatchSha256": sha256(patch.read_bytes()),
                 "libraries": {}}
+    if game:
+        manifest["openssl"] = "3.5.9"
+        manifest["opensslPatchSha256"] = sha256(openssl_patch.read_bytes())
     for abi in ["arm64-v8a", "armeabi-v7a"]:
         directory = build / ("build-" + abi)
         subprocess.run([

@@ -20,9 +20,6 @@ internal object StickRuntime {
         private set
 
     fun prepare() {
-        if (gameProcess) return
-        if (android.os.Build.VERSION.SDK_INT >= 28 && android.app.Application.getProcessName().endsWith(":stick"))
-            android.webkit.WebView.setDataDirectorySuffix("stick")
         gameProcess = true
     }
 }
@@ -41,12 +38,22 @@ internal class StickConfig(context: Context) {
     val language get() = prefs.getString("lang", "cs") ?: "cs"
     val story get() = prefs.getBoolean("story", false)
 
-    private fun key(): SecretKey {
-        val alias = "stick-pairing-v1"
-        val store = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
-        (store.getKey(alias, null) as? SecretKey)?.let { return it }
+    companion object {
+        private const val keyAlias = "stick-pairing-v1"
+        private val pairingLock = Any()
+        private var attempt = Any()
+    }
+
+    fun pairingAttempt(): Any = synchronized(pairingLock) {
+        Any().also { attempt = it }
+    }
+
+    private fun keystore() = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
+
+    private fun keyForSave(): SecretKey {
+        (keystore().getKey(keyAlias, null) as? SecretKey)?.let { return it }
         val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, "AndroidKeyStore")
-        generator.init(KeyGenParameterSpec.Builder(alias,
+        generator.init(KeyGenParameterSpec.Builder(keyAlias,
             KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
             .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
             .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE).build())
@@ -56,20 +63,31 @@ internal class StickConfig(context: Context) {
     private fun encode(bytes: ByteArray) = Base64.encodeToString(bytes, Base64.NO_WRAP)
     private fun decode(text: String) = Base64.decode(text, Base64.NO_WRAP)
 
-    fun save(ip: String, registration: ByteArray, session: ByteArray) {
+    fun save(expected: Any, ip: String, registration: ByteArray, session: ByteArray) = synchronized(pairingLock) {
+        check(expected === attempt)
+        require(StickPairingInput.localAddress(ip) && registration.size == 16 && session.size == 16)
         val data = JSONObject().put("ip", ip).put("reg", encode(registration)).put("key", encode(session))
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        cipher.init(Cipher.ENCRYPT_MODE, key())
+        cipher.init(Cipher.ENCRYPT_MODE, keyForSave())
         val encrypted = encode(cipher.iv) + "." + encode(cipher.doFinal(data.toString().toByteArray()))
         check(prefs.edit().putString("console", encrypted).commit())
     }
 
-    fun connection(): ConnectInfo {
+    fun forget() = synchronized(pairingLock) {
+        attempt = Any()
+        // Delete the wrapping key first so a stale copy of the encrypted record is unusable.
+        keystore().deleteEntry(keyAlias)
+        check(prefs.edit().remove("console").commit())
+    }
+
+    fun connection(): ConnectInfo = synchronized(pairingLock) {
         val parts = requireNotNull(prefs.getString("console", null)).split('.')
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
-        cipher.init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(128, decode(parts[0])))
+        val key = keystore().getKey(keyAlias, null) as? SecretKey ?: error("Nejprve spáruj PS5.")
+        cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(128, decode(parts[0])))
         val data = JSONObject(String(cipher.doFinal(decode(parts[1])), Charsets.UTF_8))
-        return ConnectInfo(true, data.getString("ip"), decode(data.getString("reg")),
-            decode(data.getString("key")), quality.profile())
+        val ip = data.getString("ip")
+        require(StickPairingInput.localAddress(ip))
+        ConnectInfo(true, ip, decode(data.getString("reg")), decode(data.getString("key")), quality.profile())
     }
 }
